@@ -22,6 +22,8 @@ const publicRoutePatterns = [
   /^\/thread\/[^/]+$/,
   /^\/u\/[^/]+$/,
   /^\/api\/auth(\/.*)?\/?$/,
+  /^\/api\/captcha(\/.*)?\/?$/,
+  /^\/api\/username-check\/?$/,
 ];
 
 const adminRoutes = ["/admin"];
