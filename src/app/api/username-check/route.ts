@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { containsProfanity } from "@/lib/security/profanity";
 
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 60_000;
@@ -38,13 +39,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  try {
-    const existingUser = await db.user.findUnique({
-      where: { username: username.toLowerCase() },
-      select: { id: true },
-    });
+  // Check profanity
+  if (containsProfanity(username)) {
+    return NextResponse.json({ available: false, reason: "inappropriate" });
+  }
 
-    return NextResponse.json({ available: !existingUser });
+  try {
+    // Check both username AND handle fields (handle defaults to username on signup)
+    const [existingUsername, existingHandle] = await Promise.all([
+      db.user.findUnique({
+        where: { username: username.toLowerCase() },
+        select: { id: true },
+      }),
+      db.user.findUnique({
+        where: { handle: username.toLowerCase() },
+        select: { id: true },
+      }),
+    ]);
+
+    return NextResponse.json({ available: !existingUsername && !existingHandle });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

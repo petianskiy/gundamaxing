@@ -6,7 +6,73 @@ import { generateSilhouetteChallenge } from "./svg-templates/silhouette-match";
 import { generateArmorAlignmentChallenge } from "./svg-templates/armor-alignment";
 import { generateLoadoutMatchChallenge } from "./svg-templates/loadout-match";
 
-type CaptchaType = "SILHOUETTE_MATCH" | "ARMOR_ALIGNMENT" | "LOADOUT_MATCH" | "TEXT_LOGIC";
+type CaptchaType = "SILHOUETTE_MATCH" | "ARMOR_ALIGNMENT" | "LOADOUT_MATCH" | "GUNDAM_IDENTIFY" | "TEXT_LOGIC";
+
+// ---- Gundam emoji identification ----
+
+interface GundamEmoji {
+  id: string;
+  name: string;
+  image: string; // path relative to /captcha/
+}
+
+const GUNDAM_EMOJIS: GundamEmoji[] = [
+  { id: "sazabi", name: "Sazabi", image: "/captcha/sazabi.webp" },
+  { id: "purple-gundam", name: "Gundam Mk-II", image: "/captcha/purple-gundam.webp" },
+  { id: "gundam", name: "RX-78-2 Gundam", image: "/captcha/gundam.webp" },
+];
+
+// Wrong answer names (decoys) — real MS names that aren't in our emoji set
+const DECOY_NAMES = [
+  "Zaku II",
+  "Wing Zero",
+  "Barbatos",
+  "Exia",
+  "Freedom",
+  "Strike",
+  "Epyon",
+  "Tallgeese",
+  "Sinanju",
+  "Unicorn",
+  "Nu Gundam",
+  "Destiny",
+  "Astray Red Frame",
+  "Gouf Custom",
+  "Kampfer",
+  "Gelgoog",
+  "Dom",
+  "Qubeley",
+  "The O",
+  "Hyaku Shiki",
+];
+
+function generateGundamIdentifyChallenge(): {
+  correctId: string;
+  imageUrl: string;
+  promptLabel: string;
+  options: { id: string; label: string }[];
+} {
+  // Pick a random Gundam emoji as the target
+  const target = GUNDAM_EMOJIS[Math.floor(Math.random() * GUNDAM_EMOJIS.length)];
+
+  // Build wrong options from decoy names
+  const wrongNames = [...DECOY_NAMES]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+
+  // Build options: 1 correct + 3 wrong, shuffled
+  const options = [
+    { id: target.id, label: target.name },
+    ...wrongNames.map((name, i) => ({ id: `wrong-${i}`, label: name })),
+  ].sort(() => Math.random() - 0.5);
+
+  return {
+    correctId: target.id,
+    imageUrl: target.image,
+    promptLabel: "IDENTIFY THIS MOBILE SUIT",
+    options,
+  };
+}
 
 // ---- Text logic puzzles ----
 
@@ -78,6 +144,9 @@ function hashAnswer(answer: string): string {
 // ---- Visual challenge types (pick random) ----
 
 const visualChallengeTypes: CaptchaType[] = [
+  "GUNDAM_IDENTIFY",
+  "GUNDAM_IDENTIFY",
+  "GUNDAM_IDENTIFY",
   "SILHOUETTE_MATCH",
   "ARMOR_ALIGNMENT",
   "LOADOUT_MATCH",
@@ -88,9 +157,10 @@ const visualChallengeTypes: CaptchaType[] = [
 export interface GenerateChallengeResult {
   challengeId: string;
   type: CaptchaType;
-  promptSvg: string;
+  promptSvg?: string;
+  promptImage?: string;
   promptLabel: string;
-  options: { id: string; svg: string }[];
+  options: { id: string; svg?: string; label?: string }[];
 }
 
 export interface GenerateTextChallengeResult {
@@ -109,12 +179,21 @@ export async function generateChallenge(): Promise<GenerateChallengeResult> {
     Math.floor(Math.random() * visualChallengeTypes.length)
   ];
 
-  let promptSvg: string;
+  let promptSvg: string | undefined;
+  let promptImage: string | undefined;
   let promptLabel: string;
-  let options: { id: string; svg: string }[];
+  let options: { id: string; svg?: string; label?: string }[];
   let correctId: string;
 
   switch (type) {
+    case "GUNDAM_IDENTIFY": {
+      const result = generateGundamIdentifyChallenge();
+      promptImage = result.imageUrl;
+      promptLabel = result.promptLabel;
+      options = result.options;
+      correctId = result.correctId;
+      break;
+    }
     case "SILHOUETTE_MATCH": {
       const result = generateSilhouetteChallenge();
       promptSvg = result.promptSvg;
@@ -169,6 +248,7 @@ export async function generateChallenge(): Promise<GenerateChallengeResult> {
     challengeId: challenge.id,
     type,
     promptSvg,
+    promptImage,
     promptLabel,
     options,
   };

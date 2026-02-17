@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { containsProfanity } from "@/lib/security/profanity";
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -33,6 +34,10 @@ export async function saveBuilderIdentity(
     };
 
     if (data.handle !== undefined) {
+      // Check profanity
+      if (containsProfanity(data.handle)) {
+        return { error: "This handle contains inappropriate language and is not allowed." };
+      }
       // Check handle uniqueness
       const existing = await db.user.findUnique({
         where: { handle: data.handle.toLowerCase() },

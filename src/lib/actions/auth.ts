@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/security/password";
 import { signupSchema } from "@/lib/validations/auth";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email/send";
 import { logEvent } from "@/lib/data/events";
+import { containsProfanity } from "@/lib/security/profanity";
 
 // ─── Sign Up ──────────────────────────────────────────────────────
 
@@ -28,6 +29,11 @@ export async function signUpAction(
 
     const { email, username, password } = result.data;
 
+    // Check profanity in username
+    if (containsProfanity(username)) {
+      return { error: "This username contains inappropriate language and is not allowed." };
+    }
+
     // Check email uniqueness
     const existingEmail = await db.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -44,23 +50,25 @@ export async function signUpAction(
       return { error: "This username is already taken" };
     }
 
-    // Check handle uniqueness (handle = username initially)
-    const existingHandle = await db.user.findUnique({
-      where: { handle: username.toLowerCase() },
-    });
-    if (existingHandle) {
-      return { error: "This handle is already taken" };
-    }
-
     // Hash password
     const passwordHash = await hashPassword(password);
+
+    // Determine handle (default to username, add suffix if taken)
+    let handle = username.toLowerCase();
+    const existingHandle = await db.user.findUnique({
+      where: { handle },
+      select: { id: true },
+    });
+    if (existingHandle) {
+      handle = `${handle}${Math.floor(Math.random() * 9000 + 1000)}`;
+    }
 
     // Create user
     const user = await db.user.create({
       data: {
         email: email.toLowerCase(),
         username: username.toLowerCase(),
-        handle: username.toLowerCase(),
+        handle,
         passwordHash,
       },
     });

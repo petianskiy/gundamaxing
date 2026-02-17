@@ -9,7 +9,7 @@ interface UsernameCheckerProps {
   username: string;
 }
 
-type CheckStatus = "idle" | "checking" | "available" | "taken" | "error";
+type CheckStatus = "idle" | "checking" | "available" | "taken" | "inappropriate" | "error";
 
 export function UsernameChecker({ username }: UsernameCheckerProps) {
   const [status, setStatus] = useState<CheckStatus>("idle");
@@ -38,7 +38,11 @@ export function UsernameChecker({ username }: UsernameCheckerProps) {
         }
 
         const data = await res.json();
-        setStatus(data.available ? "available" : "taken");
+        if (data.reason === "inappropriate") {
+          setStatus("inappropriate");
+        } else {
+          setStatus(data.available ? "available" : "taken");
+        }
       } catch {
         if (!cancelled) {
           setStatus("error");
@@ -86,6 +90,14 @@ export function UsernameChecker({ username }: UsernameCheckerProps) {
             <X className="h-3 w-3 text-red-500" />
             <span className="text-[10px] font-mono tracking-wider text-red-500">
               CALLSIGN TAKEN
+            </span>
+          </>
+        )}
+        {status === "inappropriate" && (
+          <>
+            <X className="h-3 w-3 text-red-500" />
+            <span className="text-[10px] font-mono tracking-wider text-red-500">
+              INAPPROPRIATE — CHOOSE ANOTHER
             </span>
           </>
         )}

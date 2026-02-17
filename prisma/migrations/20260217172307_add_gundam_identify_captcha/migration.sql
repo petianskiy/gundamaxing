@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "CaptchaType" ADD VALUE 'GUNDAM_IDENTIFY';

@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 interface CaptchaChallenge {
   challengeId: string;
   type: string;
-  promptSvg: string;
+  promptSvg?: string;
+  promptImage?: string;
   promptLabel: string;
-  options: { id: string; svg: string }[];
+  options: { id: string; svg?: string; label?: string }[];
 }
 
 interface CaptchaWidgetProps {
@@ -129,18 +130,34 @@ export function CaptchaWidget({ onVerify, className }: CaptchaWidgetProps) {
           </div>
         ) : challenge ? (
           <>
-            {/* Prompt SVG */}
+            {/* Prompt: Image or SVG */}
             <div className="flex justify-center mb-4">
-              <div
-                className="p-3 rounded border border-border/30 bg-black/30"
-                dangerouslySetInnerHTML={{ __html: challenge.promptSvg }}
-                aria-hidden="true"
-              />
+              {challenge.promptImage ? (
+                <div className="p-2 rounded-lg border border-border/30 bg-black/30">
+                  <img
+                    src={challenge.promptImage}
+                    alt="Identify this mobile suit"
+                    className="w-32 h-32 object-contain"
+                    draggable={false}
+                  />
+                </div>
+              ) : challenge.promptSvg ? (
+                <div
+                  className="p-3 rounded border border-border/30 bg-black/30"
+                  dangerouslySetInnerHTML={{ __html: challenge.promptSvg }}
+                  aria-hidden="true"
+                />
+              ) : null}
             </div>
 
-            {/* Options Grid */}
+            {/* Options: text labels or SVG grid */}
             <div
-              className="grid grid-cols-2 gap-2"
+              className={cn(
+                "gap-2",
+                challenge.options[0]?.label
+                  ? "flex flex-col"
+                  : "grid grid-cols-2"
+              )}
               role="radiogroup"
               aria-label="Select the correct option"
             >
@@ -155,10 +172,11 @@ export function CaptchaWidget({ onVerify, className }: CaptchaWidgetProps) {
                     onClick={() => handleSelect(option.id)}
                     disabled={verifying || result === "success"}
                     className={cn(
-                      "flex items-center justify-center p-3 rounded border-2 transition-all duration-200",
+                      "flex items-center justify-center rounded border-2 transition-all duration-200",
                       "hover:border-gx-red/60 hover:bg-white/5 cursor-pointer",
                       "disabled:cursor-not-allowed disabled:opacity-60",
                       "focus:outline-none focus:ring-2 focus:ring-gx-red/30",
+                      option.label ? "px-4 py-2.5 text-sm font-medium" : "p-3",
                       isSuccess
                         ? "border-green-500 bg-green-500/10"
                         : isFailure
@@ -169,12 +187,21 @@ export function CaptchaWidget({ onVerify, className }: CaptchaWidgetProps) {
                     )}
                     role="radio"
                     aria-checked={isSelected}
-                    aria-label={`Option ${index + 1}`}
+                    aria-label={option.label || `Option ${index + 1}`}
                   >
-                    <div
-                      dangerouslySetInnerHTML={{ __html: option.svg }}
-                      aria-hidden="true"
-                    />
+                    {option.label ? (
+                      <span className={cn(
+                        "font-mono tracking-wider text-xs",
+                        isSuccess ? "text-green-400" : isFailure ? "text-red-400" : "text-foreground"
+                      )}>
+                        {option.label}
+                      </span>
+                    ) : option.svg ? (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: option.svg }}
+                        aria-hidden="true"
+                      />
+                    ) : null}
                   </button>
                 );
               })}
