@@ -1,0 +1,15 @@
+export const profile = {
+  "profile.notFound": "Builder not found",
+  "profile.notFoundDesc": "This builder profile doesn't exist.",
+  "profile.browseBuilds": "Browse builds",
+  "profile.level": "Level",
+  "profile.rep": "REP",
+  "profile.builds": "builds",
+  "profile.likes": "likes",
+  "profile.tabBuilds": "Builds",
+  "profile.tabActivity": "Activity",
+  "profile.tabThreads": "Threads",
+  "profile.noBuilds": "No builds yet.",
+  "profile.noThreads": "No threads yet.",
+  "profile.activitySoon": "Activity feed coming soon.",
+} as const;

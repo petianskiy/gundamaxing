@@ -1,26 +1,159 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--gx-accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-gx-red: var(--gx-red);
+  --color-gx-gold: var(--gx-gold);
+  --color-gx-blue: var(--gx-blue);
+  --color-gx-surface: var(--gx-surface);
+  --color-gx-surface-elevated: var(--gx-surface-elevated);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --border: #27272a;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --gx-accent: #dc2626;
+  --accent-foreground: #fafafa;
+  --gx-red: #dc2626;
+  --gx-gold: #d4a017;
+  --gx-blue: #3b82f6;
+  --gx-surface: #0f0f12;
+  --gx-surface-elevated: #1a1a1f;
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iPhone safe area support */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* Skeleton loading */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #27272a 0%, #3f3f46 50%, #27272a 100%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Verification tier colors */
+.tier-master { --tier-color: #d4a017; }
+.tier-featured { --tier-color: #8b5cf6; }
+.tier-verified { --tier-color: #3b82f6; }
+.tier-unverified { --tier-color: #71717a; }
+
+/* Mecha HUD scan line effect */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.15), transparent);
+  pointer-events: none;
+  animation: scan-line 8s linear infinite;
+}
+
+/* Gundam red glow */
+.gx-glow {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.1), 0 0 40px rgba(220, 38, 38, 0.05);
+}
+
+/* Mecha corner brackets */
+.mecha-frame {
+  position: relative;
+}
+.mecha-frame::before,
+.mecha-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+.mecha-frame::before {
+  top: 0;
+  left: 0;
+  border-top: 2px solid rgba(220, 38, 38, 0.3);
+  border-left: 2px solid rgba(220, 38, 38, 0.3);
+}
+.mecha-frame::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 2px solid rgba(220, 38, 38, 0.3);
+  border-right: 2px solid rgba(220, 38, 38, 0.3);
 }

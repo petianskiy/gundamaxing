@@ -1,0 +1,15 @@
+export const profile = {
+  "profile.notFound": "ビルダーが見つかりません",
+  "profile.notFoundDesc": "このビルダープロフィールは存在しません。",
+  "profile.browseBuilds": "ビルドを閲覧",
+  "profile.level": "レベル",
+  "profile.rep": "REP",
+  "profile.builds": "ビルド",
+  "profile.likes": "いいね",
+  "profile.tabBuilds": "ビルド",
+  "profile.tabActivity": "アクティビティ",
+  "profile.tabThreads": "スレッド",
+  "profile.noBuilds": "まだビルドがありません。",
+  "profile.noThreads": "まだスレッドがありません。",
+  "profile.activitySoon": "アクティビティフィードは近日公開予定です。",
+} as const;
