@@ -4,11 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Menu, X, Upload, Grid3X3, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { LanguageToggle } from "@/components/ui/language-toggle";
+import { SignInButton } from "@/components/auth/sign-in-button";
+import { UserMenu } from "@/components/auth/user-menu";
 
 const navLinks = [
   { href: "/builds", labelKey: "nav.builds", icon: Grid3X3 },
@@ -20,6 +23,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
+  const { data: session, status } = useSession();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-top">
@@ -67,9 +71,12 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Right side: Language toggle + Mobile toggle */}
+          {/* Right side: Language toggle + Auth + Mobile toggle */}
           <div className="flex items-center gap-2">
             <LanguageToggle />
+            {status !== "loading" && (
+              session ? <UserMenu /> : <SignInButton />
+            )}
             <button
               className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground"
               onClick={() => setMobileOpen(!mobileOpen)}

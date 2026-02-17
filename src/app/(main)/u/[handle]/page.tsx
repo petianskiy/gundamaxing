@@ -1,0 +1,179 @@
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { ProfileHeader } from "./components/profile-header";
+import { BuildGallery } from "./components/build-gallery";
+import { WorkshopSpecs } from "./components/workshop-specs";
+import { Achievements } from "./components/achievements";
+
+type Props = {
+  params: Promise<{ handle: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { handle } = await params;
+  const user = await db.user.findUnique({
+    where: { handle },
+    select: { displayName: true, username: true, handle: true, bio: true, avatar: true },
+  });
+
+  if (!user) {
+    return { title: "Pilot Not Found | Gundamaxing" };
+  }
+
+  return {
+    title: `${user.displayName || user.username} (@${user.handle}) | Gundamaxing`,
+    description: user.bio || `Check out ${user.displayName || user.username}'s Gunpla builds on Gundamaxing.`,
+    openGraph: {
+      title: `${user.displayName || user.username} | Gundamaxing`,
+      description: user.bio || undefined,
+      images: user.avatar ? [{ url: user.avatar }] : undefined,
+    },
+  };
+}
+
+export default async function ProfilePage({ params }: Props) {
+  const { handle } = await params;
+
+  const user = await db.user.findUnique({
+    where: { handle },
+    include: {
+      badges: { include: { badge: true } },
+      _count: {
+        select: {
+          builds: true,
+          likes: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return (
+      <div className="pt-24 pb-16 px-4 text-center">
+        <div className="mx-auto max-w-md">
+          <h1 className="text-2xl font-bold text-foreground">
+            Pilot Not Found
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            No pilot with the handle @{handle} exists in our registry.
+          </p>
+          <a
+            href="/builds"
+            className="mt-4 inline-block text-sm text-gx-red hover:text-red-400 transition-colors"
+          >
+            Browse builds instead
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const builds = await db.build.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      images: true,
+      user: { select: { username: true, handle: true, avatar: true } },
+    },
+  });
+
+  const session = await auth();
+  const isOwner = session?.user?.id === user.id;
+
+  const sectionOrder = user.sectionOrder.length > 0
+    ? user.sectionOrder
+    : ["featured", "gallery", "wip", "workshop", "achievements"];
+  const hiddenSections = new Set(user.hiddenSections);
+
+  const featuredBuild = builds.find((b) => b.isFeaturedBuild) || null;
+  const socialLinks = (user.socialLinks as Record<string, string> | null) || {};
+
+  const sectionComponents: Record<string, React.ReactNode> = {
+    featured: featuredBuild && !hiddenSections.has("featured") ? (
+      <section key="featured" className="rounded-xl border border-border/50 bg-card p-5">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">
+          Featured Build
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-4">
+          {featuredBuild.images[0] && (
+            <div className="relative w-full sm:w-48 aspect-[4/3] rounded-lg overflow-hidden bg-muted shrink-0">
+              <img
+                src={featuredBuild.images[0].url}
+                alt={featuredBuild.images[0].alt}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h3 className="text-lg font-bold text-foreground">
+              {featuredBuild.title}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {featuredBuild.kitName} &middot; {featuredBuild.grade} &middot;{" "}
+              {featuredBuild.scale}
+            </p>
+            {featuredBuild.intentStatement && (
+              <p className="text-sm text-zinc-300 mt-2 leading-relaxed">
+                {featuredBuild.intentStatement}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+    ) : null,
+    gallery: !hiddenSections.has("gallery") ? (
+      <BuildGallery key="gallery" builds={builds} userHandle={user.handle} />
+    ) : null,
+    workshop: !hiddenSections.has("workshop") ? (
+      <WorkshopSpecs
+        key="workshop"
+        skillLevel={user.skillLevel}
+        techniques={user.techniques}
+        tools={user.tools}
+        preferredGrades={user.preferredGrades}
+      />
+    ) : null,
+    achievements: !hiddenSections.has("achievements") ? (
+      <Achievements
+        key="achievements"
+        badges={user.badges.map((ub) => ({
+          id: ub.badge.id,
+          name: ub.badge.name,
+          icon: ub.badge.icon,
+          description: ub.badge.description,
+          tier: ub.badge.tier,
+        }))}
+      />
+    ) : null,
+  };
+
+  return (
+    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <ProfileHeader
+          user={{
+            handle: user.handle,
+            displayName: user.displayName,
+            username: user.username,
+            avatar: user.avatar,
+            banner: user.banner,
+            bio: user.bio,
+            accentColor: user.accentColor,
+            verificationTier: user.verificationTier,
+            level: user.level,
+            reputation: user.reputation,
+            socialLinks,
+            buildCount: user._count.builds,
+            likeCount: user._count.likes,
+            joinedAt: user.createdAt.toLocaleDateString(),
+          }}
+          isOwner={isOwner}
+        />
+
+        {sectionOrder.map((section) => sectionComponents[section])}
+      </div>
+    </div>
+  );
+}

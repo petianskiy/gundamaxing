@@ -1,0 +1,511 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH (NextAuth v5 Prisma Adapter) ────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  deviceId     String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── USER ─────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum VerificationTier {
+  UNVERIFIED
+  VERIFIED
+  FEATURED
+  MASTER
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+model User {
+  id               String           @id @default(cuid())
+  email            String           @unique
+  emailVerified    DateTime?
+  passwordHash     String?
+  username         String           @unique
+  handle           String           @unique
+  displayName      String?
+  avatar           String?
+  banner           String?
+  bio              String?          @db.Text
+  accentColor      String?          @default("#dc2626")
+  role             Role             @default(USER)
+  verificationTier VerificationTier @default(UNVERIFIED)
+
+  // Builder identity (Step B)
+  country          String?
+  skillLevel       SkillLevel?
+  preferredGrades  String[]         @default([])
+  favoriteTimelines String[]        @default([])
+  favoriteSeries   String[]         @default([])
+
+  // Workshop setup (Step C)
+  tools            String[]         @default([])
+  techniques       String[]         @default([])
+
+  // Profile personalization (Step D)
+  socialLinks      Json?
+  profileLayout    String?          @default("default")
+  sectionOrder     String[]         @default(["featured", "gallery", "wip", "workshop", "achievements"])
+  pinnedBuildIds   String[]         @default([])
+  hiddenSections   String[]         @default([])
+
+  // Reputation & anti-spam
+  reputation       Int              @default(0)
+  level            Int              @default(1)
+  riskScore        Int              @default(0)
+
+  // Registration tracking
+  registrationIp   String?
+  onboardingStep   Int              @default(0)
+  onboardingComplete Boolean        @default(false)
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  accounts         Account[]
+  sessions         Session[]
+  builds           Build[]
+  buildLogs        BuildLogEntry[]
+  comments         Comment[]
+  threads          Thread[]
+  likes            Like[]
+  bookmarks        Bookmark[]
+  badges           UserBadge[]
+  reportsFiled     Report[]         @relation("reporter")
+  reportsReceived  Report[]         @relation("reported")
+  moderationActions ModerationAction[] @relation("moderator")
+  eventLogs        EventLog[]
+
+  @@index([email])
+  @@index([handle])
+  @@index([reputation])
+  @@index([createdAt])
+}
+
+// ─── BUILDS ───────────────────────────────────────────────────────
+
+enum BuildStatus {
+  WIP
+  COMPLETED
+  ABANDONED
+}
+
+model Build {
+  id              String           @id @default(cuid())
+  title           String
+  kitName         String
+  grade           String
+  timeline        String
+  scale           String
+  status          BuildStatus      @default(WIP)
+  techniques      String[]         @default([])
+  paintSystem     String?
+  topcoat         String?
+  timeInvested    String?
+  tools           String[]         @default([])
+  intentStatement String?          @db.Text
+  baseKit         String?
+  verification    VerificationTier @default(UNVERIFIED)
+
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images          BuildImage[]
+  calloutPins     CalloutPin[]
+  buildLog        BuildLogEntry[]
+  comments        Comment[]
+  likes           Like[]
+  bookmarks       Bookmark[]
+
+  // Build DNA
+  inspiredByIds   String[]         @default([])
+  forkOfId        String?
+  forkOf          Build?           @relation("BuildForks", fields: [forkOfId], references: [id])
+  forks           Build[]          @relation("BuildForks")
+
+  // Denormalized counters
+  likeCount       Int              @default(0)
+  commentCount    Int              @default(0)
+  forkCount       Int              @default(0)
+  bookmarkCount   Int              @default(0)
+
+  isFeaturedBuild Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([grade])
+  @@index([timeline])
+  @@index([status])
+  @@index([verification])
+  @@index([createdAt])
+  @@index([likeCount])
+}
+
+model BuildImage {
+  id             String  @id @default(cuid())
+  url            String
+  alt            String
+  isPrimary      Boolean @default(false)
+  objectPosition String?
+  order          Int     @default(0)
+  buildId        String
+  build          Build   @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId])
+}
+
+model CalloutPin {
+  id          String @id @default(cuid())
+  x           Float
+  y           Float
+  label       String
+  description String
+  buildId     String
+  build       Build  @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId])
+}
+
+model BuildLogEntry {
+  id        String   @id @default(cuid())
+  date      DateTime
+  title     String
+  content   String   @db.Text
+  images    String[] @default([])
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([buildId])
+  @@index([userId])
+}
+
+// ─── FORUM ────────────────────────────────────────────────────────
+
+model ForumCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  color       String
+  order       Int      @default(0)
+  threadCount Int      @default(0)
+  postCount   Int      @default(0)
+  threads     Thread[]
+
+  @@index([order])
+}
+
+model Thread {
+  id          String        @id @default(cuid())
+  title       String
+  content     String        @db.Text
+  isPinned    Boolean       @default(false)
+  isLocked    Boolean       @default(false)
+  views       Int           @default(0)
+  replyCount  Int           @default(0)
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  lastReplyAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([isPinned, createdAt])
+  @@index([lastReplyAt])
+}
+
+// ─── COMMENTS ─────────────────────────────────────────────────────
+
+model Comment {
+  id         String    @id @default(cuid())
+  content    String    @db.Text
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId    String?
+  build      Build?    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  threadId   String?
+  thread     Thread?   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Comment[] @relation("CommentReplies")
+  likeCount  Int       @default(0)
+  likes      Like[]
+  ipAddress  String?
+  flagged    Boolean   @default(false)
+  flagReason String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([buildId])
+  @@index([threadId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+// ─── ENGAGEMENT ───────────────────────────────────────────────────
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId   String?
+  build     Build?   @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, buildId])
+  @@unique([userId, commentId])
+  @@index([buildId])
+  @@index([commentId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, buildId])
+  @@index([userId])
+}
+
+// ─── BADGES ───────────────────────────────────────────────────────
+
+enum BadgeTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  icon        String
+  description String
+  tier        BadgeTier
+  criteria    Json?
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+// ─── CAPTCHA ──────────────────────────────────────────────────────
+
+enum CaptchaType {
+  SILHOUETTE_MATCH
+  ARMOR_ALIGNMENT
+  LOADOUT_MATCH
+  TEXT_LOGIC
+}
+
+model CaptchaChallenge {
+  id            String      @id @default(cuid())
+  type          CaptchaType
+  challengeData Json
+  answerHash    String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  ipAddress     String?
+  createdAt     DateTime    @default(now())
+
+  @@index([expiresAt])
+  @@index([ipAddress])
+}
+
+// ─── MODERATION ───────────────────────────────────────────────────
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  MISINFORMATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reason         ReportReason
+  description    String?      @db.Text
+  status         ReportStatus @default(PENDING)
+  reporterId     String
+  reporter       User         @relation("reporter", fields: [reporterId], references: [id])
+  reportedUserId String?
+  reportedUser   User?        @relation("reported", fields: [reportedUserId], references: [id])
+  buildId        String?
+  commentId      String?
+  threadId       String?
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  createdAt      DateTime     @default(now())
+
+  @@index([status])
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([createdAt])
+}
+
+enum ModerationActionType {
+  WARN
+  MUTE
+  BAN
+  UNBAN
+  DELETE_CONTENT
+  APPROVE_CONTENT
+}
+
+model ModerationAction {
+  id              String               @id @default(cuid())
+  type            ModerationActionType
+  reason          String?              @db.Text
+  targetUserId    String?
+  targetBuildId   String?
+  targetCommentId String?
+  targetThreadId  String?
+  moderatorId     String
+  moderator       User                 @relation("moderator", fields: [moderatorId], references: [id])
+  expiresAt       DateTime?
+  createdAt       DateTime             @default(now())
+
+  @@index([targetUserId])
+  @@index([moderatorId])
+  @@index([createdAt])
+}
+
+// ─── EVENT LOGGING ────────────────────────────────────────────────
+
+enum EventType {
+  SIGNUP_ATTEMPT
+  SIGNUP_SUCCESS
+  SIGNUP_BLOCKED
+  LOGIN_ATTEMPT
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  CAPTCHA_SERVED
+  CAPTCHA_PASSED
+  CAPTCHA_FAILED
+  RATE_LIMIT_HIT
+  COMMENT_BLOCKED
+  CONTENT_FLAGGED
+  REPORT_CREATED
+  MODERATION_ACTION
+  EMAIL_VERIFICATION_SENT
+  EMAIL_VERIFICATION_COMPLETE
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETE
+}
+
+model EventLog {
+  id        String    @id @default(cuid())
+  type      EventType
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  @@index([type])
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+// ─── RATE LIMIT (DB fallback) ─────────────────────────────────────
+
+model RateLimitRecord {
+  id          String   @id @default(cuid())
+  key         String
+  count       Int      @default(1)
+  windowStart DateTime
+  expiresAt   DateTime
+
+  @@unique([key, windowStart])
+  @@index([expiresAt])
+  @@index([key])
+}

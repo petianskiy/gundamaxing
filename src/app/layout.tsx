@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/context";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
+import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -56,11 +56,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
-        <LanguageProvider>
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-        </LanguageProvider>
+        <AuthSessionProvider>
+          <LanguageProvider>
+            {children}
+            <Toaster
+              theme="dark"
+              toastOptions={{
+                style: {
+                  background: "var(--gx-surface-elevated)",
+                  border: "1px solid hsl(var(--border) / 0.5)",
+                  color: "hsl(var(--foreground))",
+                },
+              }}
+            />
+          </LanguageProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );
