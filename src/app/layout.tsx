@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { Navbar } from "@/components/layout/navbar";
@@ -15,17 +15,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "Gundamaxing — Showcase Your Build. Earn Your Rank.",
   description:
     "The definitive platform for Gunpla builders. Create Build Passports, showcase custom builds, track your lineage, and earn your rank.",
   keywords: ["Gundam", "Gunpla", "model kit", "custom build", "Build Passport"],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    viewportFit: "cover",
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
