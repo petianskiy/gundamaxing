@@ -27,6 +27,13 @@ export const metadata: Metadata = {
   description:
     "The definitive platform for Gunpla builders. Create Build Passports, showcase custom builds, track your lineage, and earn your rank.",
   keywords: ["Gundam", "Gunpla", "model kit", "custom build", "Build Passport"],
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

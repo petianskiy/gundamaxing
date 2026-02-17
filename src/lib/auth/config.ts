@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import DiscordProvider from "next-auth/providers/discord";
 import { db } from "@/lib/db";
@@ -63,15 +62,7 @@ const providers: NextAuthConfig["providers"] = [
   }),
 ];
 
-if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
-  providers.push(
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    })
-  );
-}
-
+// Google OAuth
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({
@@ -81,6 +72,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
+// Discord OAuth
 if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
   providers.push(
     DiscordProvider({
@@ -103,14 +95,40 @@ const authConfig: NextAuthConfig = {
   },
   providers,
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, account }) {
       // On initial sign-in, populate the token with user data
       if (user) {
-        token.id = user.id!;
-        token.role = (user as any).role ?? "USER";
-        token.handle = (user as any).handle ?? "";
-        token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
-        token.onboardingComplete = (user as any).onboardingComplete ?? false;
+        // For OAuth sign-ins, the user may be new — ensure DB fields are loaded
+        if (account?.provider !== "credentials") {
+          const dbUser = await db.user.findUnique({
+            where: { id: user.id! },
+            select: {
+              role: true,
+              handle: true,
+              verificationTier: true,
+              onboardingComplete: true,
+            },
+          });
+          if (dbUser) {
+            token.id = user.id!;
+            token.role = dbUser.role;
+            token.handle = dbUser.handle;
+            token.verificationTier = dbUser.verificationTier;
+            token.onboardingComplete = dbUser.onboardingComplete;
+          } else {
+            token.id = user.id!;
+            token.role = "USER";
+            token.handle = "";
+            token.verificationTier = "UNVERIFIED";
+            token.onboardingComplete = false;
+          }
+        } else {
+          token.id = user.id!;
+          token.role = (user as any).role ?? "USER";
+          token.handle = (user as any).handle ?? "";
+          token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
+          token.onboardingComplete = (user as any).onboardingComplete ?? false;
+        }
       }
 
       // On session update trigger, refresh from DB
