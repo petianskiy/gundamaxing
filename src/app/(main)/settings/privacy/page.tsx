@@ -12,7 +12,7 @@ export default async function PrivacySettingsPage() {
 
   return (
     <PrivacySettingsForm
-      user={{
+      initialData={{
         isProfilePrivate: user.isProfilePrivate,
         hiddenSections: user.hiddenSections,
         sectionOrder: user.sectionOrder.length > 0

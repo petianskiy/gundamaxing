@@ -1,136 +1,288 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/context";
 import { updateProfile } from "@/lib/actions/profile";
-import { Lock } from "lucide-react";
+import { useUploadThing } from "@/lib/upload/uploadthing";
+import { Camera, Upload, X, Loader2 } from "lucide-react";
 
-type Props = {
-  user: {
-    username: string;
-    handle: string;
-    displayName: string;
-    bio: string;
-    avatar: string;
-    banner: string;
-    accentColor: string;
-    socialLinks: Record<string, string>;
+interface ProfileFormData {
+  displayName: string;
+  username: string;
+  handle: string;
+  bio: string;
+  avatar: string;
+  banner: string;
+  accentColor: string;
+  socialLinks: {
+    twitter: string;
+    instagram: string;
+    youtube: string;
+    github: string;
+    discord: string;
+    tiktok: string;
   };
-};
+}
 
-const socialPlatforms = ["twitter", "instagram", "youtube", "discord", "tiktok"];
-
-export function ProfileSettingsForm({ user }: Props) {
+export function ProfileSettingsForm({ initialData }: { initialData: ProfileFormData }) {
   const { t } = useTranslation();
-  const { update } = useSession();
+  const { update: updateSession } = useSession();
   const [saving, setSaving] = useState(false);
-  const [displayName, setDisplayName] = useState(user.displayName);
-  const [bio, setBio] = useState(user.bio);
-  const [avatar, setAvatar] = useState(user.avatar);
-  const [banner, setBanner] = useState(user.banner);
-  const [accentColor, setAccentColor] = useState(user.accentColor);
-  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(user.socialLinks);
+  const [form, setForm] = useState(initialData);
 
-  async function handleSave() {
+  // Upload state
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const { startUpload: startAvatarUpload } = useUploadThing("avatarUpload", {
+    onClientUploadComplete: (res) => {
+      if (res?.[0]) {
+        updateField("avatar", res[0].ufsUrl);
+        toast.success(t("settings.profile.avatarUploaded"));
+      }
+      setUploadingAvatar(false);
+    },
+    onUploadError: (error) => {
+      toast.error(error.message || "Avatar upload failed");
+      setUploadingAvatar(false);
+    },
+  });
+
+  const { startUpload: startBannerUpload } = useUploadThing("bannerUpload", {
+    onClientUploadComplete: (res) => {
+      if (res?.[0]) {
+        updateField("banner", res[0].ufsUrl);
+        toast.success(t("settings.profile.bannerUploaded"));
+      }
+      setUploadingBanner(false);
+    },
+    onUploadError: (error) => {
+      toast.error(error.message || "Banner upload failed");
+      setUploadingBanner(false);
+    },
+  });
+
+  function updateField<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updateSocial(key: string, value: string) {
+    setForm((prev) => ({
+      ...prev,
+      socialLinks: { ...prev.socialLinks, [key]: value },
+    }));
+  }
+
+  async function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    await startAvatarUpload([file]);
+    // Reset the input so the same file can be re-selected
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }
+
+  async function handleBannerSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBanner(true);
+    await startBannerUpload([file]);
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setSaving(true);
-    try {
-      const formData = new FormData();
-      if (displayName) formData.set("displayName", displayName);
-      if (bio) formData.set("bio", bio);
-      if (avatar) formData.set("avatar", avatar);
-      if (banner) formData.set("banner", banner);
-      if (accentColor) formData.set("accentColor", accentColor);
 
-      const filteredLinks = Object.fromEntries(
-        Object.entries(socialLinks).filter(([, v]) => v.trim())
-      );
-      if (Object.keys(filteredLinks).length > 0) {
-        formData.set("socialLinks", JSON.stringify(filteredLinks));
-      }
+    const formData = new FormData();
+    formData.set("displayName", form.displayName);
+    formData.set("bio", form.bio);
+    formData.set("avatar", form.avatar);
+    formData.set("banner", form.banner);
+    formData.set("accentColor", form.accentColor);
+    formData.set("socialLinks", JSON.stringify(form.socialLinks));
 
-      const result = await updateProfile(formData);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success(t("settings.profile.saved"));
-        await update();
-      }
-    } finally {
-      setSaving(false);
+    const result = await updateProfile(formData);
+    setSaving(false);
+
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("settings.profile.saved"));
+      // Refresh the session so avatar/name update in the navbar
+      await updateSession();
     }
   }
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div>
+      <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">{t("settings.profile.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t("settings.profile.subtitle")}</p>
       </div>
 
-      <div className="rounded-xl border border-border/50 bg-card p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Avatar & Banner uploads */}
+        <div className="space-y-4">
+          {/* Banner */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {t("settings.profile.banner")}
+            </label>
+            <div className="relative rounded-xl overflow-hidden border border-border/50 bg-gx-surface h-32 group">
+              {form.banner ? (
+                <Image src={form.banner} alt="Banner" fill className="object-cover" unoptimized />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Upload className="h-6 w-6" />
+                </div>
+              )}
+              {uploadingBanner && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-white animate-spin" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur text-white text-xs font-medium hover:bg-white/30 transition-colors"
+                >
+                  <Camera className="h-3.5 w-3.5 inline mr-1.5" />
+                  {form.banner ? t("settings.profile.changeBanner") : t("settings.profile.uploadBanner")}
+                </button>
+                {form.banner && (
+                  <button
+                    type="button"
+                    onClick={() => updateField("banner", "")}
+                    className="ml-2 p-1.5 rounded-lg bg-red-500/60 backdrop-blur text-white hover:bg-red-500/80 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerSelect}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">{t("settings.profile.bannerHint")}</p>
+          </div>
+
+          {/* Avatar */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {t("settings.profile.avatar")}
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-border/50 bg-gx-surface group shrink-0">
+                {form.avatar ? (
+                  <Image src={form.avatar} alt="Avatar" fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <Camera className="h-6 w-6" />
+                  </div>
+                )}
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                >
+                  <Camera className="h-5 w-5 text-white" />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarSelect}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      {t("settings.profile.uploading")}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      {t("settings.profile.uploadAvatar")}
+                    </>
+                  )}
+                </Button>
+                {form.avatar && (
+                  <button
+                    type="button"
+                    onClick={() => updateField("avatar", "")}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors text-left"
+                  >
+                    {t("settings.profile.removeAvatar")}
+                  </button>
+                )}
+                <p className="text-xs text-muted-foreground">{t("settings.profile.avatarHint")}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Read-only fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              {t("settings.profile.username")}
-            </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/30 bg-muted/20 text-sm text-muted-foreground">
-              <Lock className="h-3.5 w-3.5" />
-              {user.username}
-            </div>
-            <p className="text-xs text-muted-foreground/60">{t("settings.profile.usernameReadonly")}</p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              {t("settings.profile.handle")}
-            </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/30 bg-muted/20 text-sm text-muted-foreground">
-              <Lock className="h-3.5 w-3.5" />
-              @{user.handle}
-            </div>
-            <p className="text-xs text-muted-foreground/60">{t("settings.profile.handleReadonly")}</p>
-          </div>
+          <Input
+            label={t("settings.profile.username")}
+            value={form.username}
+            disabled
+            hint={t("settings.profile.usernameReadonly")}
+          />
+          <Input
+            label={t("settings.profile.handle")}
+            value={`@${form.handle}`}
+            disabled
+            hint={t("settings.profile.handleReadonly")}
+          />
         </div>
 
         {/* Editable fields */}
         <Input
           label={t("settings.profile.displayName")}
+          value={form.displayName}
+          onChange={(e) => updateField("displayName", e.target.value)}
           hint={t("settings.profile.displayNameHint")}
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
           maxLength={50}
         />
 
         <Textarea
           label={t("settings.profile.bio")}
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          maxLength={500}
+          value={form.bio}
+          onChange={(e) => updateField("bio", e.target.value)}
           rows={4}
-          placeholder="Tell the community about yourself..."
+          maxLength={500}
         />
-        <p className="text-xs text-muted-foreground/60 -mt-4">{bio.length}/500</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label={t("settings.profile.avatar")}
-            value={avatar}
-            onChange={(e) => setAvatar(e.target.value)}
-            placeholder="https://..."
-          />
-          <Input
-            label={t("settings.profile.banner")}
-            value={banner}
-            onChange={(e) => setBanner(e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
-
+        {/* Accent color */}
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {t("settings.profile.accentColor")}
@@ -138,15 +290,19 @@ export function ProfileSettingsForm({ user }: Props) {
           <div className="flex items-center gap-3">
             <input
               type="color"
-              value={accentColor}
-              onChange={(e) => setAccentColor(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded-lg border border-border/50 bg-transparent"
+              value={form.accentColor}
+              onChange={(e) => updateField("accentColor", e.target.value)}
+              className="h-10 w-14 rounded-lg border border-border/50 bg-gx-surface cursor-pointer"
             />
             <Input
-              value={accentColor}
-              onChange={(e) => setAccentColor(e.target.value)}
-              className="w-32"
+              value={form.accentColor}
+              onChange={(e) => updateField("accentColor", e.target.value)}
+              className="max-w-[140px]"
               maxLength={7}
+            />
+            <div
+              className="h-10 flex-1 rounded-lg border border-border/50"
+              style={{ backgroundColor: form.accentColor }}
             />
           </div>
         </div>
@@ -156,25 +312,27 @@ export function ProfileSettingsForm({ user }: Props) {
           <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {t("settings.profile.socialLinks")}
           </label>
-          {socialPlatforms.map((platform) => (
-            <Input
-              key={platform}
-              label={platform.charAt(0).toUpperCase() + platform.slice(1)}
-              value={socialLinks[platform] ?? ""}
-              onChange={(e) =>
-                setSocialLinks((prev) => ({ ...prev, [platform]: e.target.value }))
-              }
-              placeholder={platform === "discord" ? "username#0000" : `https://${platform}.com/...`}
-            />
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(["twitter", "instagram", "youtube", "github", "discord", "tiktok"] as const).map(
+              (platform) => (
+                <Input
+                  key={platform}
+                  label={t(`settings.profile.${platform}`)}
+                  value={form.socialLinks[platform]}
+                  onChange={(e) => updateSocial(platform, e.target.value)}
+                  placeholder={platform === "discord" ? "username#0000" : "https://..."}
+                />
+              )
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} loading={saving} variant="primary">
-          {saving ? t("settings.saving") : t("settings.save")}
-        </Button>
-      </div>
+        <div className="flex justify-end pt-2">
+          <Button type="submit" variant="primary" loading={saving}>
+            {saving ? t("settings.saving") : t("settings.save")}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

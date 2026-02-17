@@ -12,7 +12,7 @@ export default async function IdentitySettingsPage() {
 
   return (
     <IdentitySettingsForm
-      user={{
+      initialData={{
         country: user.country ?? "",
         skillLevel: user.skillLevel,
         preferredGrades: user.preferredGrades,

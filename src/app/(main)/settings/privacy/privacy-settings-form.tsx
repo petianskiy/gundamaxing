@@ -5,171 +5,183 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/context";
 import { updatePrivacySettings } from "@/lib/actions/settings";
+import { ChevronUp, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GripVertical, Eye, EyeOff } from "lucide-react";
 
-type Props = {
-  user: {
-    isProfilePrivate: boolean;
-    hiddenSections: string[];
-    sectionOrder: string[];
-  };
-};
+const ALL_SECTIONS = ["featured", "gallery", "wip", "workshop", "achievements"];
 
-const sectionLabels: Record<string, string> = {
-  featured: "settings.section.featured",
-  gallery: "settings.section.gallery",
-  wip: "settings.section.wip",
-  workshop: "settings.section.workshop",
-  achievements: "settings.section.achievements",
-};
+interface PrivacyData {
+  isProfilePrivate: boolean;
+  hiddenSections: string[];
+  sectionOrder: string[];
+}
 
-export function PrivacySettingsForm({ user }: Props) {
+export function PrivacySettingsForm({ initialData }: { initialData: PrivacyData }) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(user.isProfilePrivate);
-  const [hiddenSections, setHiddenSections] = useState<Set<string>>(new Set(user.hiddenSections));
-  const [sectionOrder, setSectionOrder] = useState(user.sectionOrder);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [form, setForm] = useState(initialData);
 
   function toggleSection(section: string) {
-    setHiddenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(section)) next.delete(section);
-      else next.add(section);
-      return next;
-    });
+    setForm((prev) => ({
+      ...prev,
+      hiddenSections: prev.hiddenSections.includes(section)
+        ? prev.hiddenSections.filter((s) => s !== section)
+        : [...prev.hiddenSections, section],
+    }));
   }
 
-  function handleDragStart(idx: number) {
-    setDragIdx(idx);
+  function moveSection(index: number, direction: "up" | "down") {
+    const newOrder = [...form.sectionOrder];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+    setForm((prev) => ({ ...prev, sectionOrder: newOrder }));
   }
 
-  function handleDragOver(e: React.DragEvent, idx: number) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    const newOrder = [...sectionOrder];
-    const [moved] = newOrder.splice(dragIdx, 1);
-    newOrder.splice(idx, 0, moved);
-    setSectionOrder(newOrder);
-    setDragIdx(idx);
-  }
-
-  function handleDragEnd() {
-    setDragIdx(null);
-  }
-
-  async function handleSave() {
     setSaving(true);
-    try {
-      const result = await updatePrivacySettings({
-        isProfilePrivate: isPrivate,
-        hiddenSections: Array.from(hiddenSections),
-        sectionOrder,
-      });
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success(t("settings.privacy.saved"));
-      }
-    } finally {
-      setSaving(false);
+
+    const result = await updatePrivacySettings({
+      isProfilePrivate: form.isProfilePrivate,
+      hiddenSections: form.hiddenSections,
+      sectionOrder: form.sectionOrder,
+    });
+
+    setSaving(false);
+
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success(t("settings.privacy.saved"));
     }
   }
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div>
+      <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">{t("settings.privacy.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t("settings.privacy.subtitle")}</p>
       </div>
 
-      {/* Private profile toggle */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
-        <div className="flex items-center justify-between">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Private Profile Toggle */}
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("settings.privacy.privateProfile")}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md">
+                {t("settings.privacy.privateProfileDesc")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, isProfilePrivate: !prev.isProfilePrivate }))}
+              className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
+                form.isProfilePrivate ? "bg-gx-red" : "bg-zinc-700"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+                  form.isProfilePrivate ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Section Visibility */}
+        <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground">
-              {t("settings.privacy.privateProfile")}
+              {t("settings.privacy.sectionVisibility")}
             </h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-md">
-              {t("settings.privacy.privateProfileDesc")}
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("settings.privacy.sectionVisibilityDesc")}
             </p>
           </div>
-          <button
-            onClick={() => setIsPrivate(!isPrivate)}
-            className={cn(
-              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-              isPrivate ? "bg-gx-red" : "bg-muted"
-            )}
-          >
-            <span
-              className={cn(
-                "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform",
-                isPrivate ? "translate-x-5" : "translate-x-0"
-              )}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Section visibility */}
-      <div className="rounded-xl border border-border/50 bg-card p-6 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            {t("settings.privacy.sectionVisibility")}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("settings.privacy.sectionVisibilityDesc")}
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          {sectionOrder.map((section, idx) => {
-            const isHidden = hiddenSections.has(section);
-            return (
-              <div
-                key={section}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors cursor-grab active:cursor-grabbing",
-                  dragIdx === idx
-                    ? "border-gx-red/50 bg-gx-red/5"
-                    : "border-border/30 bg-muted/10 hover:bg-muted/20"
-                )}
-              >
-                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                <span className={cn(
-                  "flex-1 text-sm font-medium",
-                  isHidden ? "text-muted-foreground/40 line-through" : "text-foreground"
-                )}>
-                  {t(sectionLabels[section] ?? section)}
-                </span>
+          <div className="space-y-2">
+            {ALL_SECTIONS.map((section) => {
+              const isHidden = form.hiddenSections.includes(section);
+              return (
                 <button
+                  key={section}
                   type="button"
                   onClick={() => toggleSection(section)}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors",
                     isHidden
-                      ? "text-muted-foreground/40 hover:text-muted-foreground"
-                      : "text-foreground hover:text-gx-red"
+                      ? "text-muted-foreground/50 bg-transparent"
+                      : "text-foreground bg-muted/30"
                   )}
                 >
-                  {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {isHidden ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground/50" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gx-red" />
+                  )}
+                  {t(`settings.privacy.section.${section}`)}
                 </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} loading={saving} variant="primary">
-          {saving ? t("settings.saving") : t("settings.save")}
-        </Button>
-      </div>
+        {/* Section Order */}
+        <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t("settings.privacy.sectionOrder")}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("settings.privacy.sectionOrderDesc")}
+            </p>
+          </div>
+          <div className="space-y-1">
+            {form.sectionOrder.map((section, index) => (
+              <div
+                key={section}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/20 border border-border/30"
+              >
+                <span className="text-xs text-muted-foreground font-mono w-5">
+                  {index + 1}
+                </span>
+                <span className="flex-1 text-sm text-foreground">
+                  {t(`settings.privacy.section.${section}`)}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveSection(index, "up")}
+                    disabled={index === 0}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(index, "down")}
+                    disabled={index === form.sectionOrder.length - 1}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button type="submit" variant="primary" loading={saving}>
+            {saving ? t("settings.saving") : t("settings.save")}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

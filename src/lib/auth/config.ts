@@ -115,6 +115,8 @@ const authConfig: NextAuthConfig = {
             token.handle = dbUser.handle;
             token.verificationTier = dbUser.verificationTier;
             token.onboardingComplete = dbUser.onboardingComplete;
+            token.picture = user.image ?? "";
+            token.name = user.name ?? "";
           } else {
             token.id = user.id!;
             token.role = "USER";
@@ -128,6 +130,8 @@ const authConfig: NextAuthConfig = {
           token.handle = (user as any).handle ?? "";
           token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
           token.onboardingComplete = (user as any).onboardingComplete ?? false;
+          token.picture = user.image ?? "";
+          token.name = user.name ?? "";
         }
       }
 
@@ -164,6 +168,7 @@ const authConfig: NextAuthConfig = {
         session.user.handle = token.handle as string;
         session.user.verificationTier = token.verificationTier as any;
         session.user.onboardingComplete = token.onboardingComplete as boolean;
+        session.user.image = (token.picture as string) || null;
       }
       return session;
     },

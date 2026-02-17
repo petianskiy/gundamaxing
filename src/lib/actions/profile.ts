@@ -6,21 +6,14 @@ import { z } from "zod";
 
 const profileSchema = z.object({
   displayName: z.string().min(1).max(50).optional(),
-  bio: z.string().max(500).optional(),
-  avatar: z.string().url().optional(),
-  banner: z.string().url().optional(),
+  bio: z.string().max(500).optional().or(z.literal("")),
+  avatar: z.string().url().optional().or(z.literal("")),
+  banner: z.string().url().optional().or(z.literal("")),
   accentColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .optional(),
-  socialLinks: z
-    .array(
-      z.object({
-        platform: z.string(),
-        url: z.string().url(),
-      })
-    )
-    .optional(),
+  socialLinks: z.record(z.string(), z.string()).optional(),
 });
 
 export async function updateProfile(formData: FormData) {
@@ -32,11 +25,14 @@ export async function updateProfile(formData: FormData) {
 
     const socialLinksRaw = formData.get("socialLinks") as string | null;
 
+    const avatarRaw = formData.get("avatar") as string | null;
+    const bannerRaw = formData.get("banner") as string | null;
+
     const raw = {
       displayName: (formData.get("displayName") as string) || undefined,
-      bio: (formData.get("bio") as string) || undefined,
-      avatar: (formData.get("avatar") as string) || undefined,
-      banner: (formData.get("banner") as string) || undefined,
+      bio: (formData.get("bio") as string) ?? undefined,
+      avatar: avatarRaw !== null ? avatarRaw : undefined,
+      banner: bannerRaw !== null ? bannerRaw : undefined,
       accentColor: (formData.get("accentColor") as string) || undefined,
       socialLinks: socialLinksRaw ? JSON.parse(socialLinksRaw) : undefined,
     };

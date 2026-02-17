@@ -14,7 +14,7 @@ export default async function ProfileSettingsPage() {
 
   return (
     <ProfileSettingsForm
-      user={{
+      initialData={{
         displayName: user.displayName ?? "",
         username: user.username,
         handle: user.handle,
@@ -22,7 +22,14 @@ export default async function ProfileSettingsPage() {
         avatar: user.avatar ?? "",
         banner: user.banner ?? "",
         accentColor: user.accentColor ?? "#dc2626",
-        socialLinks,
+        socialLinks: {
+          twitter: socialLinks.twitter ?? "",
+          instagram: socialLinks.instagram ?? "",
+          youtube: socialLinks.youtube ?? "",
+          github: socialLinks.github ?? "",
+          discord: socialLinks.discord ?? "",
+          tiktok: socialLinks.tiktok ?? "",
+        },
       }}
     />
   );
