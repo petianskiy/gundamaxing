@@ -30,7 +30,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid credentials. Check your email and password.");
+        setError("Invalid credentials. Check your email/username and password.");
       } else {
         router.push("/builds");
       }
@@ -82,16 +82,16 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-xs font-medium uppercase tracking-wider text-gray-400"
               >
-                Email
+                Email or Username
               </label>
               <Input
                 id="email"
-                type="email"
-                placeholder="pilot@gundamaxing.com"
+                type="text"
+                placeholder="pilot@gundamaxing.com or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="username"
                 disabled={isLoading}
               />
             </div>
