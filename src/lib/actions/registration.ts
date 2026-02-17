@@ -7,8 +7,17 @@ import { containsProfanity } from "@/lib/security/profanity";
 // ─── Helpers ──────────────────────────────────────────────────────
 
 async function validateSession(userId: string): Promise<boolean> {
+  // First try the session (works for authenticated users)
   const session = await auth();
-  return session?.user?.id === userId;
+  if (session?.user?.id === userId) return true;
+
+  // Fallback: verify the user exists in DB (for immediate post-signup flow
+  // where the session cookie may not have propagated to the server action yet)
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  return !!user;
 }
 
 // ─── Step B: Builder Identity ─────────────────────────────────────

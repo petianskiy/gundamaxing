@@ -20,6 +20,7 @@ const GUNDAM_EMOJIS: GundamEmoji[] = [
   { id: "sazabi", name: "Sazabi", image: "/captcha/sazabi.webp" },
   { id: "purple-gundam", name: "Gundam Mk-II", image: "/captcha/purple-gundam.webp" },
   { id: "gundam", name: "RX-78-2 Gundam", image: "/captcha/gundam.webp" },
+  { id: "gundam-classic", name: "Classic Gundam", image: "/captcha/gundam-classic.webp" },
 ];
 
 // Wrong answer names (decoys) — real MS names that aren't in our emoji set
@@ -143,13 +144,9 @@ function hashAnswer(answer: string): string {
 
 // ---- Visual challenge types (pick random) ----
 
+// Always use GUNDAM_IDENTIFY for the best visual experience
 const visualChallengeTypes: CaptchaType[] = [
   "GUNDAM_IDENTIFY",
-  "GUNDAM_IDENTIFY",
-  "GUNDAM_IDENTIFY",
-  "SILHOUETTE_MATCH",
-  "ARMOR_ALIGNMENT",
-  "LOADOUT_MATCH",
 ];
 
 // ---- Public API ----

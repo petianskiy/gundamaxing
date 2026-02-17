@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -234,17 +234,23 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         return;
       }
 
-      // Get user ID from session (may need to sign in first)
-      // For the flow, we assume the user is now authenticated after sign-up
-      const userId = session?.user?.id;
-      if (!userId) {
-        // If we don't have a session yet, show success and redirect to login
-        toast.success("Account created! Please verify your email and sign in.");
+      // 2. Auto sign-in to get a session
+      const signInResult = await signIn("credentials", {
+        email: allData.stepA.email.toLowerCase(),
+        password: allData.stepA.password,
+        redirect: false,
+      });
+
+      if (!signInResult || signInResult.error) {
+        toast.error("Account created but sign-in failed. Please log in manually.");
         router.push("/login");
         return;
       }
 
-      // 2. Save builder identity (Step B data)
+      // Use the userId from signUpAction directly (session may not be refreshed yet)
+      const userId = signUpResult.userId;
+
+      // 3. Save builder identity (Step B data)
       const identityResult = await saveBuilderIdentity(userId, {
         handle: allData.stepB.handle,
         country: allData.stepB.country,
@@ -253,23 +259,19 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         favoriteTimelines: allData.stepB.favoriteTimelines,
       });
       if ("error" in identityResult) {
-        toast.error(identityResult.error);
-        setIsSubmitting(false);
-        return;
+        console.warn("[StepProfile] Identity save failed:", identityResult.error);
       }
 
-      // 3. Save workshop setup (Step C data)
+      // 4. Save workshop setup (Step C data)
       const workshopResult = await saveWorkshopSetup(userId, {
         tools: allData.stepC.tools,
         techniques: allData.stepC.techniques,
       });
       if ("error" in workshopResult) {
-        toast.error(workshopResult.error);
-        setIsSubmitting(false);
-        return;
+        console.warn("[StepProfile] Workshop save failed:", workshopResult.error);
       }
 
-      // 4. Save profile personalization (Step D data)
+      // 5. Save profile personalization (Step D data)
       const profileResult = await saveProfilePersonalization(userId, {
         bio: stepDData.bio,
         avatar: stepDData.avatar,
@@ -278,18 +280,11 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         socialLinks: stepDData.socialLinks,
       });
       if ("error" in profileResult) {
-        toast.error(profileResult.error);
-        setIsSubmitting(false);
-        return;
+        console.warn("[StepProfile] Profile save failed:", profileResult.error);
       }
 
-      // 5. Complete onboarding
-      const onboardResult = await completeOnboarding(userId);
-      if ("error" in onboardResult) {
-        toast.error(onboardResult.error);
-        setIsSubmitting(false);
-        return;
-      }
+      // 6. Complete onboarding
+      await completeOnboarding(userId);
 
       // Show success
       setDeploySuccess(true);

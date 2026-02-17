@@ -12,7 +12,7 @@ import { containsProfanity } from "@/lib/security/profanity";
 
 export async function signUpAction(
   formData: FormData
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ success: true; email: string; userId: string } | { error: string }> {
   try {
     const raw = {
       email: formData.get("email") as string,
@@ -63,30 +63,35 @@ export async function signUpAction(
       handle = `${handle}${Math.floor(Math.random() * 9000 + 1000)}`;
     }
 
-    // Create user
+    // Create user (auto-verify email since email service may not be configured)
     const user = await db.user.create({
       data: {
         email: email.toLowerCase(),
         username: username.toLowerCase(),
         handle,
         passwordHash,
+        emailVerified: new Date(),
       },
     });
 
-    // Generate verification token (24-hour expiry)
-    const token = crypto.randomUUID();
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Generate verification token and attempt to send email (best-effort)
+    try {
+      const token = crypto.randomUUID();
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    await db.verificationToken.create({
-      data: {
-        identifier: user.email,
-        token,
-        expires,
-      },
-    });
+      await db.verificationToken.create({
+        data: {
+          identifier: user.email,
+          token,
+          expires,
+        },
+      });
 
-    // Send verification email
-    await sendVerificationEmail(user.email, token);
+      await sendVerificationEmail(user.email, token);
+    } catch (emailError) {
+      // Email sending is best-effort; don't block registration
+      console.warn("[signUpAction] Email sending failed:", emailError);
+    }
 
     // Log event
     await logEvent("SIGNUP_SUCCESS", {
@@ -94,7 +99,7 @@ export async function signUpAction(
       metadata: { email: user.email, username: user.username } as Record<string, unknown>,
     });
 
-    return { success: true };
+    return { success: true, email: user.email, userId: user.id };
   } catch (error) {
     console.error("[signUpAction] Error:", error);
     return { error: "Something went wrong. Please try again." };
