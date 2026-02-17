@@ -1,6 +1,8 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+// Lightweight middleware — no Prisma/NextAuth imports to stay under 1MB Edge limit.
+// We check for session cookie existence only. Role-based access is enforced in layouts.
 
 const publicRoutes = [
   "/",
@@ -21,70 +23,40 @@ const publicRoutePatterns = [
   /^\/builds\/[^/]+$/,
   /^\/thread\/[^/]+$/,
   /^\/u\/[^/]+$/,
-  /^\/api\/auth(\/.*)?\/?$/,
-  /^\/api\/captcha(\/.*)?\/?$/,
-  /^\/api\/username-check\/?$/,
+  /^\/api\//,
 ];
-
-const adminRoutes = ["/admin"];
 
 function isPublicRoute(pathname: string): boolean {
   if (publicRoutes.includes(pathname)) {
     return true;
   }
-
   return publicRoutePatterns.some((pattern) => pattern.test(pathname));
 }
 
-function isAdminRoute(pathname: string): boolean {
-  return adminRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-}
-
-export default auth((req) => {
+export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const session = req.auth;
 
   // Allow public routes without authentication
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
   }
 
-  // Admin route protection
-  if (isAdminRoute(pathname)) {
-    if (!session?.user) {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  // Check for session cookie (NextAuth database session)
+  const sessionCookie =
+    req.cookies.get("authjs.session-token") ||
+    req.cookies.get("__Secure-authjs.session-token");
 
-    if (session.user.role !== "ADMIN" && session.user.role !== "MODERATOR") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    return NextResponse.next();
-  }
-
-  // All other routes require authentication
-  if (!session?.user) {
+  if (!sessionCookie) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder assets (images, etc.)
-     */
     "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
