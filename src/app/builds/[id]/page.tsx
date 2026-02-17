@@ -29,16 +29,21 @@ import { GradeBadge } from "@/components/ui/grade-badge";
 import type { Build, Comment } from "@/lib/types";
 
 function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
+  const size = depth > 0 ? 28 : 32;
   return (
     <div className={cn("flex gap-3", depth > 0 && "ml-8 mt-3")}>
-      <Image
-        src={comment.userAvatar}
-        alt={comment.username}
-        width={depth > 0 ? 28 : 32}
-        height={depth > 0 ? 28 : 32}
-        className="rounded-full flex-shrink-0"
-        unoptimized
-      />
+      <div
+        className="relative rounded-full overflow-hidden flex-shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={comment.userAvatar}
+          alt={comment.username}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <Link href={`/u/${comment.username}`} className="text-sm font-medium text-foreground hover:underline">
@@ -271,14 +276,15 @@ export default function BuildPassportPage({ params }: { params: Promise<{ id: st
 
           {/* Builder */}
           <div className="flex items-center gap-3 pt-4 border-t border-border/50">
-            <Image
-              src={build.userAvatar}
-              alt={build.username}
-              width={36}
-              height={36}
-              className="rounded-full"
-              unoptimized
-            />
+            <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+              <Image
+                src={build.userAvatar}
+                alt={build.username}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
             <div>
               <Link href={`/u/${build.username}`} className="text-sm font-medium text-foreground hover:underline">
                 {build.username}

@@ -92,14 +92,15 @@ export function BuildCard({ build }: { build: Build }) {
           <div className="flex items-center justify-between pt-2 border-t border-border/50">
             {/* User */}
             <div className="flex items-center gap-1.5 min-w-0">
-              <Image
-                src={build.userAvatar}
-                alt={build.username}
-                width={18}
-                height={18}
-                className="rounded-full shrink-0"
-                unoptimized
-              />
+              <div className="relative w-[18px] h-[18px] rounded-full overflow-hidden shrink-0">
+                <Image
+                  src={build.userAvatar}
+                  alt={build.username}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
               <span className="text-xs text-muted-foreground truncate">
                 {build.username}
               </span>

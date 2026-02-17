@@ -12,14 +12,18 @@ function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number 
   return (
     <div className={depth > 0 ? "ml-8 mt-4" : ""}>
       <div className="flex gap-3">
-        <Image
-          src={comment.userAvatar}
-          alt={comment.username}
-          width={depth > 0 ? 28 : 32}
-          height={depth > 0 ? 28 : 32}
-          className="rounded-full flex-shrink-0"
-          unoptimized
-        />
+        <div
+          className="relative rounded-full overflow-hidden flex-shrink-0"
+          style={{ width: depth > 0 ? 28 : 32, height: depth > 0 ? 28 : 32 }}
+        >
+          <Image
+            src={comment.userAvatar}
+            alt={comment.username}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Link href={`/u/${comment.username}`} className="text-sm font-medium text-foreground hover:underline">
@@ -89,14 +93,15 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
         {/* Thread content */}
         <article className="rounded-xl border border-border/50 bg-card p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Image
-              src={thread.userAvatar}
-              alt={thread.username}
-              width={40}
-              height={40}
-              className="rounded-full"
-              unoptimized
-            />
+            <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+              <Image
+                src={thread.userAvatar}
+                alt={thread.username}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
             <div>
               <Link href={`/u/${thread.username}`} className="text-sm font-semibold text-foreground hover:underline">
                 {thread.username}

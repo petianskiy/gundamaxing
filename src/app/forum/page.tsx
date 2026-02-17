@@ -69,14 +69,15 @@ export default function ForumPage() {
                 href={`/thread/${thread.id}`}
                 className="group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-card hover:border-border transition-colors"
               >
-                <Image
-                  src={thread.userAvatar}
-                  alt={thread.username}
-                  width={32}
-                  height={32}
-                  className="rounded-full flex-shrink-0 mt-0.5"
-                  unoptimized
-                />
+                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                  <Image
+                    src={thread.userAvatar}
+                    alt={thread.username}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {thread.isPinned && <Pin className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
