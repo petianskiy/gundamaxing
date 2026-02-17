@@ -32,7 +32,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid credentials. Check your email and password.");
       } else {
-        router.push("/dashboard");
+        router.push("/builds");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -42,7 +42,7 @@ export default function LoginPage() {
   }
 
   async function handleOAuth(provider: string) {
-    await signIn(provider, { callbackUrl: "/dashboard" });
+    await signIn(provider, { callbackUrl: "/builds" });
   }
 
   return (

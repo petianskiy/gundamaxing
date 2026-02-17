@@ -20,7 +20,7 @@ const providers: NextAuthConfig["providers"] = [
         return null;
       }
 
-      const email = credentials.email as string;
+      const email = (credentials.email as string).toLowerCase();
       const password = credentials.password as string;
 
       const user = await db.user.findUnique({
@@ -93,36 +93,60 @@ if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
 const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(db) as NextAuthConfig["adapter"],
   session: {
-    strategy: "database",
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/login",
     newUser: "/register",
+    error: "/login",
   },
   providers,
   callbacks: {
-    async session({ session, user }) {
-      if (session.user && user) {
+    async jwt({ token, user, trigger, session }) {
+      // On initial sign-in, populate the token with user data
+      if (user) {
+        token.id = user.id!;
+        token.role = (user as any).role ?? "USER";
+        token.handle = (user as any).handle ?? "";
+        token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
+        token.onboardingComplete = (user as any).onboardingComplete ?? false;
+      }
+
+      // On session update trigger, refresh from DB
+      if (trigger === "update" && token.id) {
         const dbUser = await db.user.findUnique({
-          where: { id: user.id },
+          where: { id: token.id as string },
           select: {
-            id: true,
             role: true,
             handle: true,
             verificationTier: true,
             onboardingComplete: true,
+            avatar: true,
+            displayName: true,
+            username: true,
           },
         });
-
         if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.role = dbUser.role;
-          session.user.handle = dbUser.handle;
-          session.user.verificationTier = dbUser.verificationTier;
-          session.user.onboardingComplete = dbUser.onboardingComplete;
+          token.role = dbUser.role;
+          token.handle = dbUser.handle;
+          token.verificationTier = dbUser.verificationTier;
+          token.onboardingComplete = dbUser.onboardingComplete;
+          token.picture = dbUser.avatar;
+          token.name = dbUser.displayName ?? dbUser.username;
         }
       }
 
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as any;
+        session.user.handle = token.handle as string;
+        session.user.verificationTier = token.verificationTier as any;
+        session.user.onboardingComplete = token.onboardingComplete as boolean;
+      }
       return session;
     },
   },

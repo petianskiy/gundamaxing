@@ -41,10 +41,12 @@ export default function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie (NextAuth database session)
+  // Check for session cookie (NextAuth JWT or database session)
   const sessionCookie =
     req.cookies.get("authjs.session-token") ||
-    req.cookies.get("__Secure-authjs.session-token");
+    req.cookies.get("__Secure-authjs.session-token") ||
+    req.cookies.get("next-auth.session-token") ||
+    req.cookies.get("__Secure-next-auth.session-token");
 
   if (!sessionCookie) {
     const loginUrl = new URL("/login", req.url);
