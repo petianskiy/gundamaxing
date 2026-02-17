@@ -2,6 +2,7 @@ export const common = {
   "nav.builds": "Builds",
   "nav.forum": "Forum",
   "nav.upload": "Upload",
+  "nav.portfolio": "My Portfolio",
   "nav.toggleMenu": "Toggle menu",
   "footer.platform": "Platform",
   "footer.community": "Community",

@@ -127,3 +127,13 @@ export const getBuildById = cache(async (id: string): Promise<Build | null> => {
   if (!build) return null;
   return toUIBuild(build);
 });
+
+export const getBuildsByUserId = cache(async (userId: string): Promise<Build[]> => {
+  const builds = await db.build.findMany({
+    where: { userId },
+    include: buildInclude,
+    orderBy: { createdAt: "desc" },
+  });
+
+  return builds.map(toUIBuild);
+});

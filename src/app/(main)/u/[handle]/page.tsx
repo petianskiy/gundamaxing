@@ -82,6 +82,33 @@ export default async function ProfilePage({ params }: Props) {
   const session = await auth();
   const isOwner = session?.user?.id === user.id;
 
+  // Privacy check: if profile is private and viewer is not the owner, show limited view
+  if (user.isProfilePrivate && !isOwner) {
+    return (
+      <div className="pt-24 pb-16 px-4 text-center">
+        <div className="mx-auto max-w-md">
+          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+            <svg className="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">
+            @{user.handle}
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            This pilot&apos;s profile is private.
+          </p>
+          <a
+            href="/builds"
+            className="mt-4 inline-block text-sm text-gx-red hover:text-red-400 transition-colors"
+          >
+            Browse builds instead
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   const sectionOrder = user.sectionOrder.length > 0
     ? user.sectionOrder
     : ["featured", "gallery", "wip", "workshop", "achievements"];

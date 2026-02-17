@@ -104,6 +104,7 @@ model User {
   sectionOrder     String[]         @default(["featured", "gallery", "wip", "workshop", "achievements"])
   pinnedBuildIds   String[]         @default([])
   hiddenSections   String[]         @default([])
+  isProfilePrivate Boolean          @default(false)
 
   // Reputation & anti-spam
   reputation       Int              @default(0)

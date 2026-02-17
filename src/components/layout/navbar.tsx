@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, X, Upload, Grid3X3, MessageSquare } from "lucide-react";
+import { Menu, X, Upload, Grid3X3, MessageSquare, Briefcase } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -14,9 +14,10 @@ import { SignInButton } from "@/components/auth/sign-in-button";
 import { UserMenu } from "@/components/auth/user-menu";
 
 const navLinks = [
-  { href: "/builds", labelKey: "nav.builds", icon: Grid3X3 },
-  { href: "/forum", labelKey: "nav.forum", icon: MessageSquare },
-  { href: "/upload", labelKey: "nav.upload", icon: Upload },
+  { href: "/builds", labelKey: "nav.builds", icon: Grid3X3, authOnly: false },
+  { href: "/forum", labelKey: "nav.forum", icon: MessageSquare, authOnly: false },
+  { href: "/upload", labelKey: "nav.upload", icon: Upload, authOnly: false },
+  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, authOnly: true },
 ];
 
 export function Navbar() {
@@ -51,24 +52,26 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "text-foreground bg-muted"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  )}
-                >
-                  <link.icon className="h-4 w-4" />
-                  {t(link.labelKey)}
-                </Link>
-              );
-            })}
+            {navLinks
+              .filter((link) => !link.authOnly || !!session)
+              .map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "text-foreground bg-muted"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <link.icon className="h-4 w-4" />
+                    {t(link.labelKey)}
+                  </Link>
+                );
+              })}
           </div>
 
           {/* Right side: Language toggle + Auth + Mobile toggle */}
@@ -98,25 +101,27 @@ export function Navbar() {
             className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl overflow-hidden"
           >
             <div className="px-4 py-3 space-y-1">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                      isActive
-                        ? "text-foreground bg-muted"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <link.icon className="h-4 w-4" />
-                    {t(link.labelKey)}
-                  </Link>
-                );
-              })}
+              {navLinks
+                .filter((link) => !link.authOnly || !!session)
+                .map((link) => {
+                  const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        isActive
+                          ? "text-foreground bg-muted"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {t(link.labelKey)}
+                    </Link>
+                  );
+                })}
             </div>
           </motion.div>
         )}
