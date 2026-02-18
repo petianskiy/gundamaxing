@@ -121,14 +121,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gx-surface px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        <div className="rounded-xl border border-border/50 bg-card p-6 sm:p-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="w-full max-w-md mx-auto"
+    >
+      <div className="rounded-xl border border-border/50 bg-card p-6 sm:p-8">
           {/* Step 3: Success */}
           {step === "success" && (
             <div className="text-center">
@@ -338,11 +337,10 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        {/* Decorative bottom line */}
-        <div className="mt-4 flex justify-center">
-          <div className="h-1 w-16 rounded-full bg-gx-red/30" />
-        </div>
-      </motion.div>
-    </div>
+      {/* Decorative bottom line */}
+      <div className="mt-4 flex justify-center">
+        <div className="h-1 w-16 rounded-full bg-gx-red/30" />
+      </div>
+    </motion.div>
   );
 }

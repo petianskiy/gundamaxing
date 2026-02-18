@@ -75,7 +75,7 @@ export function CodeInput({ value, onChange, disabled, length = 6 }: CodeInputPr
           value={digit === " " ? "" : digit}
           disabled={disabled}
           className={cn(
-            "h-14 w-11 sm:h-16 sm:w-13 rounded-lg border-2 bg-gx-surface text-center text-2xl font-bold text-foreground",
+            "h-14 w-11 sm:h-16 sm:w-14 rounded-lg border-2 bg-gx-surface text-center text-2xl font-bold text-foreground",
             "focus:outline-none focus:border-gx-red focus:ring-1 focus:ring-gx-red/30 transition-colors",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             digit && digit !== " " ? "border-gx-red/50" : "border-border/50"
