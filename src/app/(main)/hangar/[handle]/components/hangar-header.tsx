@@ -40,16 +40,15 @@ export function HangarHeader({ user, isOwner }: HangarHeaderProps) {
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="mb-8"
+      transition={{ duration: 0.6, ease: "easeOut" as const }}
     >
-      <div className="flex flex-col sm:flex-row items-start gap-5">
+      <div className="flex items-center gap-4 p-3 sm:p-4 rounded-2xl bg-black/20 backdrop-blur-md border border-white/5">
         {/* Avatar */}
         <div
           className={cn(
-            "relative h-20 w-20 rounded-full ring-4 ring-offset-4 ring-offset-[#09090b] overflow-hidden bg-muted flex-shrink-0",
+            "relative h-12 w-12 sm:h-14 sm:w-14 rounded-full ring-2 ring-offset-2 ring-offset-transparent overflow-hidden bg-zinc-900 flex-shrink-0",
             tierRingColor[user.verificationTier] || "ring-zinc-600"
           )}
         >
@@ -57,75 +56,80 @@ export function HangarHeader({ user, isOwner }: HangarHeaderProps) {
             <Image
               src={user.avatar}
               alt={user.displayName || user.username}
-              width={80}
-              height={80}
+              width={56}
+              height={56}
               className="h-full w-full object-cover"
               unoptimized
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-muted-foreground bg-[#18181b]">
+            <div className="h-full w-full flex items-center justify-center text-lg font-bold text-zinc-500 bg-zinc-900">
               {(user.displayName || user.username)[0]?.toUpperCase()}
             </div>
           )}
         </div>
 
-        {/* Identity info */}
+        {/* Identity */}
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight truncate">
               {user.displayName || user.username}
             </h1>
             <VerificationBadge
               tier={user.verificationTier.toLowerCase() as "unverified" | "verified" | "featured" | "master"}
-              showLabel
-              size="md"
+              size="sm"
             />
-            {isOwner && (
-              <Link
-                href="/settings/hangar"
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-muted/50 text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors ml-auto"
-              >
-                <Pencil className="h-3 w-3" />
-                {t("hangar.editHangar")}
-              </Link>
-            )}
           </div>
-
-          <p className="text-sm text-muted-foreground mt-0.5">
-            @{user.handle}
-          </p>
-
-          {/* Manifesto */}
-          {user.manifesto && (
-            <blockquote className="border-l-2 border-[#dc2626]/40 pl-4 mt-4">
-              <p className="text-sm text-zinc-400 italic leading-relaxed">
-                &ldquo;{user.manifesto}&rdquo;
-              </p>
-            </blockquote>
-          )}
-
-          {/* Social links */}
-          {Object.keys(user.socialLinks).length > 0 && (
-            <div className="flex gap-2 mt-4">
-              {Object.entries(user.socialLinks).map(([platform, url]) => {
-                const Icon = socialIcons[platform] || ExternalLink;
-                return (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                    title={platform}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                );
-              })}
-            </div>
-          )}
+          <p className="text-xs text-white/40">@{user.handle}</p>
         </div>
+
+        {/* Manifesto (desktop only) */}
+        {user.manifesto && (
+          <div className="hidden lg:block max-w-sm">
+            <p className="text-xs text-white/50 italic leading-relaxed line-clamp-2">
+              &ldquo;{user.manifesto}&rdquo;
+            </p>
+          </div>
+        )}
+
+        {/* Social links */}
+        <div className="hidden sm:flex items-center gap-1.5">
+          {Object.entries(user.socialLinks).slice(0, 4).map(([platform, url]) => {
+            const Icon = socialIcons[platform] || ExternalLink;
+            return (
+              <a
+                key={platform}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                title={platform}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </a>
+            );
+          })}
+        </div>
+
+        {/* Edit button */}
+        {isOwner && (
+          <Link
+            href="/settings/hangar"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/10 transition-all"
+          >
+            <Pencil className="h-3 w-3" />
+            <span className="hidden sm:inline">{t("hangar.editHangar")}</span>
+          </Link>
+        )}
       </div>
+
+      {/* Manifesto (mobile only) */}
+      {user.manifesto && (
+        <div className="lg:hidden mt-3 px-1">
+          <p className="text-xs text-white/40 italic leading-relaxed line-clamp-2">
+            &ldquo;{user.manifesto}&rdquo;
+          </p>
+        </div>
+      )}
     </motion.header>
   );
 }

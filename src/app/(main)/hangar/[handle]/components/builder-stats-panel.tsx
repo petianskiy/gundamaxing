@@ -47,30 +47,29 @@ export function BuilderStatsPanel({ user }: BuilderStatsPanelProps) {
   ];
 
   return (
-    <motion.section
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-      className="mb-8"
+      transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" as const }}
     >
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="flex justify-center gap-3 sm:gap-4 lg:gap-6">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-border/50 bg-[#18181b]/80 backdrop-blur-sm p-4"
+            className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-black/20 backdrop-blur-sm border border-white/5"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+            <stat.icon className="h-4 w-4 text-white/30 hidden sm:block" />
+            <div className="text-center sm:text-left">
+              <p className="text-base sm:text-lg font-bold text-white tabular-nums">
+                {stat.value}
+              </p>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/30 font-medium">
                 {stat.label}
-              </span>
+              </p>
             </div>
-            <p className="text-2xl font-bold text-foreground tracking-tight">
-              {stat.value}
-            </p>
           </div>
         ))}
       </div>
-    </motion.section>
+    </motion.div>
   );
 }

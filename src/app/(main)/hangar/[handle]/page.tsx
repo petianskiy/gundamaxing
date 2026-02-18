@@ -61,6 +61,7 @@ export default async function HangarPage({ params }: Props) {
     <HangarShell
       user={hangarData.user}
       featuredBuild={hangarData.featuredBuild}
+      latestBuilds={hangarData.latestBuilds}
       eras={hangarData.eras}
       unassignedBuilds={hangarData.unassignedBuilds}
       isOwner={isOwner}

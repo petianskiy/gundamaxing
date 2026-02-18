@@ -1,115 +1,71 @@
 "use client";
 
-import { HANGAR_THEMES } from "./theme-config";
-import type { ThemeKey } from "./theme-config";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface HangarBackgroundProps {
-  theme: ThemeKey;
-  accentColor: string | null;
-}
+const BACKGROUNDS = [
+  "/hangar/backgrounds/bg-01.jpg",
+  "/hangar/backgrounds/bg-02.jpg",
+  "/hangar/backgrounds/bg-03.jpg",
+  "/hangar/backgrounds/bg-04.jpg",
+  "/hangar/backgrounds/bg-05.jpg",
+  "/hangar/backgrounds/bg-06.jpg",
+  "/hangar/backgrounds/bg-07.jpg",
+  "/hangar/backgrounds/bg-08.jpg",
+  "/hangar/backgrounds/bg-09.png",
+  "/hangar/backgrounds/bg-10.jpg",
+];
 
-export function HangarBackground({ theme, accentColor }: HangarBackgroundProps) {
-  const config = HANGAR_THEMES[theme];
-  const gridColor = accentColor || config.gridColor;
-  const gridOpacity = config.gridOpacity;
+const INTERVAL = 8000;
+
+export function HangarBackground() {
+  const [idx, setIdx] = useState(0);
+
+  const advance = useCallback(() => {
+    setIdx((p) => (p + 1) % BACKGROUNDS.length);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(advance, INTERVAL);
+    return () => clearInterval(t);
+  }, [advance]);
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-      {/* Background gradient */}
-      <div
-        className="absolute inset-0"
-        style={{ background: config.bgGradient }}
-      />
+      {/* Crossfading images */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 2, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={BACKGROUNDS[idx]}
+            alt=""
+            fill
+            className="object-cover"
+            priority={idx === 0}
+            unoptimized
+            sizes="100vw"
+          />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Grid lines */}
+      {/* Overlay stack for readability */}
+      <div className="absolute inset-0 bg-black/60 z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 z-[2]"
         style={{
-          opacity: gridOpacity,
-          backgroundImage: [
-            `repeating-linear-gradient(0deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 80px)`,
-            `repeating-linear-gradient(90deg, ${gridColor} 0px, ${gridColor} 1px, transparent 1px, transparent 80px)`,
-          ].join(", "),
+          background:
+            "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
         }}
       />
 
-      {/* Scan line effect (for themes that support it) */}
-      {config.scanLine && <div className="scan-line" />}
-
-      {/* Noise overlay */}
-      <div className="noise-overlay" />
-
-      {/* NEON_TOKYO rain streaks */}
-      {theme === "NEON_TOKYO" && (
-        <>
-          <style>{`
-            @keyframes neon-rain {
-              0% { transform: translateY(-100%); }
-              100% { transform: translateY(100vh); }
-            }
-            .neon-rain-streak {
-              position: absolute;
-              width: 1px;
-              background: linear-gradient(180deg, transparent, ${gridColor}40, transparent);
-              pointer-events: none;
-              opacity: 0.3;
-            }
-          `}</style>
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div
-              key={i}
-              className="neon-rain-streak"
-              style={{
-                left: `${(i * 5.26) + Math.random() * 2}%`,
-                height: `${60 + Math.random() * 80}px`,
-                animationName: "neon-rain",
-                animationDuration: `${2 + Math.random() * 3}s`,
-                animationDelay: `${Math.random() * 4}s`,
-                animationTimingFunction: "linear",
-                animationIterationCount: "infinite",
-              }}
-            />
-          ))}
-        </>
-      )}
-
-      {/* DESERT_BATTLEFIELD sand drift */}
-      {theme === "DESERT_BATTLEFIELD" && (
-        <>
-          <style>{`
-            @keyframes sand-drift {
-              0% { transform: translateX(-100%) translateY(0); opacity: 0; }
-              10% { opacity: 1; }
-              90% { opacity: 1; }
-              100% { transform: translateX(100vw) translateY(-20px); opacity: 0; }
-            }
-            .sand-particle {
-              position: absolute;
-              width: 2px;
-              height: 2px;
-              border-radius: 50%;
-              background: ${gridColor};
-              pointer-events: none;
-              opacity: 0.2;
-            }
-          `}</style>
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={i}
-              className="sand-particle"
-              style={{
-                top: `${50 + Math.random() * 50}%`,
-                left: `${Math.random() * 100}%`,
-                animationName: "sand-drift",
-                animationDuration: `${8 + Math.random() * 12}s`,
-                animationDelay: `${Math.random() * 10}s`,
-                animationTimingFunction: "linear",
-                animationIterationCount: "infinite",
-              }}
-            />
-          ))}
-        </>
-      )}
     </div>
   );
 }

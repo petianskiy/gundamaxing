@@ -18,16 +18,13 @@ import * as THREE from 'three';
 
 const VERT = `\
 precision highp float;
-attribute vec3 position;
 void main(){
   gl_Position = vec4(position, 1.0);
 }
 `;
 
 const FRAG = `\
-#ifdef GL_ES
 #extension GL_OES_standard_derivatives : enable
-#endif
 precision highp float;
 precision mediump int;
 

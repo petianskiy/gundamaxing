@@ -59,6 +59,14 @@ export const getHangarByHandle = cache(async (handle: string): Promise<HangarDat
     assignedBuildIds.add(featuredBuildRaw.id);
   }
 
+  // Fetch latest builds for showcase (most recent, with images)
+  const latestBuildsRaw = await db.build.findMany({
+    where: { userId: user.id },
+    include: buildInclude,
+    orderBy: { createdAt: "desc" },
+    take: 6,
+  });
+
   // Fetch unassigned builds (not in any era and not featured)
   const unassignedBuildsRaw = await db.build.findMany({
     where: {
@@ -111,6 +119,7 @@ export const getHangarByHandle = cache(async (handle: string): Promise<HangarDat
   return {
     user: hangarUser,
     featuredBuild: featuredBuildRaw ? toUIBuild(featuredBuildRaw) : null,
+    latestBuilds: latestBuildsRaw.map(toUIBuild),
     eras: transformedEras,
     unassignedBuilds: unassignedBuildsRaw.map(toUIBuild),
   };

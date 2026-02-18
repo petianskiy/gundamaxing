@@ -221,6 +221,7 @@ export interface HangarUser {
 export interface HangarData {
   user: HangarUser;
   featuredBuild: Build | null;
+  latestBuilds: Build[];
   eras: BuildEra[];
   unassignedBuilds: Build[];
 }
