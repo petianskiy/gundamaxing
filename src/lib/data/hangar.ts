@@ -11,9 +11,9 @@ function formatDate(date: Date): string {
 
 // ─── Queries ─────────────────────────────────────────────────────
 
-export const getHangarByHandle = cache(async (handle: string): Promise<HangarData | null> => {
+export const getHangarByUsername = cache(async (username: string): Promise<HangarData | null> => {
   const user = await db.user.findUnique({
-    where: { handle: handle.toLowerCase() },
+    where: { username: username.toLowerCase() },
     include: {
       _count: {
         select: {
@@ -80,7 +80,6 @@ export const getHangarByHandle = cache(async (handle: string): Promise<HangarDat
   // Transform user to HangarUser
   const hangarUser: HangarUser = {
     id: user.id,
-    handle: user.handle,
     username: user.username,
     displayName: user.displayName,
     avatar: user.avatar,

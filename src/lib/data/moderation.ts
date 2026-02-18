@@ -6,8 +6,8 @@ export const getPendingReports = cache(async (page = 1, pageSize = 20) => {
     db.report.findMany({
       where: { status: "PENDING" },
       include: {
-        reporter: { select: { id: true, handle: true, avatar: true } },
-        reportedUser: { select: { id: true, handle: true, avatar: true } },
+        reporter: { select: { id: true, username: true, avatar: true } },
+        reportedUser: { select: { id: true, username: true, avatar: true } },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
@@ -33,7 +33,7 @@ export const getEventLogs = cache(async (
     db.eventLog.findMany({
       where,
       include: {
-        user: { select: { id: true, handle: true } },
+        user: { select: { id: true, username: true } },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,

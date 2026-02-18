@@ -19,7 +19,6 @@ import {
 import { VerificationBadge } from "@/components/ui/verification-badge";
 
 interface ProfileUser {
-  handle: string;
   displayName: string | null;
   username: string;
   avatar: string | null;
@@ -134,7 +133,7 @@ export function ProfileHeader({
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              @{user.handle}
+              @{user.username}
             </p>
 
             {user.bio && (

@@ -15,7 +15,6 @@ import { Camera, Upload, X, Loader2 } from "lucide-react";
 interface ProfileFormData {
   displayName: string;
   username: string;
-  handle: string;
   bio: string;
   avatar: string;
   banner: string;
@@ -250,20 +249,12 @@ export function ProfileSettingsForm({ initialData }: { initialData: ProfileFormD
         </div>
 
         {/* Read-only fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label={t("settings.profile.username")}
-            value={form.username}
-            disabled
-            hint={t("settings.profile.usernameReadonly")}
-          />
-          <Input
-            label={t("settings.profile.handle")}
-            value={`@${form.handle}`}
-            disabled
-            hint={t("settings.profile.handleReadonly")}
-          />
-        </div>
+        <Input
+          label={t("settings.profile.username")}
+          value={form.username}
+          disabled
+          hint={t("settings.profile.usernameReadonly")}
+        />
 
         {/* Editable fields */}
         <Input

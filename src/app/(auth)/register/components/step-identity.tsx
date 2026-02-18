@@ -3,7 +3,6 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { stepBSchema, type StepBInput } from "@/lib/validations/registration-wizard";
@@ -55,7 +54,6 @@ export function StepIdentity({ data, onNext, onBack }: StepIdentityProps) {
   } = useForm<StepBInput>({
     resolver: zodResolver(stepBSchema),
     defaultValues: {
-      handle: data.handle ?? "",
       country: data.country ?? "",
       skillLevel: data.skillLevel,
       preferredGrades: data.preferredGrades ?? [],
@@ -84,15 +82,6 @@ export function StepIdentity({ data, onNext, onBack }: StepIdentityProps) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Handle / Callsign */}
-        <Input
-          label="Callsign (Handle)"
-          placeholder="Your builder handle"
-          autoComplete="off"
-          error={errors.handle?.message}
-          {...register("handle")}
-        />
-
         {/* Country */}
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">

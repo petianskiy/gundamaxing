@@ -23,7 +23,7 @@ export default async function PortfolioPage() {
   const { db } = await import("@/lib/db");
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { pinnedBuildIds: true, handle: true, displayName: true, username: true },
+    select: { pinnedBuildIds: true, displayName: true, username: true },
   });
 
   return (
@@ -31,7 +31,7 @@ export default async function PortfolioPage() {
       builds={builds}
       stats={stats}
       pinnedBuildIds={(user?.pinnedBuildIds as string[]) ?? []}
-      handle={user?.handle ?? ""}
+      handle={user?.username ?? ""}
       displayName={user?.displayName ?? user?.username ?? ""}
     />
   );

@@ -70,7 +70,7 @@ export function HangarIdentity({ user, isOwner }: HangarIdentityProps) {
           )}
         </div>
 
-        {/* Name + handle */}
+        {/* Name + username */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
@@ -88,7 +88,7 @@ export function HangarIdentity({ user, isOwner }: HangarIdentityProps) {
             />
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-sm text-white/30">@{user.handle}</span>
+            <span className="text-sm text-white/30">@{user.username}</span>
             <span className="text-white/10">|</span>
             <span className="text-xs text-white/25 flex items-center gap-1">
               <Package className="h-3 w-3" />

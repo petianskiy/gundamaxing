@@ -6,7 +6,7 @@ declare module "next-auth" {
     user: {
       id: string;
       role: "USER" | "MODERATOR" | "ADMIN";
-      handle: string;
+      username: string;
       verificationTier: "UNVERIFIED" | "VERIFIED" | "FEATURED" | "MASTER";
       onboardingComplete: boolean;
     } & DefaultSession["user"];
@@ -14,7 +14,7 @@ declare module "next-auth" {
 
   interface User extends DefaultUser {
     role: "USER" | "MODERATOR" | "ADMIN";
-    handle: string;
+    username: string;
     verificationTier: "UNVERIFIED" | "VERIFIED" | "FEATURED" | "MASTER";
     onboardingComplete: boolean;
   }
@@ -24,7 +24,7 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     role: "USER" | "MODERATOR" | "ADMIN";
-    handle: string;
+    username: string;
     verificationTier: "UNVERIFIED" | "VERIFIED" | "FEATURED" | "MASTER";
     onboardingComplete: boolean;
   }

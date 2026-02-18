@@ -26,14 +26,6 @@ export const stepASchema = z.object({
  * Step B: Builder identity
  */
 export const stepBSchema = z.object({
-  handle: z
-    .string()
-    .min(3, "Handle must be at least 3 characters")
-    .max(20, "Handle must be at most 20 characters")
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      "Handle can only contain letters, numbers, and underscores"
-    ),
   country: z
     .string()
     .optional(),

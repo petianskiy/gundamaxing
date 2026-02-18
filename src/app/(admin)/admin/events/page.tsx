@@ -68,7 +68,7 @@ export default async function EventsPage({
       take: PER_PAGE,
       skip: (currentPage - 1) * PER_PAGE,
       orderBy: { createdAt: "desc" },
-      include: { user: { select: { username: true, handle: true } } },
+      include: { user: { select: { username: true } } },
     }),
     db.eventLog.count({ where }),
   ]);
@@ -168,7 +168,7 @@ export default async function EventsPage({
                         href={`/admin/users/${event.userId}`}
                         className="hover:text-gx-red transition-colors"
                       >
-                        @{event.user.handle}
+                        @{event.user.username}
                       </Link>
                     ) : (
                       <span className="text-muted-foreground">--</span>

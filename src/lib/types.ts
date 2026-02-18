@@ -193,7 +193,6 @@ export interface BuildEra {
 
 export interface HangarUser {
   id: string;
-  handle: string;
   username: string;
   displayName: string | null;
   avatar: string | null;

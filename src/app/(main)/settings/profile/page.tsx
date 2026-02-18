@@ -17,7 +17,6 @@ export default async function ProfileSettingsPage() {
       initialData={{
         displayName: user.displayName ?? "",
         username: user.username,
-        handle: user.handle,
         bio: user.bio ?? "",
         avatar: user.avatar ?? "",
         banner: user.banner ?? "",

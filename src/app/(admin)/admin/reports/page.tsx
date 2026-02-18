@@ -139,10 +139,10 @@ export default async function ReportsPage() {
     orderBy: { createdAt: "desc" },
     include: {
       reporter: {
-        select: { id: true, username: true, avatar: true, handle: true },
+        select: { id: true, username: true, avatar: true },
       },
       reportedUser: {
-        select: { id: true, username: true, avatar: true, handle: true },
+        select: { id: true, username: true, avatar: true },
       },
     },
   });
@@ -198,7 +198,7 @@ export default async function ReportsPage() {
                     <User className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">Reported by</span>
                     <span className="font-medium text-foreground">
-                      @{report.reporter.handle}
+                      @{report.reporter.username}
                     </span>
                   </div>
 
@@ -207,7 +207,7 @@ export default async function ReportsPage() {
                       <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
                       <span className="text-muted-foreground">Target</span>
                       <span className="font-medium text-red-400">
-                        @{report.reportedUser.handle}
+                        @{report.reportedUser.username}
                       </span>
                     </div>
                   )}

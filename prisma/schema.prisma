@@ -97,7 +97,6 @@ model User {
   emailVerified    DateTime?
   passwordHash     String?
   username         String           @unique
-  handle           String           @unique
   displayName      String?
   avatar           String?
   banner           String?
@@ -161,7 +160,6 @@ model User {
   reactions        Reaction[]
 
   @@index([email])
-  @@index([handle])
   @@index([reputation])
   @@index([createdAt])
 }

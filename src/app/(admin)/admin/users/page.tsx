@@ -61,7 +61,6 @@ export default async function UsersPage({
         OR: [
           { username: { contains: query, mode: "insensitive" as const } },
           { email: { contains: query, mode: "insensitive" as const } },
-          { handle: { contains: query, mode: "insensitive" as const } },
         ],
       }
     : {};
@@ -75,7 +74,6 @@ export default async function UsersPage({
       select: {
         id: true,
         username: true,
-        handle: true,
         email: true,
         avatar: true,
         role: true,
@@ -116,7 +114,7 @@ export default async function UsersPage({
             type="text"
             name="q"
             defaultValue={query}
-            placeholder="Search by username, email, or handle..."
+            placeholder="Search by username or email..."
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gx-red/50 focus:border-gx-red/50 transition-colors"
           />
         </div>
@@ -183,9 +181,6 @@ export default async function UsersPage({
                         <div>
                           <p className="font-medium text-foreground">
                             {user.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            @{user.handle}
                           </p>
                         </div>
                       </Link>

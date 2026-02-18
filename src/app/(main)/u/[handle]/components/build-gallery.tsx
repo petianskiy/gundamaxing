@@ -20,7 +20,6 @@ interface BuildImage {
 
 interface BuildUser {
   username: string;
-  handle: string;
   avatar: string | null;
 }
 

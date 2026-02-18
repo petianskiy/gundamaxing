@@ -53,22 +53,11 @@ export async function signUpAction(
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Determine handle (default to username, add suffix if taken)
-    let handle = username.toLowerCase();
-    const existingHandle = await db.user.findUnique({
-      where: { handle },
-      select: { id: true },
-    });
-    if (existingHandle) {
-      handle = `${handle}${Math.floor(Math.random() * 9000 + 1000)}`;
-    }
-
     // Create user (auto-verify email since email service may not be configured)
     const user = await db.user.create({
       data: {
         email: email.toLowerCase(),
         username: username.toLowerCase(),
-        handle,
         passwordHash,
         emailVerified: new Date(),
       },

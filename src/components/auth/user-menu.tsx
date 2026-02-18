@@ -72,7 +72,7 @@ export function UserMenu() {
             {/* User info */}
             <div className="px-4 py-3 border-b border-border/50">
               <p className="text-sm font-semibold text-foreground truncate">
-                {session.user.name || session.user.handle}
+                {session.user.name || session.user.username}
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 {session.user.email}
@@ -82,7 +82,7 @@ export function UserMenu() {
             {/* Links */}
             <div className="py-1">
               <Link
-                href={`/u/${session.user.handle}`}
+                href={`/u/${session.user.username}`}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
@@ -90,7 +90,7 @@ export function UserMenu() {
                 {t("auth.profile")}
               </Link>
               <Link
-                href={`/hangar/${session.user.handle}`}
+                href={`/hangar/${session.user.username}`}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >

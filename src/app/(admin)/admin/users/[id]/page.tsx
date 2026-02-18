@@ -139,7 +139,7 @@ export default async function UserDetailPage({
       where: { targetUserId: id },
       orderBy: { createdAt: "desc" },
       include: {
-        moderator: { select: { username: true, handle: true } },
+        moderator: { select: { username: true } },
       },
     }),
   ]);
@@ -216,7 +216,7 @@ export default async function UserDetailPage({
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                @{user.handle} &middot; {user.email}
+                @{user.username} &middot; {user.email}
               </p>
               {user.bio && (
                 <p className="text-sm text-zinc-300 mt-2 max-w-lg leading-relaxed">
@@ -497,7 +497,7 @@ export default async function UserDetailPage({
                       {action.type}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
-                      by @{action.moderator.handle}
+                      by @{action.moderator.username}
                     </span>
                   </div>
                   {action.reason && (

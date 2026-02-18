@@ -1,9 +1,9 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
 
-export const getUserByHandle = cache(async (handle: string) => {
+export const getUserByUsername = cache(async (username: string) => {
   const user = await db.user.findUnique({
-    where: { handle: handle.toLowerCase() },
+    where: { username: username.toLowerCase() },
     include: {
       _count: {
         select: {
@@ -42,7 +42,6 @@ export const getUserSettingsData = cache(async (userId: string) => {
       id: true,
       email: true,
       username: true,
-      handle: true,
       displayName: true,
       avatar: true,
       banner: true,

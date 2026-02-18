@@ -6,6 +6,67 @@ import GoogleProvider from "next-auth/providers/google";
 import DiscordProvider from "next-auth/providers/discord";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/security/password";
+import { logEvent } from "@/lib/data/events";
+
+// ---------------------------------------------------------------------------
+// Custom adapter: wraps PrismaAdapter to handle OAuth user creation
+// ---------------------------------------------------------------------------
+
+function createAdapter() {
+  const base = PrismaAdapter(db);
+
+  return {
+    ...base,
+    async createUser(data: { name?: string | null; email: string; emailVerified?: Date | null; image?: string | null }) {
+      // Generate a username from the email prefix
+      const email = data.email ?? "";
+      const prefix = email
+        .split("@")[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 20) || "user";
+
+      let username = prefix;
+      // Check if username is taken; if so, append random suffix
+      const existing = await db.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+      if (existing) {
+        const suffix = Math.floor(1000 + Math.random() * 9000); // 4-digit
+        username = `${prefix}_${suffix}`;
+      }
+
+      const user = await db.user.create({
+        data: {
+          displayName: data.name ?? null,
+          email,
+          emailVerified: data.emailVerified ?? null,
+          avatar: data.image ?? null,
+          username,
+          onboardingComplete: false,
+          onboardingStep: 0,
+        },
+      });
+
+      return {
+        id: user.id,
+        name: user.displayName,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.avatar,
+        role: "USER" as const,
+        username: user.username,
+        verificationTier: "UNVERIFIED" as const,
+        onboardingComplete: user.onboardingComplete,
+      };
+    },
+  } as NextAuthConfig["adapter"];
+}
+
+// ---------------------------------------------------------------------------
+// Providers
+// ---------------------------------------------------------------------------
 
 const providers: NextAuthConfig["providers"] = [
   CredentialsProvider({
@@ -33,7 +94,6 @@ const providers: NextAuthConfig["providers"] = [
           email: true,
           passwordHash: true,
           username: true,
-          handle: true,
           displayName: true,
           avatar: true,
           role: true,
@@ -43,12 +103,19 @@ const providers: NextAuthConfig["providers"] = [
       });
 
       if (!user || !user.passwordHash) {
+        await logEvent("LOGIN_FAILED", {
+          metadata: { provider: "credentials", reason: "user_not_found" },
+        });
         return null;
       }
 
       const isValid = await verifyPassword(password, user.passwordHash);
 
       if (!isValid) {
+        await logEvent("LOGIN_FAILED", {
+          userId: user.id,
+          metadata: { provider: "credentials", reason: "invalid_password" },
+        });
         return null;
       }
 
@@ -58,7 +125,7 @@ const providers: NextAuthConfig["providers"] = [
         name: user.displayName ?? user.username,
         image: user.avatar,
         role: user.role,
-        handle: user.handle,
+        username: user.username,
         verificationTier: user.verificationTier,
         onboardingComplete: user.onboardingComplete,
       };
@@ -72,6 +139,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: "openid email profile",
+          prompt: "select_account",
+        },
+      },
+      allowDangerousEmailAccountLinking: true,
     })
   );
 }
@@ -82,12 +156,39 @@ if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: "identify email",
+        },
+      },
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        // Strip email for unverified Discord accounts to prevent
+        // the adapter from email-matching to an existing user
+        return {
+          id: profile.id,
+          name: profile.global_name ?? profile.username,
+          email: profile.verified ? profile.email : null,
+          image: profile.avatar
+            ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
+            : null,
+          // Required by extended User type — actual values loaded from DB in jwt callback
+          role: "USER" as const,
+          username: "",
+          verificationTier: "UNVERIFIED" as const,
+          onboardingComplete: false,
+        };
+      },
     })
   );
 }
 
+// ---------------------------------------------------------------------------
+// Auth config
+// ---------------------------------------------------------------------------
+
 const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(db) as NextAuthConfig["adapter"],
+  adapter: createAdapter(),
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -97,8 +198,38 @@ const authConfig: NextAuthConfig = {
     newUser: "/register",
     error: "/login",
   },
+  trustHost: true,
   providers,
   callbacks: {
+    async signIn({ user, account }) {
+      // Block banned users (riskScore >= 100)
+      if (user.id) {
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { riskScore: true },
+        });
+        if (dbUser && dbUser.riskScore >= 100) {
+          return false;
+        }
+      }
+      return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allow relative paths
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      // Allow same-origin absolute URLs
+      try {
+        if (new URL(url).origin === baseUrl) {
+          return url;
+        }
+      } catch {
+        // Invalid URL — fall through to default
+      }
+      // Reject everything else
+      return `${baseUrl}/builds`;
+    },
     async jwt({ token, user, trigger, account }) {
       // On initial sign-in, populate the token with user data
       if (user) {
@@ -108,7 +239,7 @@ const authConfig: NextAuthConfig = {
             where: { id: user.id! },
             select: {
               role: true,
-              handle: true,
+              username: true,
               verificationTier: true,
               onboardingComplete: true,
             },
@@ -116,7 +247,7 @@ const authConfig: NextAuthConfig = {
           if (dbUser) {
             token.id = user.id!;
             token.role = dbUser.role;
-            token.handle = dbUser.handle;
+            token.username = dbUser.username;
             token.verificationTier = dbUser.verificationTier;
             token.onboardingComplete = dbUser.onboardingComplete;
             token.picture = user.image ?? "";
@@ -124,14 +255,14 @@ const authConfig: NextAuthConfig = {
           } else {
             token.id = user.id!;
             token.role = "USER";
-            token.handle = "";
+            token.username = "";
             token.verificationTier = "UNVERIFIED";
             token.onboardingComplete = false;
           }
         } else {
           token.id = user.id!;
           token.role = (user as any).role ?? "USER";
-          token.handle = (user as any).handle ?? "";
+          token.username = (user as any).username ?? "";
           token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
           token.onboardingComplete = (user as any).onboardingComplete ?? false;
           token.picture = user.image ?? "";
@@ -145,17 +276,16 @@ const authConfig: NextAuthConfig = {
           where: { id: token.id as string },
           select: {
             role: true,
-            handle: true,
+            username: true,
             verificationTier: true,
             onboardingComplete: true,
             avatar: true,
             displayName: true,
-            username: true,
           },
         });
         if (dbUser) {
           token.role = dbUser.role;
-          token.handle = dbUser.handle;
+          token.username = dbUser.username;
           token.verificationTier = dbUser.verificationTier;
           token.onboardingComplete = dbUser.onboardingComplete;
           token.picture = dbUser.avatar;
@@ -169,12 +299,20 @@ const authConfig: NextAuthConfig = {
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as any;
-        session.user.handle = token.handle as string;
+        session.user.username = token.username as string;
         session.user.verificationTier = token.verificationTier as any;
         session.user.onboardingComplete = token.onboardingComplete as boolean;
         session.user.image = (token.picture as string) || null;
       }
       return session;
+    },
+  },
+  events: {
+    async signIn({ user, account }) {
+      await logEvent("LOGIN_SUCCESS", {
+        userId: user.id ?? undefined,
+        metadata: { provider: account?.provider ?? "unknown" },
+      });
     },
   },
 };

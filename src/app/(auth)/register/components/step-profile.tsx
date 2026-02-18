@@ -252,7 +252,6 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
 
       // 3. Save builder identity (Step B data)
       const identityResult = await saveBuilderIdentity(userId, {
-        handle: allData.stepB.handle,
         country: allData.stepB.country,
         skillLevel: allData.stepB.skillLevel,
         preferredGrades: allData.stepB.preferredGrades,

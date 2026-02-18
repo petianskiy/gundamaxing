@@ -2,7 +2,6 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { containsProfanity } from "@/lib/security/profanity";
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -25,7 +24,6 @@ async function validateSession(userId: string): Promise<boolean> {
 export async function saveBuilderIdentity(
   userId: string,
   data: {
-    handle?: string;
     country?: string;
     skillLevel?: string;
     preferredGrades?: string[];
@@ -41,21 +39,6 @@ export async function saveBuilderIdentity(
     const updateData: Record<string, unknown> = {
       onboardingStep: 2,
     };
-
-    if (data.handle !== undefined) {
-      // Check profanity
-      if (containsProfanity(data.handle)) {
-        return { error: "This handle contains inappropriate language and is not allowed." };
-      }
-      // Check handle uniqueness
-      const existing = await db.user.findUnique({
-        where: { handle: data.handle.toLowerCase() },
-      });
-      if (existing && existing.id !== userId) {
-        return { error: "This handle is already taken" };
-      }
-      updateData.handle = data.handle.toLowerCase();
-    }
 
     if (data.country !== undefined) updateData.country = data.country;
     if (data.skillLevel !== undefined) updateData.skillLevel = data.skillLevel;

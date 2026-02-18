@@ -45,19 +45,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check both username AND handle fields (handle defaults to username on signup)
-    const [existingUsername, existingHandle] = await Promise.all([
-      db.user.findUnique({
-        where: { username: username.toLowerCase() },
-        select: { id: true },
-      }),
-      db.user.findUnique({
-        where: { handle: username.toLowerCase() },
-        select: { id: true },
-      }),
-    ]);
+    const existingUsername = await db.user.findUnique({
+      where: { username: username.toLowerCase() },
+      select: { id: true },
+    });
 
-    return NextResponse.json({ available: !existingUsername && !existingHandle });
+    return NextResponse.json({ available: !existingUsername });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

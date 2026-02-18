@@ -19,10 +19,10 @@ const baseNavLinks = [
   { href: "/upload", labelKey: "nav.upload", icon: Upload, authOnly: false },
 ];
 
-function getNavLinks(handle?: string | null) {
+function getNavLinks(username?: string | null) {
   return [
     ...baseNavLinks,
-    { href: handle ? `/hangar/${handle}` : "/builds", labelKey: "nav.hangar", icon: Warehouse, authOnly: true },
+    { href: username ? `/hangar/${username}` : "/builds", labelKey: "nav.hangar", icon: Warehouse, authOnly: true },
   ];
 }
 
@@ -31,7 +31,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
   const { data: session, status } = useSession();
-  const navLinks = getNavLinks(session?.user?.handle);
+  const navLinks = getNavLinks(session?.user?.username);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-top">

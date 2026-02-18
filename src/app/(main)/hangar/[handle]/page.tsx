@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Lock } from "lucide-react";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
-import { getHangarByHandle } from "@/lib/data/hangar";
+import { getHangarByUsername } from "@/lib/data/hangar";
 import { HangarShell } from "./components/hangar-shell";
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const hangarData = await getHangarByHandle(handle);
+  const hangarData = await getHangarByUsername(handle);
 
   if (!hangarData) {
     return { title: "Hangar Not Found | Gundamaxing" };
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = user.displayName || user.username;
 
   return {
-    title: `${name}'s Hangar (@${user.handle}) | Gundamaxing`,
+    title: `${name}'s Hangar (@${user.username}) | Gundamaxing`,
     description: user.manifesto || `Explore ${name}'s Gunpla hangar on Gundamaxing.`,
     openGraph: {
       title: `${name}'s Hangar | Gundamaxing`,
@@ -35,7 +35,7 @@ export default async function HangarPage({ params }: Props) {
   const { handle } = await params;
 
   const [hangarData, session] = await Promise.all([
-    getHangarByHandle(handle),
+    getHangarByUsername(handle),
     auth(),
   ]);
 

@@ -79,7 +79,7 @@ export function HangarHeader({ user, isOwner }: HangarHeaderProps) {
               size="sm"
             />
           </div>
-          <p className="text-xs text-white/40">@{user.handle}</p>
+          <p className="text-xs text-white/40">@{user.username}</p>
         </div>
 
         {/* Manifesto (desktop only) */}

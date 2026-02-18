@@ -16,8 +16,8 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const user = await db.user.findUnique({
-    where: { handle },
-    select: { displayName: true, username: true, handle: true, bio: true, avatar: true },
+    where: { username: handle },
+    select: { displayName: true, username: true, bio: true, avatar: true },
   });
 
   if (!user) {
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${user.displayName || user.username} (@${user.handle}) | Gundamaxing`,
+    title: `${user.displayName || user.username} (@${user.username}) | Gundamaxing`,
     description: user.bio || `Check out ${user.displayName || user.username}'s Gunpla builds on Gundamaxing.`,
     openGraph: {
       title: `${user.displayName || user.username} | Gundamaxing`,
@@ -39,7 +39,7 @@ export default async function ProfilePage({ params }: Props) {
   const { handle } = await params;
 
   const user = await db.user.findUnique({
-    where: { handle },
+    where: { username: handle },
     include: {
       badges: { include: { badge: true } },
       _count: {
@@ -59,7 +59,7 @@ export default async function ProfilePage({ params }: Props) {
             Pilot Not Found
           </h1>
           <p className="mt-2 text-muted-foreground">
-            No pilot with the handle @{handle} exists in our registry.
+            No pilot with the username @{handle} exists in our registry.
           </p>
           <a
             href="/builds"
@@ -77,7 +77,7 @@ export default async function ProfilePage({ params }: Props) {
     orderBy: { createdAt: "desc" },
     include: {
       images: true,
-      user: { select: { username: true, handle: true, avatar: true } },
+      user: { select: { username: true, avatar: true } },
     },
   });
 
@@ -95,7 +95,7 @@ export default async function ProfilePage({ params }: Props) {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            @{user.handle}
+            @{user.username}
           </h1>
           <p className="mt-2 text-muted-foreground">
             This pilot&apos;s profile is private.
@@ -153,7 +153,7 @@ export default async function ProfilePage({ params }: Props) {
       </section>
     ) : null,
     gallery: !hiddenSections.has("gallery") ? (
-      <BuildGallery key="gallery" builds={builds} userHandle={user.handle} />
+      <BuildGallery key="gallery" builds={builds} userHandle={user.username} />
     ) : null,
     workshop: !hiddenSections.has("workshop") ? (
       <WorkshopSpecs
@@ -193,7 +193,6 @@ export default async function ProfilePage({ params }: Props) {
 
         <ProfileHeader
           user={{
-            handle: user.handle,
             displayName: user.displayName,
             username: user.username,
             avatar: user.avatar,
