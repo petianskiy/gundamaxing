@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, KeyboardEvent, ClipboardEvent } from "react";
+import { useRef, useCallback, useState, KeyboardEvent, ClipboardEvent } from "react";
 import { cn } from "@/lib/utils";
 
 interface CodeInputProps {
@@ -12,6 +12,7 @@ interface CodeInputProps {
 
 export function CodeInput({ value, onChange, disabled, length = 6 }: CodeInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [focused, setFocused] = useState(false);
 
   const digits = value.padEnd(length, "").split("").slice(0, length);
 
@@ -63,32 +64,61 @@ export function CodeInput({ value, onChange, disabled, length = 6 }: CodeInputPr
   }
 
   return (
-    <div className="flex justify-center gap-2 sm:gap-3">
-      {digits.map((digit, i) => (
-        <input
-          key={i}
-          ref={(el) => { inputRefs.current[i] = el; }}
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={1}
-          value={digit === " " ? "" : digit}
-          disabled={disabled}
-          className={cn(
-            "h-14 w-11 sm:h-16 sm:w-14 rounded-lg border-2 bg-gx-surface text-center text-2xl font-bold text-foreground",
-            "focus:outline-none focus:border-gx-red focus:ring-1 focus:ring-gx-red/30 transition-colors",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            digit && digit !== " " ? "border-gx-red/50" : "border-border/50"
-          )}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val.length === 1) handleChange(i, val);
-          }}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          onPaste={handlePaste}
-          onFocus={(e) => e.target.select()}
-        />
-      ))}
+    <div className="space-y-1">
+      <div
+        className={cn(
+          "flex justify-center gap-2 sm:gap-3",
+          focused && "ring-0"
+        )}
+      >
+        {digits.map((digit, i) => (
+          <input
+            key={i}
+            ref={(el) => { inputRefs.current[i] = el; }}
+            type="text"
+            inputMode="numeric"
+            autoComplete={i === 0 ? "one-time-code" : "off"}
+            maxLength={1}
+            value={digit === " " ? "" : digit}
+            disabled={disabled}
+            style={{
+              width: "3rem",
+              height: "3.5rem",
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              textAlign: "center",
+              borderRadius: "0.5rem",
+              borderWidth: "2px",
+              borderStyle: "solid",
+              borderColor: digit && digit !== " " ? "#dc2626" : "#52525b",
+              backgroundColor: "#1a1a1f",
+              color: "#fafafa",
+              outline: "none",
+              caretColor: "#dc2626",
+              transition: "border-color 0.15s",
+              opacity: disabled ? 0.5 : 1,
+            }}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val.length === 1) handleChange(i, val);
+            }}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            onPaste={handlePaste}
+            onFocus={(e) => {
+              setFocused(true);
+              e.target.select();
+              e.target.style.borderColor = "#dc2626";
+              e.target.style.boxShadow = "0 0 0 2px rgba(220, 38, 38, 0.2)";
+            }}
+            onBlur={(e) => {
+              setFocused(false);
+              const hasValue = e.target.value && e.target.value !== " ";
+              e.target.style.borderColor = hasValue ? "#dc2626" : "#52525b";
+              e.target.style.boxShadow = "none";
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
