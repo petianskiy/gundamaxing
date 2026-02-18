@@ -137,6 +137,7 @@ function generateDefaultLayout(build: Build): ShowcaseLayout {
     version: 1,
     canvas: {
       backgroundImageUrl: build.images[0]?.url ?? null,
+      backgroundColor: null,
       backgroundOpacity: 0.15,
       backgroundBlur: 10,
     },

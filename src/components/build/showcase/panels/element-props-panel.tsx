@@ -1,8 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, RotateCw, Square, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ShowcaseElement } from "@/lib/types";
+import { ElasticSlider } from "@/components/ui/elastic-slider";
+import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
 
 interface ElementPropsPanelProps {
   element: ShowcaseElement;
@@ -26,13 +27,14 @@ export function ElementPropsPanel({ element, onUpdate, onClose }: ElementPropsPa
             <span>Rotation</span>
             <span className="text-zinc-500">{element.rotation}°</span>
           </label>
-          <input
-            type="range"
-            min="-45"
-            max="45"
-            value={element.rotation}
-            onChange={(e) => onUpdate({ rotation: parseInt(e.target.value) })}
-            className="w-full accent-blue-500"
+          <ElasticSlider
+            defaultValue={element.rotation + 45}
+            startingValue={0}
+            maxValue={90}
+            onChange={(val) => onUpdate({ rotation: Math.round(val - 45) })}
+            leftIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
+            rightIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
+            className="w-full"
           />
         </div>
 
@@ -63,13 +65,14 @@ export function ElementPropsPanel({ element, onUpdate, onClose }: ElementPropsPa
                 <span>Border Radius</span>
                 <span className="text-zinc-500">{element.borderRadius}px</span>
               </label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                value={element.borderRadius}
-                onChange={(e) => onUpdate({ borderRadius: parseInt(e.target.value) })}
-                className="w-full accent-blue-500"
+              <ElasticSlider
+                defaultValue={element.borderRadius}
+                startingValue={0}
+                maxValue={50}
+                onChange={(val) => onUpdate({ borderRadius: Math.round(val) })}
+                leftIcon={<Square className="h-3.5 w-3.5 text-zinc-400" />}
+                rightIcon={<Square className="h-3.5 w-3.5 text-zinc-400 rounded" />}
+                className="w-full"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -103,6 +106,22 @@ export function ElementPropsPanel({ element, onUpdate, onClose }: ElementPropsPa
         {/* Text-specific */}
         {element.type === "text" && (
           <>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Font</label>
+              <select
+                value={element.fontFamily}
+                onChange={(e) => onUpdate({ fontFamily: e.target.value as ShowcaseFontFamily })}
+                className="w-full px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="geist">Geist (Default)</option>
+                <option value="orbitron">Orbitron</option>
+                <option value="rajdhani">Rajdhani</option>
+                <option value="exo2">Exo 2</option>
+                <option value="shareTechMono">Share Tech Mono</option>
+                <option value="audiowide">Audiowide</option>
+                <option value="chakraPetch">Chakra Petch</option>
+              </select>
+            </div>
             <div>
               <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Font Size</label>
               <select

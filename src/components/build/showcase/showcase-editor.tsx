@@ -14,12 +14,33 @@ import { updateShowcaseLayout } from "@/lib/actions/build";
 import { toast } from "sonner";
 import type {
   Build,
+  BuildImage,
   ShowcaseLayout,
   ShowcaseElement as ShowcaseElementType,
   ShowcaseImageElement,
   ShowcaseTextElement,
   ShowcaseMetadataElement,
 } from "@/lib/types";
+
+// ─── Preset Background Styles ───────────────────────────────────
+
+const PRESET_STYLES: Record<string, React.CSSProperties> = {
+  "preset:noise": {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E")`,
+    backgroundSize: "200px 200px",
+  },
+  "preset:grid": {
+    backgroundImage:
+      "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+    backgroundSize: "40px 40px",
+  },
+  "preset:gradient-dark": {
+    background: "linear-gradient(135deg, #0f0f12 0%, #1a1a2e 50%, #0f0f12 100%)",
+  },
+  "preset:gradient-red": {
+    background: "linear-gradient(135deg, #0f0f12 0%, #3b0d0d 50%, #0f0f12 100%)",
+  },
+};
 
 // ─── State Management ───────────────────────────────────────────
 
@@ -29,7 +50,7 @@ type Action =
   | { type: "RESIZE_ELEMENT"; id: string; width: number; height: number }
   | { type: "UPDATE_ELEMENT"; id: string; updates: Partial<ShowcaseElementType> }
   | { type: "DELETE_ELEMENT"; id: string }
-  | { type: "SET_BACKGROUND"; backgroundImageUrl: string | null; backgroundOpacity?: number; backgroundBlur?: number }
+  | { type: "SET_BACKGROUND"; backgroundImageUrl?: string | null; backgroundColor?: string | null; backgroundOpacity?: number; backgroundBlur?: number }
   | { type: "REORDER_Z"; id: string; direction: "up" | "down" | "top" | "bottom" }
   | { type: "SET_LAYOUT"; layout: ShowcaseLayout };
 
@@ -70,7 +91,8 @@ function layoutReducer(state: ShowcaseLayout, action: Action): ShowcaseLayout {
         ...state,
         canvas: {
           ...state.canvas,
-          backgroundImageUrl: action.backgroundImageUrl,
+          backgroundImageUrl: action.backgroundImageUrl !== undefined ? action.backgroundImageUrl : state.canvas.backgroundImageUrl,
+          backgroundColor: action.backgroundColor !== undefined ? action.backgroundColor : state.canvas.backgroundColor,
           backgroundOpacity: action.backgroundOpacity ?? state.canvas.backgroundOpacity,
           backgroundBlur: action.backgroundBlur ?? state.canvas.backgroundBlur,
         },
@@ -181,6 +203,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   const [activePanel, setActivePanel] = useState<"images" | "background" | "layers" | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const selectedElement = layout.elements.find((el) => el.id === selectedId) ?? null;
@@ -297,6 +320,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       content: "Click to edit text...",
       fontSize: "lg",
       fontWeight: "normal",
+      fontFamily: "geist",
       color: "#fafafa",
       textAlign: "center",
       backgroundColor: null,
@@ -320,6 +344,22 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     };
     dispatch({ type: "ADD_ELEMENT", element });
     setSelectedId(element.id);
+  }, [layout.elements]);
+
+  // Image management callbacks
+  const handleImageUploaded = useCallback((newImage: { id: string; url: string }) => {
+    setBuildImages((prev) => [...prev, { id: newImage.id, url: newImage.url, alt: "Build image", isPrimary: false, order: prev.length }]);
+  }, []);
+
+  const handleImageDeleted = useCallback((imageId: string) => {
+    setBuildImages((prev) => prev.filter((img) => img.id !== imageId));
+    // Remove any canvas elements that reference this image
+    const elementsToRemove = layout.elements.filter(
+      (el) => el.type === "image" && el.imageId === imageId
+    );
+    for (const el of elementsToRemove) {
+      dispatch({ type: "DELETE_ELEMENT", id: el.id });
+    }
   }, [layout.elements]);
 
   // Save
@@ -351,7 +391,22 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         </div>
         {/* Re-use the same canvas rendering */}
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 5" }}>
-          {layout.canvas.backgroundImageUrl && (
+          {/* Solid color background */}
+          {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
+            <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
+          )}
+          {/* Preset pattern background */}
+          {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
+            <div
+              className="absolute inset-0 z-0"
+              style={{
+                ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
+                opacity: layout.canvas.backgroundOpacity,
+              }}
+            />
+          )}
+          {/* Image background */}
+          {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
             <div className="absolute inset-0 z-0">
               <Image
                 src={layout.canvas.backgroundImageUrl}
@@ -399,8 +454,22 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
           if (e.target === e.currentTarget) setSelectedId(null);
         }}
       >
-        {/* Background */}
-        {layout.canvas.backgroundImageUrl && (
+        {/* Solid color background */}
+        {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
+          <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
+        )}
+        {/* Preset pattern background */}
+        {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
+              opacity: layout.canvas.backgroundOpacity,
+            }}
+          />
+        )}
+        {/* Image background */}
+        {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
           <div className="absolute inset-0 z-0">
             <Image
               src={layout.canvas.backgroundImageUrl}
@@ -434,7 +503,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
               drag
               dragMomentum={false}
               dragConstraints={canvasRef}
-              dragElastic={0}
+              dragElastic={0.05}
+              whileDrag={{ scale: 1.02 }}
               onDragEnd={(event, info) => handleDragEnd(element.id, event as MouseEvent, info)}
               onClick={(e) => {
                 e.stopPropagation();
@@ -442,7 +512,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
               }}
               className={cn(
                 "absolute cursor-move",
-                isSelected && "ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent"
+                isSelected && "ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent shadow-lg shadow-blue-500/20"
               )}
               style={{
                 left: `${element.x}%`,
@@ -502,14 +572,18 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       {/* Side panels */}
       {activePanel === "images" && (
         <ImagePickerPanel
-          images={build.images}
+          images={buildImages}
+          buildId={build.id}
           onSelect={addImage}
+          onImageUploaded={handleImageUploaded}
+          onImageDeleted={handleImageDeleted}
           onClose={() => setActivePanel(null)}
         />
       )}
       {activePanel === "background" && (
         <BackgroundPicker
-          images={build.images}
+          images={buildImages}
+          buildId={build.id}
           currentBackground={layout.canvas}
           onUpdate={(bg) => dispatch({ type: "SET_BACKGROUND", ...bg })}
           onClose={() => setActivePanel(null)}

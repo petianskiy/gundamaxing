@@ -25,6 +25,16 @@ const textAlignMap: Record<string, string> = {
   right: "text-right",
 };
 
+const fontFamilyMap: Record<string, string> = {
+  geist: "font-sans",
+  orbitron: "font-[family-name:var(--font-orbitron)]",
+  rajdhani: "font-[family-name:var(--font-rajdhani)]",
+  exo2: "font-[family-name:var(--font-exo2)]",
+  shareTechMono: "font-[family-name:var(--font-share-tech-mono)]",
+  audiowide: "font-[family-name:var(--font-audiowide)]",
+  chakraPetch: "font-[family-name:var(--font-chakra-petch)]",
+};
+
 interface TextElementProps {
   element: ShowcaseTextElement;
   isEditing?: boolean;
@@ -39,6 +49,7 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
         fontSizeMap[element.fontSize],
         fontWeightMap[element.fontWeight],
         textAlignMap[element.textAlign],
+        fontFamilyMap[element.fontFamily] || "font-sans",
         isEditing && "outline-none cursor-text"
       )}
       style={{

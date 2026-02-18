@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Orbitron, Rajdhani, Exo_2, Share_Tech_Mono, Audiowide, Chakra_Petch } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
@@ -14,6 +14,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const orbitron = Orbitron({ variable: "--font-orbitron", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const rajdhani = Rajdhani({ variable: "--font-rajdhani", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const exo2 = Exo_2({ variable: "--font-exo2", subsets: ["latin"] });
+const shareTechMono = Share_Tech_Mono({ variable: "--font-share-tech-mono", subsets: ["latin"], weight: "400" });
+const audiowide = Audiowide({ variable: "--font-audiowide", subsets: ["latin"], weight: "400" });
+const chakraPetch = Chakra_Petch({ variable: "--font-chakra-petch", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -61,7 +68,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${rajdhani.variable} ${exo2.variable} ${shareTechMono.variable} ${audiowide.variable} ${chakraPetch.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         <AuthSessionProvider>
           <LanguageProvider>

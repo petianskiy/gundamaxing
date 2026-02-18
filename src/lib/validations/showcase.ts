@@ -29,6 +29,7 @@ const showcaseTextElement = z.object({
   content: z.string().min(1).max(2000),
   fontSize: z.enum(["sm", "base", "lg", "xl", "2xl", "3xl"]),
   fontWeight: z.enum(["normal", "medium", "semibold", "bold"]),
+  fontFamily: z.enum(["geist", "orbitron", "rajdhani", "exo2", "shareTechMono", "audiowide", "chakraPetch"]),
   color: z.string().regex(/^#[0-9a-fA-F]{6,8}$/),
   textAlign: z.enum(["left", "center", "right"]),
   backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6,8}$/).nullable(),
@@ -55,7 +56,8 @@ const showcaseElement = z.discriminatedUnion("type", [
 export const showcaseLayoutSchema = z.object({
   version: z.literal(1),
   canvas: z.object({
-    backgroundImageUrl: z.string().url().nullable(),
+    backgroundImageUrl: z.string().nullable(),
+    backgroundColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).nullable(),
     backgroundOpacity: z.number().min(0).max(1),
     backgroundBlur: z.number().min(0).max(20),
   }),

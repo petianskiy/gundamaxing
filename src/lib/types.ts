@@ -226,6 +226,7 @@ export interface ShowcaseLayout {
   version: 1;
   canvas: {
     backgroundImageUrl: string | null;
+    backgroundColor: string | null;
     backgroundOpacity: number;
     backgroundBlur: number;
   };
@@ -258,11 +259,14 @@ export interface ShowcaseImageElement extends ShowcaseElementBase {
   caption: string | null;
 }
 
+export type ShowcaseFontFamily = "geist" | "orbitron" | "rajdhani" | "exo2" | "shareTechMono" | "audiowide" | "chakraPetch";
+
 export interface ShowcaseTextElement extends ShowcaseElementBase {
   type: "text";
   content: string;
   fontSize: "sm" | "base" | "lg" | "xl" | "2xl" | "3xl";
   fontWeight: "normal" | "medium" | "semibold" | "bold";
+  fontFamily: ShowcaseFontFamily;
   color: string;
   textAlign: "left" | "center" | "right";
   backgroundColor: string | null;

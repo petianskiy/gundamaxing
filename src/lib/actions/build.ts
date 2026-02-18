@@ -351,3 +351,81 @@ export async function clearShowcaseLayout(formData: FormData) {
     return { error: "An unexpected error occurred." };
   }
 }
+
+export async function addBuildImage(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "You must be signed in." };
+
+    const buildId = formData.get("buildId") as string;
+    const url = formData.get("url") as string;
+    if (!buildId || !url) return { error: "Missing required fields." };
+
+    const build = await db.build.findUnique({
+      where: { id: buildId },
+      select: { id: true, userId: true, _count: { select: { images: true } } },
+    });
+    if (!build) return { error: "Build not found." };
+
+    if (build.userId !== session.user.id) {
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (user?.role !== "ADMIN") return { error: "Not authorized." };
+    }
+
+    if (build._count.images >= 25) return { error: "Maximum 25 images per build." };
+
+    const image = await db.buildImage.create({
+      data: {
+        buildId,
+        url,
+        alt: "Build image",
+        isPrimary: false,
+        order: build._count.images,
+      },
+    });
+
+    revalidatePath(`/builds/${buildId}`);
+    return { success: true, image: { id: image.id, url: image.url } };
+  } catch (error) {
+    console.error("addBuildImage error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function deleteBuildImage(formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "You must be signed in." };
+
+    const imageId = formData.get("imageId") as string;
+    const buildId = formData.get("buildId") as string;
+    if (!imageId || !buildId) return { error: "Missing required fields." };
+
+    const build = await db.build.findUnique({
+      where: { id: buildId },
+      select: { id: true, userId: true, _count: { select: { images: true } } },
+    });
+    if (!build) return { error: "Build not found." };
+
+    if (build.userId !== session.user.id) {
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (user?.role !== "ADMIN") return { error: "Not authorized." };
+    }
+
+    if (build._count.images <= 1) return { error: "Cannot delete the last image." };
+
+    await db.buildImage.delete({ where: { id: imageId } });
+
+    revalidatePath(`/builds/${buildId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("deleteBuildImage error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
