@@ -44,7 +44,24 @@ model Session {
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model EmailChangeToken {
+  identifier String
+  newEmail   String
+  token      String
   expires    DateTime
 
   @@unique([identifier, token])
@@ -511,6 +528,8 @@ enum EventType {
   EMAIL_VERIFICATION_COMPLETE
   PASSWORD_RESET_REQUESTED
   PASSWORD_RESET_COMPLETE
+  EMAIL_CHANGE_REQUESTED
+  EMAIL_CHANGE_COMPLETE
 }
 
 model EventLog {

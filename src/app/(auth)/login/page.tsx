@@ -14,6 +14,8 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
     "This email is already associated with another sign-in method.",
   OAuthCallbackError: "Sign-in was cancelled or failed.",
   AccessDenied: "Access denied.",
+  EmailNotVerified:
+    "Your email is not verified. Please check your inbox for a verification link.",
 };
 
 function getOAuthError(code: string | null): string | null {
@@ -93,6 +95,14 @@ function LoginForm() {
             className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
           >
             {error}
+            {searchParams.get("error") === "EmailNotVerified" && (
+              <Link
+                href="/verify-email"
+                className="mt-2 block text-xs text-red-300 underline hover:text-red-200"
+              >
+                Resend verification email
+              </Link>
+            )}
           </motion.div>
         )}
 

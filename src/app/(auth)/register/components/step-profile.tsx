@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -234,23 +234,10 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         return;
       }
 
-      // 2. Auto sign-in to get a session
-      const signInResult = await signIn("credentials", {
-        email: allData.stepA.email.toLowerCase(),
-        password: allData.stepA.password,
-        redirect: false,
-      });
-
-      if (!signInResult || signInResult.error) {
-        toast.error("Account created but sign-in failed. Please log in manually.");
-        router.push("/login");
-        return;
-      }
-
-      // Use the userId from signUpAction directly (session may not be refreshed yet)
+      // Use the userId from signUpAction directly (no auto-login — email verification required)
       const userId = signUpResult.userId;
 
-      // 3. Save builder identity (Step B data)
+      // 2. Save builder identity (Step B data)
       const identityResult = await saveBuilderIdentity(userId, {
         country: allData.stepB.country,
         skillLevel: allData.stepB.skillLevel,
@@ -261,7 +248,7 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         console.warn("[StepProfile] Identity save failed:", identityResult.error);
       }
 
-      // 4. Save workshop setup (Step C data)
+      // 3. Save workshop setup (Step C data)
       const workshopResult = await saveWorkshopSetup(userId, {
         tools: allData.stepC.tools,
         techniques: allData.stepC.techniques,
@@ -270,7 +257,7 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         console.warn("[StepProfile] Workshop save failed:", workshopResult.error);
       }
 
-      // 5. Save profile personalization (Step D data)
+      // 4. Save profile personalization (Step D data)
       const profileResult = await saveProfilePersonalization(userId, {
         bio: stepDData.bio,
         avatar: stepDData.avatar,
@@ -282,16 +269,15 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
         console.warn("[StepProfile] Profile save failed:", profileResult.error);
       }
 
-      // 6. Complete onboarding
+      // 5. Complete onboarding
       await completeOnboarding(userId);
 
-      // Show success
+      // Show success then redirect to email verification
       setDeploySuccess(true);
-      toast.success("Mobile suit deployed! Welcome, pilot.");
+      toast.success("Account created! Check your email to verify.");
 
-      // Redirect after animation
       setTimeout(() => {
-        router.push("/builds");
+        router.push(`/verify-email?email=${encodeURIComponent(signUpResult.email)}`);
       }, 2000);
     } catch (err) {
       console.error("[StepProfile] Submit error:", err);
@@ -323,10 +309,10 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
           className="text-center space-y-2"
         >
           <h2 className="text-2xl font-bold tracking-wider text-foreground">
-            DEPLOYMENT COMPLETE
+            ACCOUNT CREATED
           </h2>
           <p className="text-xs font-mono tracking-wider text-muted-foreground">
-            REDIRECTING TO HANGAR...
+            REDIRECTING TO EMAIL VERIFICATION...
           </p>
         </motion.div>
         <motion.div

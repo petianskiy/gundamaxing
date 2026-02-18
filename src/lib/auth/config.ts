@@ -92,6 +92,7 @@ const providers: NextAuthConfig["providers"] = [
         select: {
           id: true,
           email: true,
+          emailVerified: true,
           passwordHash: true,
           username: true,
           displayName: true,
@@ -202,14 +203,24 @@ const authConfig: NextAuthConfig = {
   providers,
   callbacks: {
     async signIn({ user, account }) {
-      // Block banned users (riskScore >= 100)
       if (user.id) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { riskScore: true },
+          select: { riskScore: true, emailVerified: true },
         });
+
+        // Block banned users (riskScore >= 100)
         if (dbUser && dbUser.riskScore >= 100) {
           return false;
+        }
+
+        // Block unverified credential logins (OAuth users are not affected)
+        if (
+          account?.provider === "credentials" &&
+          dbUser &&
+          !dbUser.emailVerified
+        ) {
+          return "/login?error=EmailNotVerified";
         }
       }
       return true;

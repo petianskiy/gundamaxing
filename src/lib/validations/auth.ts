@@ -36,15 +36,38 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  token: z
+  email: z
     .string()
-    .min(1, "Token is required"),
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+  code: z
+    .string()
+    .regex(/^\d{6}$/, "Code must be 6 digits"),
   newPassword: z
     .string()
     .min(8, "Password must be at least 8 characters"),
+});
+
+export const verifyCodeSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+  code: z
+    .string()
+    .regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
+export const emailChangeSchema = z.object({
+  newEmail: z
+    .string()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type VerifyCodeInput = z.infer<typeof verifyCodeSchema>;
+export type EmailChangeInput = z.infer<typeof emailChangeSchema>;

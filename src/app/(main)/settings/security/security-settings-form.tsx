@@ -9,7 +9,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/context";
 import { changePassword, unlinkAccount } from "@/lib/actions/settings";
-import { Lock, Mail, Link2, Unlink } from "lucide-react";
+import { requestEmailChangeAction } from "@/lib/actions/auth";
+import { Lock, Mail, Link2, Unlink, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -67,6 +68,9 @@ export function SecuritySettingsForm({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [unlinking, setUnlinking] = useState<string | null>(null);
+  const [showEmailChange, setShowEmailChange] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailChangeSaving, setEmailChangeSaving] = useState(false);
 
   const strength = getPasswordStrength(newPassword);
   const passwordsMatch = newPassword === confirmPassword;
@@ -116,6 +120,22 @@ export function SecuritySettingsForm({
     }
   }
 
+  async function handleEmailChange(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newEmail) return;
+
+    setEmailChangeSaving(true);
+    const result = await requestEmailChangeAction(newEmail);
+    setEmailChangeSaving(false);
+
+    if ("error" in result) {
+      toast.error(result.error);
+    } else {
+      toast.success("Verification code sent to your new address.");
+      router.push(`/verify-email-change?email=${encodeURIComponent(newEmail)}`);
+    }
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -124,13 +144,64 @@ export function SecuritySettingsForm({
       </div>
 
       <div className="space-y-6">
-        {/* Email (read-only) */}
+        {/* Email */}
         <div className="rounded-xl border border-border/50 bg-card p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">{t("settings.security.email")}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">{t("settings.security.email")}</h3>
+            </div>
+            {!showEmailChange && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowEmailChange(true)}
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Change
+              </Button>
+            )}
           </div>
-          <Input value={email} disabled hint={t("settings.security.emailReadonly")} />
+          {showEmailChange ? (
+            <form onSubmit={handleEmailChange} className="space-y-3">
+              <Input value={email} disabled hint="Current email" />
+              <Input
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="New email address"
+                type="email"
+                required
+                autoComplete="email"
+              />
+              <p className="text-xs text-muted-foreground">
+                A verification code will be sent to the new address. Your email won&apos;t change until you verify it.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setShowEmailChange(false);
+                    setNewEmail("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  loading={emailChangeSaving}
+                  disabled={!newEmail}
+                >
+                  Send Verification
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <Input value={email} disabled hint={t("settings.security.emailReadonly")} />
+          )}
         </div>
 
         {/* Linked Accounts */}

@@ -1,19 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
+import { CodeInput } from "@/components/auth/code-input";
+import { usePasswordStrength } from "@/hooks/use-password-strength";
+import { cn } from "@/lib/utils";
+
+type Step = "email" | "code" | "success";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const strength = usePasswordStrength(password);
+  const passwordsMatch = password === confirmPassword;
+
+  useEffect(() => {
+    if (step === "success") {
+      const timer = setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, router]);
+
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -26,14 +51,72 @@ export default function ForgotPasswordPage() {
       });
 
       if (res.ok) {
-        setIsSent(true);
+        setStep("code");
       } else {
-        setError("Failed to send reset link. Please try again.");
+        setError("Failed to send reset code. Please try again.");
       }
     } catch {
       setError("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleResetSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!passwordsMatch) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (strength.score < 2) {
+      setError("Password is too weak. Please choose a stronger password.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, password }),
+      });
+
+      if (res.ok) {
+        setStep("success");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to reset password.");
+      }
+    } catch {
+      setError("An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setIsResending(true);
+    setResendSuccess(false);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setResendSuccess(true);
+        setCode("");
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setIsResending(false);
     }
   }
 
@@ -46,37 +129,32 @@ export default function ForgotPasswordPage() {
         className="w-full max-w-md"
       >
         <div className="rounded-xl border border-border/50 bg-card p-6 sm:p-8">
-          {isSent ? (
+          {/* Step 3: Success */}
+          {step === "success" && (
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
               <h1 className="mt-6 text-2xl font-bold tracking-wider text-white">
-                RESET LINK SENT
+                CREDENTIALS UPDATED
               </h1>
-              <p className="mt-4 text-sm text-gray-400">
-                If an account exists with{" "}
-                <span className="text-white">{email}</span>, you will receive a
-                password reset link shortly.
+              <p className="mt-2 text-sm text-gray-400">
+                Your password has been reset. Redirecting to login...
               </p>
-              <Link href="/login" className="mt-8 inline-block">
-                <Button variant="secondary">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to login
-                </Button>
-              </Link>
+              <Loader2 className="mx-auto mt-4 h-5 w-5 animate-spin text-gray-500" />
             </div>
-          ) : (
+          )}
+
+          {/* Step 1: Email */}
+          {step === "email" && (
             <>
-              {/* Header */}
               <div className="mb-8 text-center">
                 <h1 className="text-2xl font-bold tracking-wider text-white">
                   RESET ACCESS CODES
                 </h1>
                 <p className="mt-2 font-mono text-sm text-gray-500">
-                  Enter your email to receive a reset link
+                  Enter your email to receive a reset code
                 </p>
               </div>
 
-              {/* Error display */}
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -87,7 +165,7 @@ export default function ForgotPasswordPage() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleEmailSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <label
                     htmlFor="email"
@@ -119,7 +197,7 @@ export default function ForgotPasswordPage() {
                       SENDING...
                     </>
                   ) : (
-                    "SEND RESET LINK"
+                    "SEND RESET CODE"
                   )}
                 </Button>
               </form>
@@ -133,6 +211,129 @@ export default function ForgotPasswordPage() {
                   Back to login
                 </Link>
               </p>
+            </>
+          )}
+
+          {/* Step 2: Code + New Password */}
+          {step === "code" && (
+            <>
+              <div className="mb-6 text-center">
+                <h1 className="text-2xl font-bold tracking-wider text-white">
+                  SET NEW ACCESS CODES
+                </h1>
+                <p className="mt-2 font-mono text-sm text-gray-500">
+                  Enter the code sent to{" "}
+                  <span className="text-gray-300">{email}</span>
+                </p>
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <form onSubmit={handleResetSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-gray-400">
+                    Verification Code
+                  </label>
+                  <CodeInput value={code} onChange={setCode} disabled={isLoading} />
+                </div>
+
+                <div className="space-y-2">
+                  <PasswordInput
+                    label="New Password"
+                    id="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Enter new password"
+                    disabled={isLoading}
+                  />
+                  {password.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className={cn(
+                              "h-1 flex-1 rounded-full transition-colors",
+                              i <= strength.score - 1
+                                ? strength.score <= 1
+                                  ? "bg-red-500"
+                                  : strength.score === 2
+                                  ? "bg-orange-500"
+                                  : strength.score === 3
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
+                                : "bg-gray-700"
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-xs ${strength.color}`}>
+                        {strength.label}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <PasswordInput
+                  label="Confirm Password"
+                  id="confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Confirm new password"
+                  disabled={isLoading}
+                  error={confirmPassword.length > 0 && !passwordsMatch ? "Passwords do not match" : undefined}
+                />
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full"
+                  disabled={isLoading || code.length !== 6 || !password || !confirmPassword || !passwordsMatch}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      UPDATING...
+                    </>
+                  ) : (
+                    "UPDATE CREDENTIALS"
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={isResending || resendSuccess}
+                  className="transition-colors hover:text-gray-300 disabled:opacity-50"
+                >
+                  {isResending ? "Sending..." : resendSuccess ? "Code resent!" : "Resend code"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("email");
+                    setCode("");
+                    setPassword("");
+                    setConfirmPassword("");
+                    setError(null);
+                  }}
+                  className="transition-colors hover:text-gray-300"
+                >
+                  Different email
+                </button>
+              </div>
             </>
           )}
         </div>

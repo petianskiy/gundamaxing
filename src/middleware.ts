@@ -17,6 +17,7 @@ const publicRoutes = [
   "/verify-email",
   "/forgot-password",
   "/reset-password",
+  "/verify-email-change",
 ];
 
 const publicRoutePatterns = [
