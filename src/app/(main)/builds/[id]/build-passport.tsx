@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,9 +17,15 @@ import {
   Wrench,
   Calendar,
   ChevronRight,
+  ChevronLeft,
   MessageCircle,
   ThumbsUp,
+  Pencil,
+  LayoutDashboard,
 } from "lucide-react";
+import { updateShowcaseLayout } from "@/lib/actions/build";
+import { toast } from "sonner";
+import type { ShowcaseLayout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { VerificationBadge } from "@/components/ui/verification-badge";
@@ -63,21 +69,119 @@ function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number 
   );
 }
 
+function generateDefaultLayout(build: Build): ShowcaseLayout {
+  const elements: ShowcaseLayout["elements"] = [];
+  let zIndex = 1;
+
+  // Only include images that have a proper DB id
+  const validImages = build.images.filter((img) => img.id);
+
+  if (validImages.length > 0) {
+    // First image: large hero
+    elements.push({
+      id: `el-img-0`,
+      type: "image" as const,
+      imageId: validImages[0].id!,
+      imageUrl: validImages[0].url,
+      x: 5,
+      y: 2,
+      width: 90,
+      height: 40,
+      zIndex: zIndex++,
+      rotation: 0,
+      objectFit: "cover",
+      borderRadius: 12,
+      shadow: true,
+      caption: null,
+    });
+
+    // Remaining images: 2-column grid below hero (cap at 6 to fit canvas)
+    validImages.slice(1, 7).forEach((img, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      elements.push({
+        id: `el-img-${i + 1}`,
+        type: "image" as const,
+        imageId: img.id!,
+        imageUrl: img.url,
+        x: 5 + col * 46,
+        y: 45 + row * 18,
+        width: 43,
+        height: 16,
+        zIndex: zIndex++,
+        rotation: 0,
+        objectFit: "cover",
+        borderRadius: 8,
+        shadow: true,
+        caption: null,
+      });
+    });
+  }
+
+  // Metadata element at bottom
+  const gridRows = Math.ceil(Math.min(validImages.length - 1, 6) / 2);
+  const metaY = validImages.length <= 1 ? 45 : 45 + gridRows * 18;
+  elements.push({
+    id: "metadata-1",
+    type: "metadata" as const,
+    x: 5,
+    y: Math.min(metaY, 85),
+    width: 90,
+    height: 12,
+    zIndex: zIndex++,
+    rotation: 0,
+    variant: "full",
+  });
+
+  return {
+    version: 1,
+    canvas: {
+      backgroundImageUrl: build.images[0]?.url ?? null,
+      backgroundOpacity: 0.15,
+      backgroundBlur: 10,
+    },
+    elements,
+  };
+}
+
 export function BuildPassport({
   build,
   comments,
   allBuilds,
+  currentUserId,
 }: {
   build: Build;
   comments: Comment[];
   allBuilds: Build[];
+  currentUserId?: string;
 }) {
   const { t } = useTranslation();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [hoveredPin, setHoveredPin] = useState<string | null>(null);
 
+  const [isCreatingShowcase, startShowcaseTransition] = useTransition();
   const currentImage = build.images[selectedImageIndex];
+  const isOwner = currentUserId === build.userId;
+
+  const goToPrev = useCallback(() => {
+    setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : build.images.length - 1));
+  }, [build.images.length]);
+
+  const goToNext = useCallback(() => {
+    setSelectedImageIndex((prev) => (prev < build.images.length - 1 ? prev + 1 : 0));
+  }, [build.images.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") goToPrev();
+      else if (e.key === "ArrowRight") goToNext();
+      else if (e.key === "Escape") setLightboxOpen(false);
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [lightboxOpen, goToPrev, goToNext]);
 
   const metaRows = [
     { icon: Package, label: t("builds.kit"), value: build.kitName },
@@ -106,6 +210,13 @@ export function BuildPassport({
               unoptimized
               priority
             />
+
+            {/* Image counter badge */}
+            {build.images.length > 1 && (
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white text-xs font-medium">
+                {selectedImageIndex + 1} / {build.images.length}
+              </div>
+            )}
 
             {/* Callout pins */}
             {build.calloutPins?.map((pin) => (
@@ -140,20 +251,39 @@ export function BuildPassport({
 
           {/* Thumbnails */}
           {build.images.length > 1 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-              {build.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImageIndex(i)}
-                  className={cn(
-                    "relative w-20 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors",
-                    i === selectedImageIndex ? "border-gx-red" : "border-transparent opacity-60 hover:opacity-100"
-                  )}
-                >
-                  <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
-                </button>
-              ))}
-            </div>
+            build.images.length <= 4 ? (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                {build.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImageIndex(i)}
+                    className={cn(
+                      "relative w-20 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-colors",
+                      i === selectedImageIndex ? "border-gx-red" : "border-transparent opacity-60 hover:opacity-100"
+                    )}
+                  >
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-1.5 mt-3">
+                {build.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImageIndex(i)}
+                    className={cn(
+                      "relative aspect-square rounded-md overflow-hidden border-2 transition-all",
+                      i === selectedImageIndex
+                        ? "border-gx-red ring-1 ring-gx-red/50"
+                        : "border-transparent opacity-70 hover:opacity-100"
+                    )}
+                  >
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </div>
       </section>
@@ -165,23 +295,78 @@ export function BuildPassport({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center"
             onClick={() => setLightboxOpen(false)}
           >
+            {/* Close button */}
             <button
-              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white"
+              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white z-10"
               onClick={() => setLightboxOpen(false)}
             >
               <X className="h-6 w-6" />
             </button>
-            <Image
-              src={currentImage.url}
-              alt={currentImage.alt}
-              width={1200}
-              height={900}
-              className="max-h-[90vh] w-auto object-contain rounded-lg"
-              unoptimized
-            />
+
+            {/* Counter */}
+            {build.images.length > 1 && (
+              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm font-medium z-10">
+                {selectedImageIndex + 1} / {build.images.length}
+              </div>
+            )}
+
+            {/* Main image area */}
+            <div className="flex-1 flex items-center justify-center w-full px-16 py-4" onClick={(e) => e.stopPropagation()}>
+              {/* Prev arrow */}
+              {build.images.length > 1 && (
+                <button
+                  className="absolute left-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+                  onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+
+              <Image
+                src={currentImage.url}
+                alt={currentImage.alt}
+                width={1200}
+                height={900}
+                className="max-h-[80vh] w-auto object-contain rounded-lg"
+                unoptimized
+              />
+
+              {/* Next arrow */}
+              {build.images.length > 1 && (
+                <button
+                  className="absolute right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+                  onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom thumbnail strip */}
+            {build.images.length > 1 && (
+              <div
+                className="flex gap-1.5 px-4 pb-4 overflow-x-auto max-w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {build.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImageIndex(i)}
+                    className={cn(
+                      "relative w-16 h-12 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all",
+                      i === selectedImageIndex
+                        ? "border-gx-red opacity-100"
+                        : "border-transparent opacity-50 hover:opacity-80"
+                    )}
+                  >
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                  </button>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -209,6 +394,47 @@ export function BuildPassport({
               )}
             </button>
           ))}
+
+          {/* Owner actions */}
+          {isOwner && (
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                disabled={isCreatingShowcase}
+                onClick={() => {
+                  startShowcaseTransition(async () => {
+                    try {
+                      const layout = generateDefaultLayout(build);
+                      const fd = new FormData();
+                      fd.append("buildId", build.id);
+                      fd.append("showcaseLayout", JSON.stringify(layout));
+                      const result = await updateShowcaseLayout(fd);
+                      if (result && "error" in result) {
+                        toast.error(result.error);
+                        return;
+                      }
+                      window.location.reload();
+                    } catch (err) {
+                      console.error("Create showcase error:", err);
+                      toast.error("Failed to create showcase");
+                    }
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+              >
+                <LayoutDashboard className={cn("h-4 w-4", isCreatingShowcase && "animate-spin")} />
+                <span className="hidden sm:inline">
+                  {isCreatingShowcase ? "Creating..." : t("builds.showcase.createShowcase")}
+                </span>
+              </button>
+              <Link
+                href={`/builds/${build.id}/edit`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="hidden sm:inline">Edit</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Build Passport Card */}

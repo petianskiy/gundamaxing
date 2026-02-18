@@ -93,5 +93,8 @@ export const hangar: Record<string, string> = {
   "hangar.settings.buildAssigned": "ビルドをエラに割り当てました",
   "hangar.settings.buildRemoved": "ビルドをエラから削除しました",
 
+  // Grid
+  "hangar.emptyHangar": "このハンガーにはまだビルドがありません",
+
   "hangar.visitHangar": "このビルダーのハンガーを見る",
 };

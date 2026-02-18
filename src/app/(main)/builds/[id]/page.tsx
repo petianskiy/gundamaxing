@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { getBuildById, getBuilds } from "@/lib/data/builds";
 import { getCommentsByBuildId } from "@/lib/data/comments";
 import { BuildPassport } from "./build-passport";
+import { ShowcasePage } from "@/components/build/showcase/showcase-page";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -10,10 +12,29 @@ export default async function BuildPage({ params }: Props) {
   const build = await getBuildById(id);
   if (!build) notFound();
 
-  const [comments, allBuilds] = await Promise.all([
+  const [comments, allBuilds, session] = await Promise.all([
     getCommentsByBuildId(id),
     getBuilds(),
+    auth(),
   ]);
 
-  return <BuildPassport build={build} comments={comments} allBuilds={allBuilds} />;
+  if (build.showcaseLayout) {
+    return (
+      <ShowcasePage
+        build={build}
+        comments={comments}
+        allBuilds={allBuilds}
+        currentUserId={session?.user?.id}
+      />
+    );
+  }
+
+  return (
+    <BuildPassport
+      build={build}
+      comments={comments}
+      allBuilds={allBuilds}
+      currentUserId={session?.user?.id}
+    />
+  );
 }

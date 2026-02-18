@@ -39,10 +39,12 @@ export type VerificationTier = "unverified" | "verified" | "featured" | "master"
 export type BuildStatus = "WIP" | "Completed" | "Abandoned";
 
 export interface BuildImage {
+  id?: string;
   url: string;
   alt: string;
   isPrimary?: boolean;
   objectPosition?: string;
+  order?: number;
 }
 
 export interface BuildLogEntry {
@@ -93,6 +95,7 @@ export interface Build {
   creativityCount: number;
   userReactions?: string[];
   verification: VerificationTier;
+  showcaseLayout?: ShowcaseLayout | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -216,6 +219,61 @@ export interface HangarUser {
   buildCount: number;
   badgeCount: number;
 }
+
+// ─── Showcase Canvas ─────────────────────────────────────────────
+
+export interface ShowcaseLayout {
+  version: 1;
+  canvas: {
+    backgroundImageUrl: string | null;
+    backgroundOpacity: number;
+    backgroundBlur: number;
+  };
+  elements: ShowcaseElement[];
+}
+
+export type ShowcaseElement =
+  | ShowcaseImageElement
+  | ShowcaseTextElement
+  | ShowcaseMetadataElement;
+
+export interface ShowcaseElementBase {
+  id: string;
+  type: "image" | "text" | "metadata";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex: number;
+  rotation: number;
+}
+
+export interface ShowcaseImageElement extends ShowcaseElementBase {
+  type: "image";
+  imageId: string;
+  imageUrl: string;
+  objectFit: "cover" | "contain";
+  borderRadius: number;
+  shadow: boolean;
+  caption: string | null;
+}
+
+export interface ShowcaseTextElement extends ShowcaseElementBase {
+  type: "text";
+  content: string;
+  fontSize: "sm" | "base" | "lg" | "xl" | "2xl" | "3xl";
+  fontWeight: "normal" | "medium" | "semibold" | "bold";
+  color: string;
+  textAlign: "left" | "center" | "right";
+  backgroundColor: string | null;
+}
+
+export interface ShowcaseMetadataElement extends ShowcaseElementBase {
+  type: "metadata";
+  variant: "compact" | "full";
+}
+
+// ─── Hangar ─────────────────────────────────────────────────────
 
 export interface HangarData {
   user: HangarUser;

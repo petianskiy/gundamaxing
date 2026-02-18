@@ -104,6 +104,9 @@ export const hangar: Record<string, string> = {
   "hangar.settings.buildAssigned": "Build assigned to era",
   "hangar.settings.buildRemoved": "Build removed from era",
 
+  // Grid
+  "hangar.emptyHangar": "No builds in this hangar yet",
+
   // Profile redirect
   "hangar.visitHangar": "Visit this builder's Hangar",
 };

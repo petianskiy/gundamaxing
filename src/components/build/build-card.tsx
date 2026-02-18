@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, GitFork } from "lucide-react";
+import { Heart, MessageCircle, GitFork, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
@@ -48,6 +48,16 @@ export function BuildCard({ build }: { build: Build }) {
           {build.verification !== "unverified" && (
             <div className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/50 backdrop-blur-sm">
               <VerificationBadge tier={build.verification} size="md" />
+            </div>
+          )}
+
+          {/* Bottom-right: Image count */}
+          {build.images.length > 1 && (
+            <div className="absolute bottom-2.5 right-2.5">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/60 text-zinc-300 backdrop-blur-sm">
+                <Camera className="h-3 w-3" />
+                {build.images.length}
+              </span>
             </div>
           )}
 

@@ -230,6 +230,9 @@ model Build {
   techniqueCount  Int              @default(0)
   creativityCount Int              @default(0)
 
+  // Showcase canvas layout (JSON blob for free-form page builder)
+  showcaseLayout  Json?
+
   // Hangar
   eraAssignments  BuildEraAssignment[]
   reactions       Reaction[]

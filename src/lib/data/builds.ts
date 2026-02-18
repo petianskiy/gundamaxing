@@ -5,6 +5,7 @@ import type {
   BuildImage,
   CalloutPin,
   BuildLogEntry,
+  ShowcaseLayout,
   Grade,
   Timeline,
   Scale,
@@ -66,11 +67,13 @@ export function toUIBuild(b: any): Build {
     tools: b.tools.length > 0 ? b.tools : undefined,
     intentStatement: b.intentStatement ?? undefined,
     images: (b.images ?? []).map(
-      (img: { url: string; alt: string; isPrimary: boolean; objectPosition: string | null }): BuildImage => ({
+      (img: { id: string; url: string; alt: string; isPrimary: boolean; objectPosition: string | null; order: number }): BuildImage => ({
+        id: img.id,
         url: img.url,
         alt: img.alt,
         isPrimary: img.isPrimary,
         objectPosition: img.objectPosition ?? undefined,
+        order: img.order,
       }),
     ),
     calloutPins: (b.calloutPins ?? []).map(
@@ -105,6 +108,7 @@ export function toUIBuild(b: any): Build {
     techniqueCount: b.techniqueCount ?? 0,
     creativityCount: b.creativityCount ?? 0,
     verification: verificationTierMap[b.verification as PrismaVerificationTier],
+    showcaseLayout: (b.showcaseLayout as ShowcaseLayout | null) ?? undefined,
     createdAt: formatDate(b.createdAt),
     updatedAt: formatDate(b.updatedAt),
   };
@@ -129,6 +133,20 @@ export const getBuildById = cache(async (id: string): Promise<Build | null> => {
 
   if (!build) return null;
   return toUIBuild(build);
+});
+
+export const getBuildForEdit = cache(async (id: string, userId: string) => {
+  const build = await db.build.findUnique({
+    where: { id },
+    include: {
+      images: { orderBy: { order: "asc" } },
+    },
+  });
+
+  if (!build) return null;
+  if (build.userId !== userId) return null;
+
+  return build;
 });
 
 export const getBuildsByUserId = cache(async (userId: string): Promise<Build[]> => {
