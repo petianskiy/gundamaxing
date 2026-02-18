@@ -1,15 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/lib/i18n/context";
-import "./laser-flow.css";
-
-const LaserFlow = dynamic(
-  () => import("./laser-flow").then((mod) => mod.LaserFlow),
-  { ssr: false }
-);
 
 export function ConnectSection() {
   const { t } = useTranslation();
@@ -36,27 +29,19 @@ export function ConnectSection() {
   ];
   return (
     <section className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* LaserFlow background */}
-      <div className="absolute inset-0" style={{ pointerEvents: "auto" }}>
-        <LaserFlow
-          color="#a8c6fe"
-          wispDensity={1}
-          flowSpeed={0.35}
-          verticalSizing={2}
-          horizontalSizing={0.5}
-          fogIntensity={0.45}
-          fogScale={0.3}
-          wispSpeed={15}
-          wispIntensity={5}
-          flowStrength={0.25}
-          decay={1.1}
-          horizontalBeamOffset={0}
-          verticalBeamOffset={-0.5}
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/connect-bg.png"
+          alt=""
+          fill
+          className="object-cover"
+          priority
         />
       </div>
 
       {/* Dark overlay for contrast */}
-      <div className="absolute inset-0 bg-black/30" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Content overlay */}
       <div className="relative z-10 mx-auto max-w-3xl text-center">
