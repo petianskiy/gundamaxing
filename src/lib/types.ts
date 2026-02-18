@@ -88,6 +88,10 @@ export interface Build {
   comments: number;
   forkCount: number;
   bookmarks: number;
+  respectCount: number;
+  techniqueCount: number;
+  creativityCount: number;
+  userReactions?: string[];
   verification: VerificationTier;
   createdAt: string;
   updatedAt: string;
@@ -172,3 +176,51 @@ export type FilterConfig = {
   verificationTiers: VerificationTier[];
   statuses: BuildStatus[];
 };
+
+export type ReactionType = "RESPECT" | "TECHNIQUE" | "CREATIVITY";
+export type HangarTheme = "CLEAN_LAB" | "CYBER_BAY" | "DESERT_BATTLEFIELD" | "NEON_TOKYO";
+export type HangarLayout = "GALLERY" | "BLUEPRINT" | "STORY";
+
+export interface BuildEra {
+  id: string;
+  name: string;
+  description: string | null;
+  coverImage: string | null;
+  order: number;
+  isCollapsed: boolean;
+  builds: Build[];
+}
+
+export interface HangarUser {
+  id: string;
+  handle: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  banner: string | null;
+  bio: string | null;
+  accentColor: string | null;
+  verificationTier: string;
+  level: number;
+  reputation: number;
+  hangarTheme: HangarTheme;
+  hangarLayout: HangarLayout;
+  manifesto: string | null;
+  socialLinks: Record<string, string>;
+  isProfilePrivate: boolean;
+  skillLevel: string | null;
+  preferredGrades: string[];
+  tools: string[];
+  techniques: string[];
+  country: string | null;
+  createdAt: string;
+  buildCount: number;
+  badgeCount: number;
+}
+
+export interface HangarData {
+  user: HangarUser;
+  featuredBuild: Build | null;
+  eras: BuildEra[];
+  unassignedBuilds: Build[];
+}

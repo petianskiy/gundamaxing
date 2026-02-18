@@ -2,6 +2,7 @@ export const common = {
   "nav.builds": "ビルド",
   "nav.forum": "フォーラム",
   "nav.upload": "アップロード",
+  "nav.hangar": "マイハンガー",
   "nav.toggleMenu": "メニュー切替",
   "footer.platform": "プラットフォーム",
   "footer.community": "コミュニティ",

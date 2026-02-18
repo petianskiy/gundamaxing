@@ -5,6 +5,7 @@ export const settings: Record<string, string> = {
   "settings.nav.identity": "ビルダー情報",
   "settings.nav.privacy": "プライバシー",
   "settings.nav.security": "セキュリティ",
+  "settings.nav.hangar": "ハンガー",
   "settings.nav.account": "アカウント",
 
   // Profile

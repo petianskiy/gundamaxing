@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +33,10 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid credentials. Check your email/username and password.");
       } else {
-        router.push("/builds");
+        // Refresh session to get handle for redirect
+        const session = await updateSession();
+        const handle = (session as any)?.user?.handle;
+        router.push(handle ? `/hangar/${handle}` : "/builds");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -42,6 +46,8 @@ export default function LoginPage() {
   }
 
   async function handleOAuth(provider: string) {
+    // OAuth will redirect back; use /builds as safe fallback
+    // NextAuth signIn callback will handle proper redirect
     await signIn(provider, { callbackUrl: "/builds" });
   }
 

@@ -9,6 +9,7 @@ import { filters as enFilters } from "./locales/en/filters";
 import { auth as enAuth } from "./locales/en/auth";
 import { admin as enAdmin } from "./locales/en/admin";
 import { settings as enSettings } from "./locales/en/settings";
+import { hangar as enHangar } from "./locales/en/hangar";
 
 import { common as jaCommon } from "./locales/ja/common";
 import { landing as jaLanding } from "./locales/ja/landing";
@@ -21,6 +22,7 @@ import { filters as jaFilters } from "./locales/ja/filters";
 import { auth as jaAuth } from "./locales/ja/auth";
 import { admin as jaAdmin } from "./locales/ja/admin";
 import { settings as jaSettings } from "./locales/ja/settings";
+import { hangar as jaHangar } from "./locales/ja/hangar";
 
 export type Locale = "en" | "ja";
 export const DEFAULT_LOCALE: Locale = "en";
@@ -31,6 +33,6 @@ function merge(...objs: Record<string, string>[]): Record<string, string> {
 }
 
 export const translations: Record<Locale, Record<string, string>> = {
-  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings),
-  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings),
+  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar),
+  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar),
 };

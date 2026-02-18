@@ -3,6 +3,7 @@ export const common = {
   "nav.forum": "Forum",
   "nav.upload": "Upload",
   "nav.portfolio": "My Portfolio",
+  "nav.hangar": "My Hangar",
   "nav.toggleMenu": "Toggle menu",
   "footer.platform": "Platform",
   "footer.community": "Community",

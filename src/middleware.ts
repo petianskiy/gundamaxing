@@ -23,6 +23,7 @@ const publicRoutePatterns = [
   /^\/builds\/[^/]+$/,
   /^\/thread\/[^/]+$/,
   /^\/u\/[^/]+$/,
+  /^\/hangar\/[^/]+$/,
   /^\/api\//,
 ];
 

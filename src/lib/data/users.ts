@@ -60,6 +60,9 @@ export const getUserSettingsData = cache(async (userId: string) => {
       sectionOrder: true,
       pinnedBuildIds: true,
       hiddenSections: true,
+      hangarTheme: true,
+      hangarLayout: true,
+      manifesto: true,
       isProfilePrivate: true,
       passwordHash: true, // to check if user has password set
       role: true,

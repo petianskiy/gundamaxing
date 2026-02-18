@@ -35,7 +35,7 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
-const buildInclude = {
+export const buildInclude = {
   user: {
     select: { id: true, username: true, displayName: true, avatar: true },
   },
@@ -50,7 +50,7 @@ const buildInclude = {
 // ─── Transform ───────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toUIBuild(b: any): Build {
+export function toUIBuild(b: any): Build {
   return {
     id: b.id,
     title: b.title,
@@ -101,6 +101,9 @@ function toUIBuild(b: any): Build {
     comments: b.commentCount,
     forkCount: b.forkCount,
     bookmarks: b.bookmarkCount,
+    respectCount: b.respectCount ?? 0,
+    techniqueCount: b.techniqueCount ?? 0,
+    creativityCount: b.creativityCount ?? 0,
     verification: verificationTierMap[b.verification as PrismaVerificationTier],
     createdAt: formatDate(b.createdAt),
     updatedAt: formatDate(b.updatedAt),

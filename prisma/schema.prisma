@@ -72,6 +72,25 @@ enum SkillLevel {
   EXPERT
 }
 
+enum ReactionType {
+  RESPECT
+  TECHNIQUE
+  CREATIVITY
+}
+
+enum HangarTheme {
+  CLEAN_LAB
+  CYBER_BAY
+  DESERT_BATTLEFIELD
+  NEON_TOKYO
+}
+
+enum HangarLayout {
+  GALLERY
+  BLUEPRINT
+  STORY
+}
+
 model User {
   id               String           @id @default(cuid())
   email            String           @unique
@@ -106,6 +125,11 @@ model User {
   hiddenSections   String[]         @default([])
   isProfilePrivate Boolean          @default(false)
 
+  // Hangar customization
+  hangarTheme    HangarTheme        @default(CYBER_BAY)
+  hangarLayout   HangarLayout       @default(GALLERY)
+  manifesto      String?            @db.Text
+
   // Reputation & anti-spam
   reputation       Int              @default(0)
   level            Int              @default(1)
@@ -133,6 +157,8 @@ model User {
   reportsReceived  Report[]         @relation("reported")
   moderationActions ModerationAction[] @relation("moderator")
   eventLogs        EventLog[]
+  eras             BuildEra[]
+  reactions        Reaction[]
 
   @@index([email])
   @@index([handle])
@@ -185,6 +211,13 @@ model Build {
   commentCount    Int              @default(0)
   forkCount       Int              @default(0)
   bookmarkCount   Int              @default(0)
+  respectCount    Int              @default(0)
+  techniqueCount  Int              @default(0)
+  creativityCount Int              @default(0)
+
+  // Hangar
+  eraAssignments  BuildEraAssignment[]
+  reactions       Reaction[]
 
   isFeaturedBuild Boolean          @default(false)
   createdAt       DateTime         @default(now())
@@ -496,6 +529,51 @@ model EventLog {
   @@index([userId])
   @@index([ipAddress])
   @@index([createdAt])
+}
+
+// ─── HANGAR ──────────────────────────────────────────────────────
+
+model BuildEra {
+  id          String               @id @default(cuid())
+  name        String
+  description String?              @db.Text
+  coverImage  String?
+  order       Int                  @default(0)
+  isCollapsed Boolean              @default(false)
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  builds      BuildEraAssignment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([userId, order])
+}
+
+model BuildEraAssignment {
+  id      String   @id @default(cuid())
+  buildId String
+  build   Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  eraId   String
+  era     BuildEra @relation(fields: [eraId], references: [id], onDelete: Cascade)
+  order   Int      @default(0)
+
+  @@unique([buildId, eraId])
+  @@index([eraId, order])
+  @@index([buildId])
+}
+
+model Reaction {
+  id        String       @id @default(cuid())
+  type      ReactionType
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId   String
+  build     Build        @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, buildId, type])
+  @@index([buildId])
+  @@index([userId])
 }
 
 // ─── RATE LIMIT (DB fallback) ─────────────────────────────────────

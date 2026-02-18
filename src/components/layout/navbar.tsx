@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, X, Upload, Grid3X3, MessageSquare, Briefcase } from "lucide-react";
+import { Menu, X, Upload, Grid3X3, MessageSquare, Warehouse } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -13,18 +13,25 @@ import { LanguageToggle } from "@/components/ui/language-toggle";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { UserMenu } from "@/components/auth/user-menu";
 
-const navLinks = [
+const baseNavLinks = [
   { href: "/builds", labelKey: "nav.builds", icon: Grid3X3, authOnly: false },
   { href: "/forum", labelKey: "nav.forum", icon: MessageSquare, authOnly: false },
   { href: "/upload", labelKey: "nav.upload", icon: Upload, authOnly: false },
-  { href: "/portfolio", labelKey: "nav.portfolio", icon: Briefcase, authOnly: true },
 ];
+
+function getNavLinks(handle?: string | null) {
+  return [
+    ...baseNavLinks,
+    { href: handle ? `/hangar/${handle}` : "/builds", labelKey: "nav.hangar", icon: Warehouse, authOnly: true },
+  ];
+}
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
   const { data: session, status } = useSession();
+  const navLinks = getNavLinks(session?.user?.handle);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl safe-top">

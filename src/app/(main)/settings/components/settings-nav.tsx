@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Fingerprint, Eye, Shield, AlertTriangle } from "lucide-react";
+import { User, Fingerprint, Eye, Shield, AlertTriangle, Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/settings/profile", labelKey: "settings.nav.profile", icon: User },
   { href: "/settings/identity", labelKey: "settings.nav.identity", icon: Fingerprint },
   { href: "/settings/privacy", labelKey: "settings.nav.privacy", icon: Eye },
+  { href: "/settings/hangar", labelKey: "settings.nav.hangar", icon: Warehouse },
   { href: "/settings/security", labelKey: "settings.nav.security", icon: Shield },
   { href: "/settings/account", labelKey: "settings.nav.account", icon: AlertTriangle },
 ];

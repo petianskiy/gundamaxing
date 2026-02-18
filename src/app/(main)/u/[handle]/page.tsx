@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Warehouse } from "lucide-react";
 import { ProfileHeader } from "./components/profile-header";
 import { BuildGallery } from "./components/build-gallery";
 import { WorkshopSpecs } from "./components/workshop-specs";
@@ -179,6 +181,16 @@ export default async function ProfilePage({ params }: Props) {
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
+        {/* Hangar banner */}
+        <Link
+          href={`/hangar/${handle}`}
+          className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-sm text-blue-400 transition-colors hover:bg-blue-500/20"
+        >
+          <Warehouse className="h-4 w-4 shrink-0" />
+          <span>Visit this builder&apos;s Hangar</span>
+          <span aria-hidden="true">&rarr;</span>
+        </Link>
+
         <ProfileHeader
           user={{
             handle: user.handle,
