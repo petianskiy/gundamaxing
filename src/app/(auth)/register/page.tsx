@@ -87,7 +87,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Wizard card */}
-      <div className="rounded-xl border border-border/50 bg-card p-6 sm:p-8 mecha-frame">
+      <div className="rounded-xl border border-border/50 bg-card/95 backdrop-blur-sm p-6 sm:p-8 mecha-frame">
         <WizardShell step={currentStep} direction={direction}>
           {currentStep === 0 && (
             <StepAccount data={wizardData.stepA} onNext={handleStepA} />
