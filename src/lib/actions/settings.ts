@@ -152,6 +152,51 @@ export async function deleteAccount(data: unknown) {
   }
 }
 
+export async function unlinkAccount(provider: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    if (!provider || typeof provider !== "string") {
+      return { error: "Invalid provider." };
+    }
+
+    // Find the linked account for this provider
+    const account = await db.account.findFirst({
+      where: { userId: session.user.id, provider },
+    });
+
+    if (!account) {
+      return { error: "This provider is not linked to your account." };
+    }
+
+    // Safety: ensure at least one login method remains
+    const [otherAccounts, user] = await Promise.all([
+      db.account.count({
+        where: { userId: session.user.id, provider: { not: provider } },
+      }),
+      db.user.findUnique({
+        where: { id: session.user.id },
+        select: { passwordHash: true },
+      }),
+    ]);
+
+    const hasPassword = !!user?.passwordHash;
+    if (otherAccounts === 0 && !hasPassword) {
+      return { error: "Cannot unlink — this is your only login method. Set a password first." };
+    }
+
+    await db.account.delete({ where: { id: account.id } });
+
+    return { success: true };
+  } catch (error) {
+    console.error("unlinkAccount error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
 export async function deleteBuild(buildId: string) {
   try {
     const session = await auth();
