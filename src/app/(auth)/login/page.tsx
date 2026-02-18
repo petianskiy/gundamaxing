@@ -75,14 +75,20 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gx-surface px-4">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/login-bg.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-black/60" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md"
+        className="relative z-10 w-full max-w-md"
       >
-        <div className="rounded-xl border border-border/50 bg-card p-6 sm:p-8">
+        <div className="rounded-xl border border-border/50 bg-card/95 backdrop-blur-sm p-6 sm:p-8">
           {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold tracking-wider text-white">
@@ -111,12 +117,12 @@ function LoginForm() {
                 htmlFor="email"
                 className="block text-xs font-medium uppercase tracking-wider text-gray-400"
               >
-                Email or Username
+                Username or Email
               </label>
               <Input
                 id="email"
                 type="text"
-                placeholder="pilot@gundamaxing.com or username"
+                placeholder="username or pilot@gundamaxing.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
