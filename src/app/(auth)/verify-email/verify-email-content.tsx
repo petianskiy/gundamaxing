@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Mail, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CodeInput } from "@/components/auth/code-input";
+import { Input } from "@/components/ui/input";
 
 export function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -180,7 +180,20 @@ export function VerifyEmailContent() {
             </p>
 
             <div className="mt-6">
-              <CodeInput value={code} onChange={setCode} />
+              <Input
+                id="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="000000"
+                maxLength={6}
+                value={code}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                  setCode(v);
+                }}
+                className="text-center text-2xl font-bold tracking-[0.5em] placeholder:tracking-[0.5em]"
+              />
             </div>
 
             <div className="mt-6 space-y-3">

@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
-import { CodeInput } from "@/components/auth/code-input";
 import { usePasswordStrength } from "@/hooks/use-password-strength";
 import { cn } from "@/lib/utils";
 
@@ -238,10 +237,27 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleResetSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="block text-xs font-medium uppercase tracking-wider text-gray-400">
+                  <label
+                    htmlFor="code"
+                    className="block text-xs font-medium uppercase tracking-wider text-gray-400"
+                  >
                     Verification Code
                   </label>
-                  <CodeInput value={code} onChange={setCode} disabled={isLoading} />
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setCode(v);
+                    }}
+                    disabled={isLoading}
+                    className="text-center text-2xl font-bold tracking-[0.5em] placeholder:tracking-[0.5em]"
+                  />
                 </div>
 
                 <div className="space-y-2">
