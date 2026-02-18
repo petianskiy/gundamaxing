@@ -11,7 +11,7 @@ export default function AuthLayout({
   return (
     <>
       <Navbar />
-      <main className="relative min-h-screen flex flex-col items-center justify-center px-4 py-12">
+      <main className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-12">
         {/* Background image */}
         <div
           className="fixed inset-0 bg-cover bg-center bg-no-repeat"
