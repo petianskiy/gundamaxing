@@ -16,7 +16,7 @@ export function BuildCard({ build }: { build: Build }) {
   const remainingCount = build.techniques.length - 3;
 
   return (
-    <Link href={`/builds/${build.id}`}>
+    <Link href={`/builds/${build.slug}`}>
       <motion.article
         whileHover={{ y: -2 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}

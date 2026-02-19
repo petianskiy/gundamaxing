@@ -116,6 +116,7 @@ interface ImageItem {
 
 interface BuildData {
   id: string;
+  slug: string;
   title: string;
   kitName: string;
   grade: string;
@@ -283,7 +284,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
         return;
       }
 
-      router.push(`/builds/${build.id}`);
+      router.push(`/builds/${build.slug}`);
     } catch (err) {
       setUploading(false);
       setSubmitting(false);

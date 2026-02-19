@@ -10,15 +10,17 @@ import {
   Share2,
   Pencil,
   LayoutDashboard,
+  Trash2,
 } from "lucide-react";
 import { toggleLike, toggleBookmark } from "@/lib/actions/like";
-import { forkBuild } from "@/lib/actions/build";
+import { forkBuild, deleteBuild } from "@/lib/actions/build";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 
 interface ActionsBarProps {
   buildId: string;
+  buildSlug: string;
   likeCount: number;
   bookmarkCount: number;
   forkCount: number;
@@ -36,6 +38,7 @@ function formatCount(count: number): string {
 
 export function ActionsBar({
   buildId,
+  buildSlug,
   likeCount,
   bookmarkCount,
   forkCount,
@@ -56,6 +59,7 @@ export function ActionsBar({
   const [bookmarks, setBookmarks] = useState(bookmarkCount);
   const [, startTransition] = useTransition();
   const [isForking, setIsForking] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLike = () => {
     if (!currentUserId) {
@@ -122,9 +126,24 @@ export function ActionsBar({
       setIsForking(false);
       if ("error" in result) {
         toast.error(result.error);
-      } else if (result.buildId) {
+      } else if (result.slug) {
         toast.success("Build forked!");
-        router.push(`/builds/${result.buildId}/edit`);
+        router.push(`/builds/${result.slug}/edit`);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!confirm("Are you sure you want to delete this build? This cannot be undone.")) return;
+    setIsDeleting(true);
+    startTransition(async () => {
+      const result = await deleteBuild(buildId);
+      setIsDeleting(false);
+      if ("error" in result) {
+        toast.error(result.error);
+      } else {
+        toast.success("Build deleted");
+        router.push("/builds");
       }
     });
   };
@@ -200,12 +219,20 @@ export function ActionsBar({
             </button>
           )}
           <Link
-            href={`/builds/${buildId}/edit`}
+            href={`/builds/${buildSlug}/edit`}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <Pencil className="h-4 w-4" />
             <span className="hidden sm:inline">Edit</span>
           </Link>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+          >
+            <Trash2 className={cn("h-4 w-4", isDeleting && "animate-spin")} />
+            <span className="hidden sm:inline">{isDeleting ? "Deleting..." : "Delete"}</span>
+          </button>
         </div>
       )}
     </div>

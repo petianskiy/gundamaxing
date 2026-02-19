@@ -21,7 +21,7 @@ export function FeaturedBuildBanner({ build }: FeaturedBuildBannerProps) {
   if (!primaryImage) return null;
 
   return (
-    <Link href={`/builds/${build.id}`}>
+    <Link href={`/builds/${build.slug}`}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

@@ -25,6 +25,7 @@ interface BuildUser {
 
 interface Build {
   id: string;
+  slug: string;
   title: string;
   kitName: string;
   grade: string;
@@ -169,7 +170,7 @@ export function BuildGallery({
           return (
             <Link
               key={build.id}
-              href={`/builds/${build.id}`}
+              href={`/builds/${build.slug}`}
               className="group relative rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300"
             >
               {/* Image */}

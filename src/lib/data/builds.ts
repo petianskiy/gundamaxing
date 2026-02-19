@@ -54,6 +54,7 @@ export const buildInclude = {
 export function toUIBuild(b: any): Build {
   return {
     id: b.id,
+    slug: b.slug ?? b.id,
     title: b.title,
     kitName: b.kitName,
     grade: b.grade as Grade,
@@ -130,23 +131,40 @@ export const getBuilds = cache(async (): Promise<Build[]> => {
   return builds.map(toUIBuild);
 });
 
-export const getBuildById = cache(async (id: string): Promise<Build | null> => {
-  const build = await db.build.findUnique({
-    where: { id },
+export const getBuildById = cache(async (idOrSlug: string): Promise<Build | null> => {
+  // Try slug first, then fall back to id (for backwards-compatible old links)
+  let build = await db.build.findUnique({
+    where: { slug: idOrSlug },
     include: buildInclude,
   });
+
+  if (!build) {
+    build = await db.build.findUnique({
+      where: { id: idOrSlug },
+      include: buildInclude,
+    });
+  }
 
   if (!build) return null;
   return toUIBuild(build);
 });
 
-export const getBuildForEdit = cache(async (id: string, userId: string) => {
-  const build = await db.build.findUnique({
-    where: { id },
+export const getBuildForEdit = cache(async (idOrSlug: string, userId: string) => {
+  let build = await db.build.findUnique({
+    where: { slug: idOrSlug },
     include: {
       images: { orderBy: { order: "asc" } },
     },
   });
+
+  if (!build) {
+    build = await db.build.findUnique({
+      where: { id: idOrSlug },
+      include: {
+        images: { orderBy: { order: "asc" } },
+      },
+    });
+  }
 
   if (!build) return null;
   if (build.userId !== userId) return null;

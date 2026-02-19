@@ -75,6 +75,7 @@ export const mockUsers: User[] = [
 export const mockBuilds: Build[] = [
   {
     id: "build-001",
+    slug: "cross-bone-gundam-red-comet-custom",
     title: "Cross Bone Gundam \u2014 Red Comet Custom",
     kitName: "MG-04 Cross Bone Gundam",
     grade: "MG",
@@ -122,6 +123,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-002",
+    slug: "dont-fk-around-with-that-dude",
     title: "Don't f##k around with that dude",
     kitName: "RX-93 Qoodah Gundam",
     grade: "MG",
@@ -154,6 +156,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-003",
+    slug: "barbatos-lupus-rex-neon-demon",
     title: "Barbatos Lupus Rex \u2014 Neon Demon",
     kitName: "ASW-G-08 Gundam Barbatos Lupus Rex",
     grade: "HG",
@@ -185,6 +188,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-004",
+    slug: "gundanigga-is-real-guys",
     title: "Gundanigga is real guys \u2014 I told him to go rob Walmart",
     kitName: "HBD-06S-2 Homeless Black Dude",
     grade: "MG",
@@ -217,6 +221,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-005",
+    slug: "my-first-build-dont-judge-me",
     title: "My first build... \u2014 don't judge me >_<",
     kitName: "XXXG-00W0 Wing Gundam Zero EW",
     grade: "RG",
@@ -249,6 +254,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-006",
+    slug: "new-whip-yall-think",
     title: "New whip \u2014 Y'all think I can take her to the O'Block?",
     kitName: "MS-06F Zaku II",
     grade: "HG",
@@ -280,6 +286,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-007",
+    slug: "im-legit-about-to-start",
     title: "I'm legit about to start a political revolution",
     kitName: "XVX-016 Cockroach Trainer",
     grade: "HG",
@@ -311,6 +318,7 @@ export const mockBuilds: Build[] = [
   },
   {
     id: "build-008",
+    slug: "pg-meowtrix-full-psycho-frame",
     title: "PG Meowtrix \u2014 Full Psycho-Frame Overhaul",
     kitName: "RX-0 Meowtrix Gundam",
     grade: "PG",

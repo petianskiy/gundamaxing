@@ -21,7 +21,7 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
   const remainingCount = build.techniques.length - 3;
 
   return (
-    <Link href={`/builds/${build.id}`}>
+    <Link href={`/builds/${build.slug}`}>
     <motion.article
       layoutId={`build-${build.id}`}
       whileHover={{ y: -2 }}

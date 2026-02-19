@@ -65,6 +65,7 @@ export interface CalloutPin {
 
 export interface Build {
   id: string;
+  slug: string;
   title: string;
   kitName: string;
   grade: Grade;

@@ -245,7 +245,7 @@ export function UploadForm() {
         return;
       }
 
-      router.push(`/builds/${result.buildId}?edit=1`);
+      router.push(`/builds/${result.slug}?edit=1`);
     } catch (err) {
       setUploading(false);
       setSubmitting(false);

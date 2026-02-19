@@ -25,6 +25,32 @@ const buildSchema = z.object({
   primaryIndex: z.number().int().min(0).optional(),
 });
 
+// Generate a URL-safe slug from a title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+// Ensure slug uniqueness by appending -2, -3, etc.
+async function uniqueSlug(base: string): Promise<string> {
+  let slug = base || "build";
+  let existing = await db.build.findUnique({ where: { slug }, select: { id: true } });
+  if (!existing) return slug;
+
+  let suffix = 2;
+  while (existing) {
+    slug = `${base}-${suffix}`;
+    existing = await db.build.findUnique({ where: { slug }, select: { id: true } });
+    suffix++;
+  }
+  return slug;
+}
+
 // Map UI status strings to Prisma BuildStatus enum values
 function toDbStatus(uiStatus: string | undefined): BuildStatus {
   const map: Record<string, BuildStatus> = {
@@ -89,10 +115,12 @@ export async function createBuild(formData: FormData) {
 
     const data = parsed.data;
     const primaryIdx = data.primaryIndex ?? 0;
+    const slug = await uniqueSlug(generateSlug(data.title));
 
     const build = await db.$transaction(async (tx) => {
       const newBuild = await tx.build.create({
         data: {
+          slug,
           title: data.title,
           kitName: data.kitName,
           grade: data.grade,
@@ -124,7 +152,7 @@ export async function createBuild(formData: FormData) {
 
     revalidatePath("/builds");
 
-    return { success: true, buildId: build.id };
+    return { success: true, buildId: build.id, slug: build.slug };
   } catch (error) {
     console.error("createBuild error:", error);
     return { error: "An unexpected error occurred." };
@@ -474,9 +502,12 @@ export async function forkBuild(buildId: string) {
       return { error: "Build not found." };
     }
 
+    const forkSlug = await uniqueSlug(generateSlug(`Fork of ${sourceBuild.title}`));
+
     const newBuild = await db.$transaction(async (tx) => {
       const forked = await tx.build.create({
         data: {
+          slug: forkSlug,
           title: `Fork of ${sourceBuild.title}`,
           kitName: sourceBuild.kitName,
           grade: sourceBuild.grade,
@@ -520,7 +551,7 @@ export async function forkBuild(buildId: string) {
     revalidatePath(`/builds/${buildId}`);
     revalidatePath("/builds");
 
-    return { success: true, buildId: newBuild.id };
+    return { success: true, buildId: newBuild.id, slug: newBuild.slug };
   } catch (error) {
     console.error("forkBuild error:", error);
     return { error: "An unexpected error occurred." };

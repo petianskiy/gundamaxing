@@ -37,7 +37,7 @@ export function SavedBuilds({ builds }: SavedBuildsProps) {
           return (
             <Link
               key={build.id}
-              href={`/builds/${build.id}`}
+              href={`/builds/${build.slug}`}
               className="group rounded-lg border border-border/50 overflow-hidden hover:border-border transition-colors"
             >
               <div className="relative aspect-[4/3] bg-muted">

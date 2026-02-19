@@ -191,6 +191,7 @@ enum BuildStatus {
 
 model Build {
   id              String           @id @default(cuid())
+  slug            String           @unique
   title           String
   kitName         String
   grade           String

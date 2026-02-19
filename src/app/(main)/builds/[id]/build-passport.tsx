@@ -344,6 +344,7 @@ export function BuildPassport({
         <div className="mb-8">
           <ActionsBar
             buildId={build.id}
+            buildSlug={build.slug}
             likeCount={build.likes}
             bookmarkCount={build.bookmarks}
             forkCount={build.forkCount}

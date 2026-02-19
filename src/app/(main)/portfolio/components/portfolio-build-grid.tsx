@@ -102,7 +102,7 @@ export function PortfolioBuildGrid({ builds, pinnedBuildIds: initialPinned }: Bu
                 {activeMenu === build.id && (
                   <div className="absolute right-0 mt-1 w-40 rounded-lg border border-border/50 bg-card shadow-xl overflow-hidden">
                     <Link
-                      href={`/builds/${build.id}`}
+                      href={`/builds/${build.slug}`}
                       className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       onClick={() => setActiveMenu(null)}
                     >
@@ -131,7 +131,7 @@ export function PortfolioBuildGrid({ builds, pinnedBuildIds: initialPinned }: Bu
               </div>
 
               {/* Image */}
-              <Link href={`/builds/${build.id}`}>
+              <Link href={`/builds/${build.slug}`}>
                 <div className="relative aspect-[4/3] bg-muted">
                   {primaryImage ? (
                     <Image

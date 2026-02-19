@@ -18,7 +18,7 @@ export function FeaturedBuildMini({ build }: { build: Build }) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
     >
-      <Link href={`/builds/${build.id}`} className="group block">
+      <Link href={`/builds/${build.slug}`} className="group block">
         <div className="rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl p-3 w-[280px] hover:border-white/20 transition-colors">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="h-3.5 w-3.5 text-yellow-500" />

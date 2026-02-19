@@ -225,8 +225,24 @@ async function main() {
   for (const mockBuild of mockBuilds) {
     const userId = userIdMap.get(mockBuild.userId)!;
 
+    // Generate slug from title
+    const baseSlug = mockBuild.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80);
+    let slug = baseSlug;
+    let suffix = 2;
+    while (await prisma.build.findUnique({ where: { slug }, select: { id: true } })) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix++;
+    }
+
     const build = await prisma.build.create({
       data: {
+        slug,
         title: mockBuild.title,
         kitName: mockBuild.kitName,
         grade: mockBuild.grade,

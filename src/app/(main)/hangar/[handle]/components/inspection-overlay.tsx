@@ -240,7 +240,7 @@ export function InspectionOverlay({
           {/* Link to full passport */}
           <div className="mt-10 pb-8">
             <Link
-              href={`/builds/${build.id}`}
+              href={`/builds/${build.slug}`}
               className={cn(
                 "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg",
                 "bg-red-600/10 border border-red-600/30 text-red-400",
