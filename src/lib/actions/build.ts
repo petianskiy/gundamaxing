@@ -300,6 +300,9 @@ export async function deleteBuild(buildId: string) {
       where: { id: buildId },
     });
 
+    revalidatePath("/builds");
+    revalidatePath(`/builds/${buildId}`);
+
     return { success: true };
   } catch (error) {
     console.error("deleteBuild error:", error);
