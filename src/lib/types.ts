@@ -229,6 +229,7 @@ export interface ShowcaseLayout {
     backgroundColor: string | null;
     backgroundOpacity: number;
     backgroundBlur: number;
+    aspectRatio: string;
   };
   elements: ShowcaseElement[];
 }
@@ -236,11 +237,12 @@ export interface ShowcaseLayout {
 export type ShowcaseElement =
   | ShowcaseImageElement
   | ShowcaseTextElement
-  | ShowcaseMetadataElement;
+  | ShowcaseMetadataElement
+  | ShowcaseEffectElement;
 
 export interface ShowcaseElementBase {
   id: string;
-  type: "image" | "text" | "metadata";
+  type: "image" | "text" | "metadata" | "effect";
   x: number;
   y: number;
   width: number;
@@ -275,6 +277,15 @@ export interface ShowcaseTextElement extends ShowcaseElementBase {
 export interface ShowcaseMetadataElement extends ShowcaseElementBase {
   type: "metadata";
   variant: "compact" | "full";
+}
+
+export interface ShowcaseEffectElement extends ShowcaseElementBase {
+  type: "effect";
+  effectType: "electric";
+  color: string;
+  speed: number;
+  chaos: number;
+  borderRadius: number;
 }
 
 // ─── Hangar ─────────────────────────────────────────────────────

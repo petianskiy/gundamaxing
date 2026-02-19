@@ -140,6 +140,7 @@ function generateDefaultLayout(build: Build): ShowcaseLayout {
       backgroundColor: null,
       backgroundOpacity: 0.15,
       backgroundBlur: 10,
+      aspectRatio: "4 / 5",
     },
     elements,
   };

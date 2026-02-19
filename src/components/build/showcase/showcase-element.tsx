@@ -3,6 +3,7 @@
 import { ImageElement } from "./elements/image-element";
 import { TextElement } from "./elements/text-element";
 import { MetadataElement } from "./elements/metadata-element";
+import { EffectElement } from "./elements/effect-element";
 import type { Build, ShowcaseElement as ShowcaseElementType } from "@/lib/types";
 
 interface ShowcaseElementProps {
@@ -26,6 +27,8 @@ export function ShowcaseElement({ element, build, isEditing, onContentChange }: 
       );
     case "metadata":
       return <MetadataElement element={element} build={build} />;
+    case "effect":
+      return <EffectElement element={element} />;
     default:
       return null;
   }

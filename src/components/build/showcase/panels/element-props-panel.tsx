@@ -1,6 +1,6 @@
 "use client";
 
-import { X, RotateCw, Square, Minus, Plus } from "lucide-react";
+import { X, RotateCw, Square, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
@@ -8,17 +8,23 @@ import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
 interface ElementPropsPanelProps {
   element: ShowcaseElement;
   onUpdate: (updates: Partial<ShowcaseElement>) => void;
+  onDelete: () => void;
   onClose: () => void;
 }
 
-export function ElementPropsPanel({ element, onUpdate, onClose }: ElementPropsPanelProps) {
+export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: ElementPropsPanelProps) {
   return (
     <div className="fixed top-20 left-4 z-40 w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <h3 className="text-sm font-semibold text-white capitalize">{element.type} Properties</h3>
-        <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button onClick={onDelete} className="text-zinc-400 hover:text-red-400 transition-colors" title="Delete element">
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
       <div className="p-4 space-y-3">
         {/* Common: Rotation */}
@@ -198,6 +204,66 @@ export function ElementPropsPanel({ element, onUpdate, onClose }: ElementPropsPa
               ))}
             </div>
           </div>
+        )}
+
+        {/* Effect-specific */}
+        {element.type === "effect" && (
+          <>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Color</label>
+              <input
+                type="color"
+                value={element.color}
+                onChange={(e) => onUpdate({ color: e.target.value })}
+                className="w-full h-8 rounded-md cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+                <span>Speed</span>
+                <span className="text-zinc-500">{element.speed.toFixed(1)}</span>
+              </label>
+              <ElasticSlider
+                defaultValue={element.speed * 20}
+                startingValue={2}
+                maxValue={100}
+                onChange={(val) => onUpdate({ speed: val / 20 })}
+                leftIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
+                rightIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+                <span>Chaos</span>
+                <span className="text-zinc-500">{element.chaos.toFixed(2)}</span>
+              </label>
+              <ElasticSlider
+                defaultValue={element.chaos * 100}
+                startingValue={0}
+                maxValue={100}
+                onChange={(val) => onUpdate({ chaos: val / 100 })}
+                leftIcon={<Square className="h-3.5 w-3.5 text-zinc-400" />}
+                rightIcon={<Square className="h-3.5 w-3.5 text-zinc-400" />}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+                <span>Border Radius</span>
+                <span className="text-zinc-500">{element.borderRadius}px</span>
+              </label>
+              <ElasticSlider
+                defaultValue={element.borderRadius}
+                startingValue={0}
+                maxValue={50}
+                onChange={(val) => onUpdate({ borderRadius: Math.round(val) })}
+                leftIcon={<Square className="h-3.5 w-3.5 text-zinc-400" />}
+                rightIcon={<Square className="h-3.5 w-3.5 text-zinc-400 rounded" />}
+                className="w-full"
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -18,12 +18,14 @@ import {
   Save,
   X,
   Loader2,
+  Zap,
 } from "lucide-react";
 
 interface ShowcaseDockProps {
   onAddImage: () => void;
   onAddText: () => void;
   onAddMetadata: () => void;
+  onAddEffect: () => void;
   onBackground: () => void;
   onLayers: () => void;
   onPreview: () => void;
@@ -43,6 +45,7 @@ export function ShowcaseDock({
   onAddImage,
   onAddText,
   onAddMetadata,
+  onAddEffect,
   onBackground,
   onLayers,
   onPreview,
@@ -56,6 +59,7 @@ export function ShowcaseDock({
     { icon: ImagePlus, label: "Add Image", onClick: onAddImage },
     { icon: Type, label: "Add Text", onClick: onAddText },
     { icon: LayoutGrid, label: "Info Card", onClick: onAddMetadata },
+    { icon: Zap, label: "Effect", onClick: onAddEffect },
     { icon: Image, label: "Background", onClick: onBackground },
     { icon: Layers, label: "Layers", onClick: onLayers },
     { icon: Eye, label: "Preview", onClick: onPreview },

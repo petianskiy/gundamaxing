@@ -33,7 +33,7 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
   const isPreset = canvas.backgroundImageUrl?.startsWith("preset:");
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 5" }}>
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5" }}>
       {/* Solid color background */}
       {canvas.backgroundColor && !canvas.backgroundImageUrl && (
         <div

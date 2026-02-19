@@ -2,7 +2,7 @@
 
 import { useReducer, useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { Trash2, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShowcaseElement } from "./showcase-element";
 import { ShowcaseDock } from "./showcase-dock";
@@ -20,6 +20,7 @@ import type {
   ShowcaseImageElement,
   ShowcaseTextElement,
   ShowcaseMetadataElement,
+  ShowcaseEffectElement,
 } from "@/lib/types";
 
 // ─── Preset Background Styles ───────────────────────────────────
@@ -42,6 +43,14 @@ const PRESET_STYLES: Record<string, React.CSSProperties> = {
   },
 };
 
+const ASPECT_RATIO_OPTIONS = [
+  { label: "4:5", value: "4 / 5" },
+  { label: "3:4", value: "3 / 4" },
+  { label: "2:3", value: "2 / 3" },
+  { label: "9:16", value: "9 / 16" },
+  { label: "1:2", value: "1 / 2" },
+];
+
 // ─── State Management ───────────────────────────────────────────
 
 type Action =
@@ -51,6 +60,7 @@ type Action =
   | { type: "UPDATE_ELEMENT"; id: string; updates: Partial<ShowcaseElementType> }
   | { type: "DELETE_ELEMENT"; id: string }
   | { type: "SET_BACKGROUND"; backgroundImageUrl?: string | null; backgroundColor?: string | null; backgroundOpacity?: number; backgroundBlur?: number }
+  | { type: "SET_ASPECT_RATIO"; aspectRatio: string }
   | { type: "REORDER_Z"; id: string; direction: "up" | "down" | "top" | "bottom" }
   | { type: "SET_LAYOUT"; layout: ShowcaseLayout };
 
@@ -98,6 +108,12 @@ function layoutReducer(state: ShowcaseLayout, action: Action): ShowcaseLayout {
         },
       };
 
+    case "SET_ASPECT_RATIO":
+      return {
+        ...state,
+        canvas: { ...state.canvas, aspectRatio: action.aspectRatio },
+      };
+
     case "REORDER_Z": {
       const sorted = [...state.elements].sort((a, b) => a.zIndex - b.zIndex);
       const idx = sorted.findIndex((el) => el.id === action.id);
@@ -134,61 +150,6 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// ─── Resize Handle ──────────────────────────────────────────────
-
-function ResizeHandle({
-  corner,
-  onResize,
-}: {
-  corner: "tl" | "tr" | "bl" | "br";
-  onResize: (deltaX: number, deltaY: number) => void;
-}) {
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    startRef.current = { x: e.clientX, y: e.clientY };
-
-    const handlePointerMove = (ev: PointerEvent) => {
-      if (!startRef.current) return;
-      const dx = ev.clientX - startRef.current.x;
-      const dy = ev.clientY - startRef.current.y;
-      startRef.current = { x: ev.clientX, y: ev.clientY };
-      onResize(
-        corner === "tl" || corner === "bl" ? -dx : dx,
-        corner === "tl" || corner === "tr" ? -dy : dy
-      );
-    };
-
-    const handlePointerUp = () => {
-      startRef.current = null;
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-  };
-
-  const posClass = {
-    tl: "-top-1.5 -left-1.5 cursor-nw-resize",
-    tr: "-top-1.5 -right-1.5 cursor-ne-resize",
-    bl: "-bottom-1.5 -left-1.5 cursor-sw-resize",
-    br: "-bottom-1.5 -right-1.5 cursor-se-resize",
-  }[corner];
-
-  return (
-    <div
-      className={cn(
-        "absolute w-3 h-3 rounded-full bg-blue-500 border-2 border-white z-50",
-        posClass
-      )}
-      onPointerDown={handlePointerDown}
-    />
-  );
-}
-
 // ─── Editor Component ───────────────────────────────────────────
 
 interface ShowcaseEditorProps {
@@ -198,18 +159,159 @@ interface ShowcaseEditorProps {
 }
 
 export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorProps) {
-  const [layout, dispatch] = useReducer(layoutReducer, initialLayout);
+  // Ensure initialLayout has aspectRatio (back-compat with old data)
+  const safeInitial: ShowcaseLayout = {
+    ...initialLayout,
+    canvas: { ...initialLayout.canvas, aspectRatio: initialLayout.canvas.aspectRatio || "4 / 5" },
+  };
+
+  const [layout, dispatch] = useReducer(layoutReducer, safeInitial);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<"images" | "background" | "layers" | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
+  const [showSizeMenu, setShowSizeMenu] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Drag state — stored in refs for smooth pointer tracking
+  const dragRef = useRef<{
+    elementId: string;
+    startX: number;
+    startY: number;
+    elStartX: number;
+    elStartY: number;
+  } | null>(null);
+
+  // Resize state
+  const resizeRef = useRef<{
+    elementId: string;
+    corner: "tl" | "tr" | "bl" | "br";
+    startX: number;
+    startY: number;
+    elStartX: number;
+    elStartY: number;
+    elStartW: number;
+    elStartH: number;
+  } | null>(null);
 
   const selectedElement = layout.elements.find((el) => el.id === selectedId) ?? null;
   const sortedElements = [...layout.elements].sort((a, b) => a.zIndex - b.zIndex);
 
-  // Keyboard shortcuts
+  // ─── Pointer-based drag & resize ──────────────────────────────
+
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      if (!canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+
+      // Handle drag
+      if (dragRef.current) {
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+        const deltaXPct = (dx / rect.width) * 100;
+        const deltaYPct = (dy / rect.height) * 100;
+        const el = layout.elements.find((el) => el.id === dragRef.current!.elementId);
+        if (!el) return;
+        const newX = Math.max(-el.width * 0.5, Math.min(100 - el.width * 0.5, dragRef.current.elStartX + deltaXPct));
+        const newY = Math.max(-el.height * 0.5, Math.min(100 - el.height * 0.5, dragRef.current.elStartY + deltaYPct));
+        dispatch({ type: "MOVE_ELEMENT", id: dragRef.current.elementId, x: newX, y: newY });
+        return;
+      }
+
+      // Handle resize
+      if (resizeRef.current) {
+        const dx = e.clientX - resizeRef.current.startX;
+        const dy = e.clientY - resizeRef.current.startY;
+        const dxPct = (dx / rect.width) * 100;
+        const dyPct = (dy / rect.height) * 100;
+        const corner = resizeRef.current.corner;
+
+        let newX = resizeRef.current.elStartX;
+        let newY = resizeRef.current.elStartY;
+        let newW = resizeRef.current.elStartW;
+        let newH = resizeRef.current.elStartH;
+
+        if (corner === "br") {
+          newW = Math.max(5, resizeRef.current.elStartW + dxPct);
+          newH = Math.max(5, resizeRef.current.elStartH + dyPct);
+        } else if (corner === "bl") {
+          newW = Math.max(5, resizeRef.current.elStartW - dxPct);
+          newH = Math.max(5, resizeRef.current.elStartH + dyPct);
+          newX = resizeRef.current.elStartX + (resizeRef.current.elStartW - newW);
+        } else if (corner === "tr") {
+          newW = Math.max(5, resizeRef.current.elStartW + dxPct);
+          newH = Math.max(5, resizeRef.current.elStartH - dyPct);
+          newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
+        } else if (corner === "tl") {
+          newW = Math.max(5, resizeRef.current.elStartW - dxPct);
+          newH = Math.max(5, resizeRef.current.elStartH - dyPct);
+          newX = resizeRef.current.elStartX + (resizeRef.current.elStartW - newW);
+          newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
+        }
+
+        dispatch({ type: "MOVE_ELEMENT", id: resizeRef.current.elementId, x: newX, y: newY });
+        dispatch({ type: "RESIZE_ELEMENT", id: resizeRef.current.elementId, width: newW, height: newH });
+        return;
+      }
+    },
+    [layout.elements]
+  );
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+    resizeRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [handlePointerMove, handlePointerUp]);
+
+  const startDrag = useCallback(
+    (elementId: string, e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = layout.elements.find((el) => el.id === elementId);
+      if (!el) return;
+      dragRef.current = {
+        elementId,
+        startX: e.clientX,
+        startY: e.clientY,
+        elStartX: el.x,
+        elStartY: el.y,
+      };
+      setSelectedId(elementId);
+    },
+    [layout.elements]
+  );
+
+  const startResize = useCallback(
+    (elementId: string, corner: "tl" | "tr" | "bl" | "br", e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = layout.elements.find((el) => el.id === elementId);
+      if (!el) return;
+      resizeRef.current = {
+        elementId,
+        corner,
+        startX: e.clientX,
+        startY: e.clientY,
+        elStartX: el.x,
+        elStartY: el.y,
+        elStartW: el.width,
+        elStartH: el.height,
+      };
+    },
+    [layout.elements]
+  );
+
+  // ─── Keyboard shortcuts ───────────────────────────────────────
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -220,12 +322,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         }
       }
       if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedId && document.activeElement?.tagName !== "INPUT" && !(document.activeElement as HTMLElement)?.isContentEditable) {
+        if (selectedId && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA" && document.activeElement?.tagName !== "SELECT" && !(document.activeElement as HTMLElement)?.isContentEditable) {
           dispatch({ type: "DELETE_ELEMENT", id: selectedId });
           setSelectedId(null);
         }
       }
-      // Arrow keys for nudging
       if (selectedId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
         const el = layout.elements.find((el) => el.id === selectedId);
@@ -233,10 +334,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         const step = e.shiftKey ? 5 : 1;
         let newX = el.x;
         let newY = el.y;
-        if (e.key === "ArrowLeft") newX = Math.max(0, el.x - step);
-        if (e.key === "ArrowRight") newX = Math.min(100 - el.width, el.x + step);
-        if (e.key === "ArrowUp") newY = Math.max(0, el.y - step);
-        if (e.key === "ArrowDown") newY = Math.min(100 - el.height, el.y + step);
+        if (e.key === "ArrowLeft") newX = el.x - step;
+        if (e.key === "ArrowRight") newX = el.x + step;
+        if (e.key === "ArrowUp") newY = el.y - step;
+        if (e.key === "ArrowDown") newY = el.y + step;
         dispatch({ type: "MOVE_ELEMENT", id: selectedId, x: newX, y: newY });
       }
     }
@@ -244,43 +345,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedId, activePanel, layout.elements]);
 
-  // Drag handler
-  const handleDragEnd = useCallback(
-    (elementId: string, _event: MouseEvent | TouchEvent | PointerEvent, info: { offset: { x: number; y: number } }) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const el = layout.elements.find((e) => e.id === elementId);
-      if (!el) return;
+  // ─── Add element helpers ──────────────────────────────────────
 
-      const deltaXPercent = (info.offset.x / rect.width) * 100;
-      const deltaYPercent = (info.offset.y / rect.height) * 100;
-      const newX = Math.max(0, Math.min(100 - el.width, el.x + deltaXPercent));
-      const newY = Math.max(0, Math.min(100 - el.height, el.y + deltaYPercent));
-
-      dispatch({ type: "MOVE_ELEMENT", id: elementId, x: newX, y: newY });
-    },
-    [layout.elements]
-  );
-
-  // Resize handler
-  const handleResize = useCallback(
-    (elementId: string, deltaXPx: number, deltaYPx: number) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const el = layout.elements.find((e) => e.id === elementId);
-      if (!el) return;
-
-      const deltaW = (deltaXPx / rect.width) * 100;
-      const deltaH = (deltaYPx / rect.height) * 100;
-      const newWidth = Math.max(5, Math.min(100, el.width + deltaW));
-      const newHeight = Math.max(5, Math.min(100, el.height + deltaH));
-
-      dispatch({ type: "RESIZE_ELEMENT", id: elementId, width: newWidth, height: newHeight });
-    },
-    [layout.elements]
-  );
-
-  // Add element helpers
   const addImage = useCallback(
     (imageId: string, imageUrl: string) => {
       const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
@@ -346,14 +412,35 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     setSelectedId(element.id);
   }, [layout.elements]);
 
-  // Image management callbacks
+  const addEffect = useCallback(() => {
+    const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
+    const element: ShowcaseEffectElement = {
+      id: generateId(),
+      type: "effect",
+      x: 15,
+      y: 15,
+      width: 70,
+      height: 50,
+      zIndex: maxZ + 1,
+      rotation: 0,
+      effectType: "electric",
+      color: "#7df9ff",
+      speed: 1,
+      chaos: 0.12,
+      borderRadius: 16,
+    };
+    dispatch({ type: "ADD_ELEMENT", element });
+    setSelectedId(element.id);
+  }, [layout.elements]);
+
+  // ─── Image management callbacks ───────────────────────────────
+
   const handleImageUploaded = useCallback((newImage: { id: string; url: string }) => {
     setBuildImages((prev) => [...prev, { id: newImage.id, url: newImage.url, alt: "Build image", isPrimary: false, order: prev.length }]);
   }, []);
 
   const handleImageDeleted = useCallback((imageId: string) => {
     setBuildImages((prev) => prev.filter((img) => img.id !== imageId));
-    // Remove any canvas elements that reference this image
     const elementsToRemove = layout.elements.filter(
       (el) => el.type === "image" && el.imageId === imageId
     );
@@ -362,7 +449,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     }
   }, [layout.elements]);
 
-  // Save
+  // ─── Save ─────────────────────────────────────────────────────
+
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     const formData = new FormData();
@@ -377,7 +465,52 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     }
   }, [build.id, layout]);
 
-  // Preview toggle
+  // ─── Delete selected element ──────────────────────────────────
+
+  const deleteSelected = useCallback(() => {
+    if (selectedId) {
+      dispatch({ type: "DELETE_ELEMENT", id: selectedId });
+      setSelectedId(null);
+    }
+  }, [selectedId]);
+
+  // ─── Background rendering helper ─────────────────────────────
+
+  const renderBackground = () => (
+    <>
+      {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
+        <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
+      )}
+      {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
+            opacity: layout.canvas.backgroundOpacity,
+          }}
+        />
+      )}
+      {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={layout.canvas.backgroundImageUrl}
+            alt="Background"
+            fill
+            className="object-cover"
+            style={{
+              opacity: layout.canvas.backgroundOpacity,
+              filter: layout.canvas.backgroundBlur > 0 ? `blur(${layout.canvas.backgroundBlur}px)` : undefined,
+            }}
+            unoptimized
+          />
+        </div>
+      )}
+      <div className="absolute inset-0 z-[1] bg-black/20" />
+    </>
+  );
+
+  // ─── Preview mode ─────────────────────────────────────────────
+
   if (isPreviewing) {
     return (
       <div>
@@ -389,39 +522,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
             Back to Editor
           </button>
         </div>
-        {/* Re-use the same canvas rendering */}
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 5" }}>
-          {/* Solid color background */}
-          {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
-            <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
-          )}
-          {/* Preset pattern background */}
-          {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
-            <div
-              className="absolute inset-0 z-0"
-              style={{
-                ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
-                opacity: layout.canvas.backgroundOpacity,
-              }}
-            />
-          )}
-          {/* Image background */}
-          {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
-            <div className="absolute inset-0 z-0">
-              <Image
-                src={layout.canvas.backgroundImageUrl}
-                alt="Background"
-                fill
-                className="object-cover"
-                style={{
-                  opacity: layout.canvas.backgroundOpacity,
-                  filter: layout.canvas.backgroundBlur > 0 ? `blur(${layout.canvas.backgroundBlur}px)` : undefined,
-                }}
-                unoptimized
-              />
-            </div>
-          )}
-          <div className="absolute inset-0 z-[1] bg-black/20" />
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: layout.canvas.aspectRatio }}>
+          {renderBackground()}
           {sortedElements.map((element) => (
             <div
               key={element.id}
@@ -443,48 +545,59 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     );
   }
 
+  // ─── Editor mode ──────────────────────────────────────────────
+
   return (
     <div className="relative">
+      {/* Canvas size selector */}
+      <div className="absolute -top-10 right-0 z-30 flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setShowSizeMenu(!showSizeMenu)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            <span>
+              {ASPECT_RATIO_OPTIONS.find((o) => o.value === layout.canvas.aspectRatio)?.label ?? "4:5"}
+            </span>
+          </button>
+          {showSizeMenu && (
+            <div className="absolute top-full right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-50">
+              {ASPECT_RATIO_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    dispatch({ type: "SET_ASPECT_RATIO", aspectRatio: opt.value });
+                    setShowSizeMenu(false);
+                  }}
+                  className={cn(
+                    "block w-full px-4 py-2 text-xs text-left transition-colors",
+                    layout.canvas.aspectRatio === opt.value
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Canvas */}
       <div
         ref={canvasRef}
-        className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl"
-        style={{ aspectRatio: "4 / 5" }}
+        className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl select-none"
+        style={{ aspectRatio: layout.canvas.aspectRatio }}
         onClick={(e) => {
-          if (e.target === e.currentTarget) setSelectedId(null);
+          if (e.target === e.currentTarget) {
+            setSelectedId(null);
+            setShowSizeMenu(false);
+          }
         }}
       >
-        {/* Solid color background */}
-        {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
-          <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
-        )}
-        {/* Preset pattern background */}
-        {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
-          <div
-            className="absolute inset-0 z-0"
-            style={{
-              ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
-              opacity: layout.canvas.backgroundOpacity,
-            }}
-          />
-        )}
-        {/* Image background */}
-        {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
-          <div className="absolute inset-0 z-0">
-            <Image
-              src={layout.canvas.backgroundImageUrl}
-              alt="Background"
-              fill
-              className="object-cover"
-              style={{
-                opacity: layout.canvas.backgroundOpacity,
-                filter: layout.canvas.backgroundBlur > 0 ? `blur(${layout.canvas.backgroundBlur}px)` : undefined,
-              }}
-              unoptimized
-            />
-          </div>
-        )}
-        <div className="absolute inset-0 z-[1] bg-black/20" />
+        {renderBackground()}
 
         {/* Grid overlay */}
         <div className="absolute inset-0 z-[1] pointer-events-none opacity-10">
@@ -498,29 +611,31 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         {sortedElements.map((element) => {
           const isSelected = selectedId === element.id;
           return (
-            <motion.div
+            <div
               key={element.id}
-              drag
-              dragMomentum={false}
-              dragConstraints={canvasRef}
-              dragElastic={0.05}
-              whileDrag={{ scale: 1.02 }}
-              onDragEnd={(event, info) => handleDragEnd(element.id, event as MouseEvent, info)}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedId(element.id);
-              }}
               className={cn(
-                "absolute cursor-move",
-                isSelected && "ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent shadow-lg shadow-blue-500/20"
+                "absolute touch-none",
+                isSelected
+                  ? "ring-2 ring-blue-500 shadow-lg shadow-blue-500/20 z-[100]"
+                  : "cursor-move"
               )}
               style={{
                 left: `${element.x}%`,
                 top: `${element.y}%`,
                 width: `${element.width}%`,
                 height: `${element.height}%`,
-                zIndex: element.zIndex + 10,
+                zIndex: isSelected ? 100 : element.zIndex + 10,
                 transform: element.rotation !== 0 ? `rotate(${element.rotation}deg)` : undefined,
+              }}
+              onPointerDown={(e) => {
+                // Don't start drag on resize handles or delete button
+                const target = e.target as HTMLElement;
+                if (target.closest("[data-resize-handle]") || target.closest("[data-delete-btn]")) return;
+                startDrag(element.id, e);
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedId(element.id);
               }}
             >
               <ShowcaseElement
@@ -534,16 +649,44 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
                 }
               />
 
-              {/* Resize handles */}
+              {/* Selection controls */}
               {isSelected && (
                 <>
-                  <ResizeHandle corner="tl" onResize={(dx, dy) => handleResize(element.id, dx, dy)} />
-                  <ResizeHandle corner="tr" onResize={(dx, dy) => handleResize(element.id, dx, dy)} />
-                  <ResizeHandle corner="bl" onResize={(dx, dy) => handleResize(element.id, dx, dy)} />
-                  <ResizeHandle corner="br" onResize={(dx, dy) => handleResize(element.id, dx, dy)} />
+                  {/* Delete button */}
+                  <button
+                    data-delete-btn
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSelected();
+                    }}
+                    className="absolute -top-3 -right-3 z-50 w-6 h-6 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-md transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+
+                  {/* Resize handles */}
+                  {(["tl", "tr", "bl", "br"] as const).map((corner) => {
+                    const posClass = {
+                      tl: "-top-1.5 -left-1.5 cursor-nw-resize",
+                      tr: "-top-1.5 -right-1.5 cursor-ne-resize",
+                      bl: "-bottom-1.5 -left-1.5 cursor-sw-resize",
+                      br: "-bottom-1.5 -right-1.5 cursor-se-resize",
+                    }[corner];
+                    return (
+                      <div
+                        key={corner}
+                        data-resize-handle
+                        className={cn(
+                          "absolute w-3 h-3 rounded-full bg-blue-500 border-2 border-white z-50",
+                          posClass
+                        )}
+                        onPointerDown={(e) => startResize(element.id, corner, e)}
+                      />
+                    );
+                  })}
                 </>
               )}
-            </motion.div>
+            </div>
           );
         })}
 
@@ -565,6 +708,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
           onUpdate={(updates) =>
             dispatch({ type: "UPDATE_ELEMENT", id: selectedElement.id, updates })
           }
+          onDelete={deleteSelected}
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -604,6 +748,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         onAddImage={() => setActivePanel(activePanel === "images" ? null : "images")}
         onAddText={addText}
         onAddMetadata={addMetadata}
+        onAddEffect={addEffect}
         onBackground={() => setActivePanel(activePanel === "background" ? null : "background")}
         onLayers={() => setActivePanel(activePanel === "layers" ? null : "layers")}
         onPreview={() => setIsPreviewing(true)}
