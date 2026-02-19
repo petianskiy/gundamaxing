@@ -5,10 +5,14 @@ import { motion } from "framer-motion";
 import { Upload, ArrowRight } from "lucide-react";
 import { HeroVideo } from "./hero-video";
 import { FeaturedBuildMini } from "./featured-build-mini";
-import { featuredBuildOfWeek } from "@/lib/mock/data";
 import { useTranslation } from "@/lib/i18n/context";
+import type { Build } from "@/lib/types";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  buildOfTheWeek?: Build | null;
+}
+
+export function HeroSection({ buildOfTheWeek }: HeroSectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -84,9 +88,11 @@ export function HeroSection() {
           </div>
 
           {/* Featured Build Mini Card */}
-          <div className="hidden lg:block">
-            <FeaturedBuildMini build={featuredBuildOfWeek} />
-          </div>
+          {buildOfTheWeek && (
+            <div className="hidden lg:block">
+              <FeaturedBuildMini build={buildOfTheWeek} />
+            </div>
+          )}
         </div>
       </div>
 

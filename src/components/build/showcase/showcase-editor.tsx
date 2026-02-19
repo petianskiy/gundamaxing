@@ -694,7 +694,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   // ─── Drawing complete callback ────────────────────────────────
 
-  const handleDrawingComplete = useCallback(async (blob: Blob) => {
+  const handleDrawingComplete = useCallback(async (blob: Blob, bounds: { x: number; y: number; width: number; height: number }) => {
     setShowDrawing(false);
     toast.info("Uploading drawing...");
     try {
@@ -723,10 +723,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       const element: ShowcaseImageElement = {
         id: generateId(),
         type: "image",
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
         zIndex: maxZ + 1,
         rotation: 0,
         imageId: dbImageId,

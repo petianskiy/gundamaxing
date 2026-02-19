@@ -24,10 +24,17 @@ const BRUSH_ICONS: Record<string, React.ElementType> = {
   eraser: Eraser,
 };
 
+export interface DrawingBounds {
+  x: number;      // percentage of canvas
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface DrawingOverlayProps {
   canvasWidth: number;
   canvasHeight: number;
-  onComplete: (blob: Blob) => void;
+  onComplete: (blob: Blob, bounds: DrawingBounds) => void;
   onCancel: () => void;
 }
 
@@ -206,9 +213,65 @@ export function DrawingOverlay({
       onCancel();
       return;
     }
-    canvas.toBlob(
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Find the bounding box of drawn content (non-transparent pixels)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const { data, width, height } = imageData;
+    let minX = width, minY = height, maxX = 0, maxY = 0;
+    let hasContent = false;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          hasContent = true;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (!hasContent) {
+      onCancel();
+      return;
+    }
+
+    // Add small padding around the drawing
+    const pad = Math.max(4, Math.round(Math.max(maxX - minX, maxY - minY) * 0.02));
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(width - 1, maxX + pad);
+    maxY = Math.min(height - 1, maxY + pad);
+
+    const cropW = maxX - minX + 1;
+    const cropH = maxY - minY + 1;
+
+    // Create a cropped canvas with only the drawn content
+    const croppedCanvas = document.createElement("canvas");
+    croppedCanvas.width = cropW;
+    croppedCanvas.height = cropH;
+    const croppedCtx = croppedCanvas.getContext("2d");
+    if (!croppedCtx) return;
+
+    const croppedData = ctx.getImageData(minX, minY, cropW, cropH);
+    croppedCtx.putImageData(croppedData, 0, 0);
+
+    // Pass bounding box info as percentage of canvas for element positioning
+    const bounds = {
+      x: (minX / width) * 100,
+      y: (minY / height) * 100,
+      width: (cropW / width) * 100,
+      height: (cropH / height) * 100,
+    };
+
+    croppedCanvas.toBlob(
       (blob) => {
-        if (blob) onComplete(blob);
+        if (blob) onComplete(blob, bounds);
       },
       "image/png",
       1

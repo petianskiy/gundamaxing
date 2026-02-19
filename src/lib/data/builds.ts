@@ -131,6 +131,40 @@ export const getBuilds = cache(async (): Promise<Build[]> => {
   return builds.map(toUIBuild);
 });
 
+export const getBuildOfTheWeek = cache(async (): Promise<Build | null> => {
+  // Get the start of the current week (Monday 00:00)
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1; // Monday is start of week
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - diff);
+  weekStart.setHours(0, 0, 0, 0);
+
+  // Find the build with the most likes created this week
+  let build = await db.build.findFirst({
+    where: {
+      createdAt: { gte: weekStart },
+      user: { isProfilePrivate: false },
+    },
+    include: buildInclude,
+    orderBy: { likeCount: "desc" },
+  });
+
+  // Fallback: if no builds this week, get the overall most-liked build
+  if (!build) {
+    build = await db.build.findFirst({
+      where: {
+        user: { isProfilePrivate: false },
+      },
+      include: buildInclude,
+      orderBy: { likeCount: "desc" },
+    });
+  }
+
+  if (!build) return null;
+  return toUIBuild(build);
+});
+
 export const getBuildById = cache(async (idOrSlug: string): Promise<Build | null> => {
   // Try slug first, then fall back to id (for backwards-compatible old links)
   let build = await db.build.findUnique({
