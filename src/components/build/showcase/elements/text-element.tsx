@@ -1,23 +1,10 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { GradientText } from "./gradient-text";
+import { FuzzyText } from "./fuzzy-text";
 import type { ShowcaseTextElement } from "@/lib/types";
-
-const fontSizeMap: Record<string, string> = {
-  sm: "text-sm",
-  base: "text-base",
-  lg: "text-lg",
-  xl: "text-xl",
-  "2xl": "text-2xl",
-  "3xl": "text-3xl",
-};
-
-const fontWeightMap: Record<string, string> = {
-  normal: "font-normal",
-  medium: "font-medium",
-  semibold: "font-semibold",
-  bold: "font-bold",
-};
 
 const textAlignMap: Record<string, string> = {
   left: "text-left",
@@ -42,20 +29,96 @@ interface TextElementProps {
 }
 
 export function TextElement({ element, isEditing, onContentChange }: TextElementProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Auto-focus when entering edit mode
+  useEffect(() => {
+    if (isEditing && ref.current) {
+      ref.current.focus();
+      // Place cursor at end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(ref.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }, [isEditing]);
+
+  const baseClassName = cn(
+    "w-full h-full px-3 py-2 leading-relaxed whitespace-pre-wrap break-words overflow-hidden",
+    textAlignMap[element.textAlign],
+    fontFamilyMap[element.fontFamily] || "font-sans",
+    element.bold && "font-bold",
+    element.italic && "italic",
+    isEditing && "outline-none cursor-text ring-1 ring-blue-400/50"
+  );
+
+  const sharedStyle: React.CSSProperties = {
+    fontSize: element.fontSize,
+    backgroundColor: element.backgroundColor || "transparent",
+    borderRadius: "8px",
+  };
+
+  // Fuzzy text (canvas-based distortion effect) — takes priority over gradient
+  if (element.fuzzy && !isEditing) {
+    return (
+      <div className={baseClassName} style={sharedStyle}>
+        <FuzzyText
+          fontSize={element.fontSize}
+          fontWeight={element.bold ? 700 : 400}
+          color={element.color}
+          baseIntensity={element.fuzzyIntensity}
+          hoverIntensity={element.fuzzyHoverIntensity}
+          fuzzRange={element.fuzzyFuzzRange}
+          direction={element.fuzzyDirection}
+          transitionDuration={element.fuzzyTransitionDuration}
+          letterSpacing={element.fuzzyLetterSpacing}
+          enableHover={element.fuzzyEnableHover}
+          clickEffect={element.fuzzyClickEffect}
+          glitchMode={element.fuzzyGlitchMode}
+          glitchInterval={element.fuzzyGlitchInterval}
+          glitchDuration={element.fuzzyGlitchDuration}
+        >
+          {element.content}
+        </FuzzyText>
+      </div>
+    );
+  }
+
+  // When gradient is active but not editing, wrap in GradientText
+  // GradientText handles its own underline/strikethrough via textDecorationColor
+  if (element.gradient && !isEditing) {
+    return (
+      <div className={baseClassName} style={sharedStyle}>
+        <GradientText
+          colors={element.gradientColors}
+          speed={element.gradientSpeed}
+          underline={element.underline}
+          strikethrough={element.strikethrough}
+          decorationColor={element.gradientColors[0]}
+        >
+          {element.content}
+        </GradientText>
+      </div>
+    );
+  }
+
+  // Build text-decoration for underline/strikethrough
+  const decorationLines: string[] = [];
+  if (element.underline) decorationLines.push("underline");
+  if (element.strikethrough) decorationLines.push("line-through");
+
+  // Normal text (no gradient or editing mode)
   return (
     <div
-      className={cn(
-        "w-full h-full px-3 py-2 leading-relaxed whitespace-pre-wrap break-words overflow-hidden",
-        fontSizeMap[element.fontSize],
-        fontWeightMap[element.fontWeight],
-        textAlignMap[element.textAlign],
-        fontFamilyMap[element.fontFamily] || "font-sans",
-        isEditing && "outline-none cursor-text"
-      )}
+      ref={ref}
+      className={baseClassName}
       style={{
+        ...sharedStyle,
         color: element.color,
-        backgroundColor: element.backgroundColor || "transparent",
-        borderRadius: "8px",
+        textDecorationLine: decorationLines.length > 0 ? decorationLines.join(" ") : undefined,
+        textDecorationColor: element.color,
       }}
       contentEditable={isEditing}
       suppressContentEditableWarning

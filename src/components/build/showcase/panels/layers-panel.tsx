@@ -22,7 +22,7 @@ export function LayersPanel({ elements, selectedId, onSelect, onReorder, onClose
   const sorted = [...elements].sort((a, b) => b.zIndex - a.zIndex);
 
   return (
-    <div className="fixed top-20 right-4 z-40 w-64 max-h-[60vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed top-20 right-4 z-[500] w-64 max-h-[60vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <h3 className="text-sm font-semibold text-white">Layers</h3>
         <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">

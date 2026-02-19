@@ -238,11 +238,12 @@ export type ShowcaseElement =
   | ShowcaseImageElement
   | ShowcaseTextElement
   | ShowcaseMetadataElement
-  | ShowcaseEffectElement;
+  | ShowcaseEffectElement
+  | ShowcaseVideoElement;
 
 export interface ShowcaseElementBase {
   id: string;
-  type: "image" | "text" | "metadata" | "effect";
+  type: "image" | "text" | "metadata" | "effect" | "video";
   x: number;
   y: number;
   width: number;
@@ -266,12 +267,30 @@ export type ShowcaseFontFamily = "geist" | "orbitron" | "rajdhani" | "exo2" | "s
 export interface ShowcaseTextElement extends ShowcaseElementBase {
   type: "text";
   content: string;
-  fontSize: "sm" | "base" | "lg" | "xl" | "2xl" | "3xl";
-  fontWeight: "normal" | "medium" | "semibold" | "bold";
+  fontSize: number;
   fontFamily: ShowcaseFontFamily;
   color: string;
   textAlign: "left" | "center" | "right";
   backgroundColor: string | null;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
+  gradient: boolean;
+  gradientColors: string[];
+  gradientSpeed: number;
+  fuzzy: boolean;
+  fuzzyIntensity: number;
+  fuzzyHoverIntensity: number;
+  fuzzyFuzzRange: number;
+  fuzzyDirection: "horizontal" | "vertical" | "both";
+  fuzzyTransitionDuration: number;
+  fuzzyLetterSpacing: number;
+  fuzzyEnableHover: boolean;
+  fuzzyClickEffect: boolean;
+  fuzzyGlitchMode: boolean;
+  fuzzyGlitchInterval: number;
+  fuzzyGlitchDuration: number;
 }
 
 export interface ShowcaseMetadataElement extends ShowcaseElementBase {
@@ -285,6 +304,15 @@ export interface ShowcaseEffectElement extends ShowcaseElementBase {
   color: string;
   speed: number;
   chaos: number;
+  borderRadius: number;
+}
+
+export interface ShowcaseVideoElement extends ShowcaseElementBase {
+  type: "video";
+  url: string;
+  objectFit: "cover" | "contain";
+  muted: boolean;
+  loop: boolean;
   borderRadius: number;
 }
 

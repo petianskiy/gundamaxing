@@ -33,6 +33,16 @@ export const uploadRouter = {
     .onUploadComplete(({ metadata, file }) => {
       return { url: file.ufsUrl, userId: metadata.userId };
     }),
+
+  buildVideoUpload: f({ video: { maxFileSize: "64MB", maxFileCount: 3 } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(({ metadata, file }) => {
+      return { url: file.ufsUrl, userId: metadata.userId };
+    }),
 } satisfies FileRouter;
 
 export type UploadRouter = typeof uploadRouter;
