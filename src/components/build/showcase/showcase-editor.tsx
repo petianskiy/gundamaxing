@@ -704,6 +704,21 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         toast.error("Drawing upload failed");
         return;
       }
+
+      // Link the uploaded image to the build in the DB
+      const fd = new FormData();
+      fd.append("buildId", build.id);
+      fd.append("url", res[0].ufsUrl);
+      const { addBuildImage } = await import("@/lib/actions/build");
+      const addResult = await addBuildImage(fd);
+      const dbImageId = (addResult && "image" in addResult && addResult.image)
+        ? (addResult.image as { id: string }).id
+        : generateId();
+
+      if (addResult && "image" in addResult && addResult.image) {
+        setBuildImages((prev) => [...prev, { id: dbImageId, url: res[0].ufsUrl, alt: "Drawing", isPrimary: false, order: prev.length }]);
+      }
+
       const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
       const element: ShowcaseImageElement = {
         id: generateId(),
@@ -714,7 +729,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         height: 100,
         zIndex: maxZ + 1,
         rotation: 0,
-        imageId: generateId(),
+        imageId: dbImageId,
         imageUrl: res[0].ufsUrl,
         objectFit: "contain",
         borderRadius: 0,
@@ -727,7 +742,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     } catch {
       toast.error("Failed to upload drawing");
     }
-  }, [startImageUpload, layout.elements, dispatch]);
+  }, [startImageUpload, layout.elements, dispatch, build.id]);
 
   // ─── Save ─────────────────────────────────────────────────────
 

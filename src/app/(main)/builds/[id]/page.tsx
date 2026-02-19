@@ -17,8 +17,10 @@ export default async function BuildPage({ params, searchParams }: Props) {
   const build = await getBuildById(id);
   if (!build) notFound();
 
+  const buildId = build.id;
+
   const [comments, allBuilds, session] = await Promise.all([
-    getCommentsByBuildId(id),
+    getCommentsByBuildId(buildId),
     getBuilds(),
     auth(),
   ]);
@@ -31,9 +33,9 @@ export default async function BuildPage({ params, searchParams }: Props) {
   // Fetch engagement status if logged in
   const [isLiked, isBookmarked, likedCommentIds] = currentUserId
     ? await Promise.all([
-        getUserLikeForBuild(currentUserId, id),
-        getUserBookmarkForBuild(currentUserId, id),
-        getUserCommentLikes(currentUserId, id),
+        getUserLikeForBuild(currentUserId, buildId),
+        getUserBookmarkForBuild(currentUserId, buildId),
+        getUserCommentLikes(currentUserId, buildId),
       ])
     : [false, false, [] as string[]];
 

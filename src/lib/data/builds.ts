@@ -172,6 +172,19 @@ export const getBuildForEdit = cache(async (idOrSlug: string, userId: string) =>
   return build;
 });
 
+export const getLatestBuilds = cache(async (limit: number = 4): Promise<Build[]> => {
+  const builds = await db.build.findMany({
+    where: {
+      user: { isProfilePrivate: false },
+    },
+    include: buildInclude,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return builds.map(toUIBuild);
+});
+
 export const getBuildsByUserId = cache(async (userId: string): Promise<Build[]> => {
   const builds = await db.build.findMany({
     where: { userId },

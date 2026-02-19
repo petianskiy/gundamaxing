@@ -2,14 +2,19 @@
 
 import { motion } from "framer-motion";
 import { BuildCard } from "@/components/build/build-card";
-import { mockBuilds } from "@/lib/mock/data";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
+import type { Build } from "@/lib/types";
 
-export function FeaturedBuildsSection() {
+interface FeaturedBuildsSectionProps {
+  builds: Build[];
+}
+
+export function FeaturedBuildsSection({ builds }: FeaturedBuildsSectionProps) {
   const { t } = useTranslation();
-  const featured = mockBuilds.filter((b) => b.verification === "featured" || b.verification === "master").slice(0, 4);
+
+  if (builds.length === 0) return null;
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -33,7 +38,7 @@ export function FeaturedBuildsSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((build, i) => (
+          {builds.map((build, i) => (
             <motion.div
               key={build.id}
               initial={{ opacity: 0, y: 30 }}

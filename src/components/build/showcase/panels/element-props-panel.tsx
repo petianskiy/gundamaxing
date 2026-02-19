@@ -1,9 +1,13 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
+
+const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+const SNAP_THRESHOLD = 5; // degrees — snap when within this range
 
 interface ElementPropsPanelProps {
   element: ShowcaseElement;
@@ -13,6 +17,37 @@ interface ElementPropsPanelProps {
 }
 
 export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: ElementPropsPanelProps) {
+  const [rotationInput, setRotationInput] = useState(String(element.rotation));
+
+  const handleRotationSlider = useCallback((rawVal: number) => {
+    // Snap to key angles when within threshold
+    let val = rawVal;
+    for (const snap of SNAP_ANGLES) {
+      if (Math.abs(val - snap) <= SNAP_THRESHOLD) {
+        val = snap;
+        break;
+      }
+      // Also snap to negative equivalents
+      if (Math.abs(val - (snap - 360)) <= SNAP_THRESHOLD) {
+        val = snap - 360;
+        break;
+      }
+    }
+    const rounded = Math.round(val);
+    // Normalize 360 to 0
+    const final = rounded === 360 ? 0 : rounded;
+    setRotationInput(String(final));
+    onUpdate({ rotation: final });
+  }, [onUpdate]);
+
+  const handleRotationInput = useCallback((raw: string) => {
+    setRotationInput(raw);
+    const val = parseInt(raw);
+    if (!isNaN(val) && val >= -360 && val <= 360) {
+      onUpdate({ rotation: val });
+    }
+  }, [onUpdate]);
+
   return (
     <div className="fixed top-4 left-4 z-[500] w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
@@ -27,21 +62,51 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
         </div>
       </div>
       <div className="p-4 space-y-3 max-h-[80vh] overflow-y-auto">
-        {/* Common: Rotation */}
+        {/* Common: Rotation — full 360° with snap */}
         <div>
           <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
             <span>Rotation</span>
-            <span className="text-zinc-500">{element.rotation}°</span>
           </label>
-          <ElasticSlider
-            defaultValue={element.rotation + 45}
-            startingValue={0}
-            maxValue={90}
-            onChange={(val) => onUpdate({ rotation: Math.round(val - 45) })}
-            leftIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
-            rightIcon={<RotateCw className="h-3.5 w-3.5 text-zinc-400" />}
-            className="w-full"
-          />
+          <div className="flex items-center gap-2 mb-2">
+            <RotateCw className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={1}
+              value={element.rotation < 0 ? element.rotation + 360 : element.rotation}
+              onChange={(e) => handleRotationSlider(parseFloat(e.target.value))}
+              className="flex-1 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-zinc-900"
+            />
+            <div className="relative shrink-0">
+              <input
+                type="number"
+                value={rotationInput}
+                onChange={(e) => handleRotationInput(e.target.value)}
+                min={-360}
+                max={360}
+                className="w-14 px-1.5 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-xs text-white text-center focus:outline-none focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 pointer-events-none">°</span>
+            </div>
+          </div>
+          {/* Quick snap buttons */}
+          <div className="flex flex-wrap gap-1">
+            {[0, 45, 90, 180, 270].map((angle) => (
+              <button
+                key={angle}
+                onClick={() => { setRotationInput(String(angle)); onUpdate({ rotation: angle }); }}
+                className={cn(
+                  "px-2 py-0.5 rounded text-[10px] font-medium border transition-colors",
+                  element.rotation === angle
+                    ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                    : "border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                {angle}°
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Image-specific */}

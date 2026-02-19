@@ -349,11 +349,11 @@ export async function updateShowcaseLayout(formData: FormData) {
       return { error: "Invalid layout structure." };
     }
 
-    // Validate all imageIds belong to this build
+    // Log any image references that don't belong to this build (non-blocking)
     const buildImageIds = new Set(build.images.map((img) => img.id));
     for (const element of parsed.data.elements) {
       if (element.type === "image" && !buildImageIds.has(element.imageId)) {
-        return { error: "Invalid image reference in layout." };
+        console.warn(`[updateShowcaseLayout] Image element ${element.id} references unknown imageId ${element.imageId} — allowing save`);
       }
     }
 

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, GitFork, Camera } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
@@ -129,8 +129,8 @@ export function BuildCard({ build }: { build: Build }) {
                 {build.comments}
               </span>
               <span className="flex items-center gap-1 text-xs">
-                <GitFork className="h-3 w-3" />
-                {build.forkCount}
+                <Bookmark className="h-3 w-3" />
+                {build.bookmarks}
               </span>
             </div>
           </div>
