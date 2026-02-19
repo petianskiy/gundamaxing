@@ -13,6 +13,18 @@ import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
 import type { Build, Comment, ShowcaseLayout } from "@/lib/types";
 
+const DEFAULT_LAYOUT: ShowcaseLayout = {
+  version: 1,
+  canvas: {
+    backgroundImageUrl: null,
+    backgroundColor: "#09090b",
+    backgroundOpacity: 1,
+    backgroundBlur: 0,
+    aspectRatio: "4 / 5",
+  },
+  elements: [],
+};
+
 interface ShowcasePageProps {
   build: Build;
   comments: Comment[];
@@ -21,13 +33,14 @@ interface ShowcasePageProps {
   isLiked: boolean;
   isBookmarked: boolean;
   likedCommentIds: string[];
+  startEditing?: boolean;
 }
 
-export function ShowcasePage({ build, comments, currentUserId, isLiked, isBookmarked, likedCommentIds }: ShowcasePageProps) {
+export function ShowcasePage({ build, comments, currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing }: ShowcasePageProps) {
   const { t } = useTranslation();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!!startEditing);
   const isOwner = currentUserId === build.userId;
-  const layout = build.showcaseLayout as ShowcaseLayout;
+  const layout = (build.showcaseLayout as ShowcaseLayout) || DEFAULT_LAYOUT;
 
   const handleExit = useCallback(() => {
     setIsEditing(false);
