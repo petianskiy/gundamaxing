@@ -116,6 +116,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 95,
     verification: "featured",
     createdAt: "2024-03-15",
+    commentsEnabled: true,
     updatedAt: "2024-03-15",
   },
   {
@@ -146,6 +147,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 70,
     verification: "verified",
     createdAt: "2024-04-02",
+    commentsEnabled: true,
     updatedAt: "2024-04-02",
   },
   {
@@ -175,6 +177,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 130,
     verification: "featured",
     createdAt: "2024-02-28",
+    commentsEnabled: true,
     updatedAt: "2024-02-28",
   },
   {
@@ -205,6 +208,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 30,
     verification: "verified",
     createdAt: "2023-11-20",
+    commentsEnabled: true,
     updatedAt: "2023-11-20",
   },
   {
@@ -235,6 +239,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 75,
     verification: "featured",
     createdAt: "2024-01-18",
+    commentsEnabled: true,
     updatedAt: "2024-01-18",
   },
   {
@@ -264,6 +269,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 25,
     verification: "verified",
     createdAt: "2024-05-01",
+    commentsEnabled: true,
     updatedAt: "2024-05-01",
   },
   {
@@ -293,6 +299,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 80,
     verification: "unverified",
     createdAt: "2024-06-10",
+    commentsEnabled: true,
     updatedAt: "2024-06-15",
   },
   {
@@ -324,6 +331,7 @@ export const mockBuilds: Build[] = [
     creativityCount: 160,
     verification: "master",
     createdAt: "2024-01-05",
+    commentsEnabled: true,
     updatedAt: "2024-01-05",
   },
 ];

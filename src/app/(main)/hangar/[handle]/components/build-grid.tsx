@@ -8,11 +8,10 @@ import type { Build } from "@/lib/types";
 
 interface BuildGridProps {
   builds: Build[];
-  onInspect: (build: Build) => void;
   pinnedBuildIds?: string[];
 }
 
-export function BuildGrid({ builds, onInspect, pinnedBuildIds = [] }: BuildGridProps) {
+export function BuildGrid({ builds, pinnedBuildIds = [] }: BuildGridProps) {
   const { t } = useTranslation();
 
   const sortedBuilds = useMemo(() => {
@@ -44,7 +43,6 @@ export function BuildGrid({ builds, onInspect, pinnedBuildIds = [] }: BuildGridP
           <BuildGridCard
             build={build}
             isPinned={pinnedBuildIds.includes(build.id)}
-            onInspect={onInspect}
           />
         </motion.div>
       ))}

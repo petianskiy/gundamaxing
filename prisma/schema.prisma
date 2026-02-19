@@ -237,6 +237,7 @@ model Build {
   eraAssignments  BuildEraAssignment[]
   reactions       Reaction[]
 
+  commentsEnabled Boolean          @default(true)
   isFeaturedBuild Boolean          @default(false)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

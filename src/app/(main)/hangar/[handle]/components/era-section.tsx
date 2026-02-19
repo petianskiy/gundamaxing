@@ -11,15 +11,12 @@ import type { Build, BuildEra } from "@/lib/types";
 interface EraSectionProps {
   eras: BuildEra[];
   unassignedBuilds: Build[];
-  onInspect: (build: Build) => void;
 }
 
 function EraGroup({
   era,
-  onInspect,
 }: {
   era: BuildEra;
-  onInspect: (build: Build) => void;
 }) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(era.isCollapsed);
@@ -66,7 +63,7 @@ function EraGroup({
             className="overflow-hidden"
           >
             {buildCount > 0 ? (
-              <BuildGrid builds={era.builds} onInspect={onInspect} />
+              <BuildGrid builds={era.builds} />
             ) : (
               <p className="text-sm text-muted-foreground py-8 text-center">
                 {t("hangar.era.empty")}
@@ -79,7 +76,7 @@ function EraGroup({
   );
 }
 
-export function EraSection({ eras, unassignedBuilds, onInspect }: EraSectionProps) {
+export function EraSection({ eras, unassignedBuilds }: EraSectionProps) {
   const { t } = useTranslation();
 
   const sortedEras = [...eras].sort((a, b) => a.order - b.order);
@@ -87,7 +84,7 @@ export function EraSection({ eras, unassignedBuilds, onInspect }: EraSectionProp
   return (
     <div className="space-y-10">
       {sortedEras.map((era) => (
-        <EraGroup key={era.id} era={era} onInspect={onInspect} />
+        <EraGroup key={era.id} era={era} />
       ))}
 
       {/* Unassigned builds */}
@@ -100,7 +97,7 @@ export function EraSection({ eras, unassignedBuilds, onInspect }: EraSectionProp
               </h3>
             </div>
           )}
-          <BuildGrid builds={unassignedBuilds} onInspect={onInspect} />
+          <BuildGrid builds={unassignedBuilds} />
         </div>
       )}
     </div>

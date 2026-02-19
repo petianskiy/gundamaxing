@@ -95,6 +95,7 @@ export interface Build {
   creativityCount: number;
   userReactions?: string[];
   verification: VerificationTier;
+  commentsEnabled: boolean;
   showcaseLayout?: ShowcaseLayout | null;
   createdAt: string;
   updatedAt: string;

@@ -38,7 +38,7 @@ function formatDate(date: Date): string {
 
 export const buildInclude = {
   user: {
-    select: { id: true, username: true, displayName: true, avatar: true },
+    select: { id: true, username: true, displayName: true, avatar: true, isProfilePrivate: true },
   },
   images: { orderBy: { order: "asc" as const } },
   calloutPins: true,
@@ -107,6 +107,7 @@ export function toUIBuild(b: any): Build {
     respectCount: b.respectCount ?? 0,
     techniqueCount: b.techniqueCount ?? 0,
     creativityCount: b.creativityCount ?? 0,
+    commentsEnabled: b.commentsEnabled ?? true,
     verification: verificationTierMap[b.verification as PrismaVerificationTier],
     showcaseLayout: (b.showcaseLayout as ShowcaseLayout | null) ?? undefined,
     createdAt: formatDate(b.createdAt),
@@ -118,6 +119,9 @@ export function toUIBuild(b: any): Build {
 
 export const getBuilds = cache(async (): Promise<Build[]> => {
   const builds = await db.build.findMany({
+    where: {
+      user: { isProfilePrivate: false },
+    },
     include: buildInclude,
     orderBy: { createdAt: "desc" },
   });

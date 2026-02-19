@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
 import { HangarBackground } from "./hangar-background";
 import { HangarIdentity } from "./hangar-identity";
 import { FeaturedBuildBanner } from "./featured-build-banner";
 import { BuildGrid } from "./build-grid";
 import { EraSection } from "./era-section";
-import { InspectionOverlay } from "./inspection-overlay";
 import type { HangarUser, Build, BuildEra } from "@/lib/types";
 
 interface HangarShellProps {
@@ -29,8 +27,6 @@ export function HangarShell({
   isOwner,
   currentUserId,
 }: HangarShellProps) {
-  const [inspectedBuild, setInspectedBuild] = useState<Build | null>(null);
-
   // Collect all non-era builds (latest + unassigned, deduplicated)
   const allLooseBuilds = useMemo(() => {
     const seen = new Set<string>();
@@ -60,10 +56,7 @@ export function HangarShell({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {/* Featured build banner */}
           {featuredBuild && (
-            <FeaturedBuildBanner
-              build={featuredBuild}
-              onInspect={setInspectedBuild}
-            />
+            <FeaturedBuildBanner build={featuredBuild} />
           )}
 
           {/* Build grids */}
@@ -71,27 +64,13 @@ export function HangarShell({
             <EraSection
               eras={eras}
               unassignedBuilds={allLooseBuilds}
-              onInspect={setInspectedBuild}
             />
           ) : (
-            <BuildGrid
-              builds={allLooseBuilds}
-              onInspect={setInspectedBuild}
-            />
+            <BuildGrid builds={allLooseBuilds} />
           )}
         </div>
       </div>
 
-      {/* Inspection overlay */}
-      <AnimatePresence>
-        {inspectedBuild && (
-          <InspectionOverlay
-            build={inspectedBuild}
-            currentUserId={currentUserId}
-            onClose={() => setInspectedBuild(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

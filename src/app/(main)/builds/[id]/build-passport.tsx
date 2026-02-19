@@ -5,10 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Heart,
-  Bookmark,
   GitFork,
-  Share2,
   X,
   Package,
   Palette,
@@ -18,10 +15,6 @@ import {
   Calendar,
   ChevronRight,
   ChevronLeft,
-  MessageCircle,
-  ThumbsUp,
-  Pencil,
-  LayoutDashboard,
 } from "lucide-react";
 import { updateShowcaseLayout } from "@/lib/actions/build";
 import { toast } from "sonner";
@@ -31,43 +24,9 @@ import { useTranslation } from "@/lib/i18n/context";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
 import { GradeBadge } from "@/components/ui/grade-badge";
+import { ActionsBar } from "@/components/build/actions-bar";
+import { CommentSection } from "@/components/build/comment-section";
 import type { Build, Comment } from "@/lib/types";
-
-function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
-  const size = depth > 0 ? 28 : 32;
-  return (
-    <div className={cn("flex gap-3", depth > 0 && "ml-8 mt-3")}>
-      <div
-        className="relative rounded-full overflow-hidden flex-shrink-0"
-        style={{ width: size, height: size }}
-      >
-        <Image
-          src={comment.userAvatar}
-          alt={comment.username}
-          fill
-          className="object-cover"
-          unoptimized
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Link href={`/u/${comment.username}`} className="text-sm font-medium text-foreground hover:underline">
-            {comment.username}
-          </Link>
-          <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
-        </div>
-        <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
-        <button className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-          <ThumbsUp className="h-3 w-3" />
-          {comment.likes}
-        </button>
-        {comment.children?.map((child) => (
-          <CommentItem key={child.id} comment={child} depth={depth + 1} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function generateDefaultLayout(build: Build): ShowcaseLayout {
   const elements: ShowcaseLayout["elements"] = [];
@@ -151,11 +110,17 @@ export function BuildPassport({
   comments,
   allBuilds,
   currentUserId,
+  isLiked,
+  isBookmarked,
+  likedCommentIds,
 }: {
   build: Build;
   comments: Comment[];
   allBuilds: Build[];
   currentUserId?: string;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  likedCommentIds: string[];
 }) {
   const { t } = useTranslation();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -376,67 +341,37 @@ export function BuildPassport({
       {/* Content */}
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mt-8">
         {/* Actions bar */}
-        <div className="flex items-center gap-2 mb-8 p-3 rounded-xl border border-border/50 bg-card">
-          {[
-            { icon: Heart, label: t("builds.like"), count: build.likes },
-            { icon: Bookmark, label: t("builds.bookmark"), count: build.bookmarks },
-            { icon: GitFork, label: t("builds.fork"), count: build.forkCount },
-            { icon: Share2, label: t("builds.share"), count: null },
-          ].map((action) => (
-            <button
-              key={action.label}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            >
-              <action.icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{action.label}</span>
-              {action.count !== null && (
-                <span className="text-xs text-muted-foreground">
-                  {action.count >= 1000 ? `${(action.count / 1000).toFixed(1)}k` : action.count}
-                </span>
-              )}
-            </button>
-          ))}
-
-          {/* Owner actions */}
-          {isOwner && (
-            <div className="ml-auto flex items-center gap-1">
-              <button
-                disabled={isCreatingShowcase}
-                onClick={() => {
-                  startShowcaseTransition(async () => {
-                    try {
-                      const layout = generateDefaultLayout(build);
-                      const fd = new FormData();
-                      fd.append("buildId", build.id);
-                      fd.append("showcaseLayout", JSON.stringify(layout));
-                      const result = await updateShowcaseLayout(fd);
-                      if (result && "error" in result) {
-                        toast.error(result.error);
-                        return;
-                      }
-                      window.location.reload();
-                    } catch (err) {
-                      console.error("Create showcase error:", err);
-                      toast.error("Failed to create showcase");
-                    }
-                  });
-                }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
-              >
-                <LayoutDashboard className={cn("h-4 w-4", isCreatingShowcase && "animate-spin")} />
-                <span className="hidden sm:inline">
-                  {isCreatingShowcase ? "Creating..." : t("builds.showcase.createShowcase")}
-                </span>
-              </button>
-              <Link
-                href={`/builds/${build.id}/edit`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="hidden sm:inline">Edit</span>
-              </Link>
-            </div>
-          )}
+        <div className="mb-8">
+          <ActionsBar
+            buildId={build.id}
+            likeCount={build.likes}
+            bookmarkCount={build.bookmarks}
+            forkCount={build.forkCount}
+            isLiked={isLiked}
+            isBookmarked={isBookmarked}
+            isOwner={isOwner}
+            currentUserId={currentUserId}
+            onCreateShowcase={() => {
+              startShowcaseTransition(async () => {
+                try {
+                  const layout = generateDefaultLayout(build);
+                  const fd = new FormData();
+                  fd.append("buildId", build.id);
+                  fd.append("showcaseLayout", JSON.stringify(layout));
+                  const result = await updateShowcaseLayout(fd);
+                  if (result && "error" in result) {
+                    toast.error(result.error);
+                    return;
+                  }
+                  window.location.reload();
+                } catch (err) {
+                  console.error("Create showcase error:", err);
+                  toast.error("Failed to create showcase");
+                }
+              });
+            }}
+            isCreatingShowcase={isCreatingShowcase}
+          />
         </div>
 
         {/* Build Passport Card */}
@@ -603,36 +538,15 @@ export function BuildPassport({
         </section>
 
         {/* Comments */}
-        <section className="mt-10">
-          <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            {t("builds.comments")} ({build.comments})
-          </h2>
-
-          {/* Write comment */}
-          <div className="mb-6 rounded-xl border border-border/50 bg-card p-4">
-            <textarea
-              placeholder={t("builds.commentPlaceholder")}
-              disabled
-              className="w-full bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/60 resize-none h-20 focus:outline-none"
-            />
-            <div className="flex justify-end">
-              <button
-                disabled
-                className="px-4 py-1.5 rounded-lg bg-gx-red/50 text-white/50 text-sm font-medium cursor-not-allowed"
-              >
-                {t("builds.postComment")}
-              </button>
-            </div>
-          </div>
-
-          {/* Comments list */}
-          <div className="space-y-6">
-            {comments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} />
-            ))}
-          </div>
-        </section>
+        <CommentSection
+          buildId={build.id}
+          comments={comments}
+          commentCount={build.comments}
+          currentUserId={currentUserId}
+          buildOwnerId={build.userId}
+          commentsEnabled={build.commentsEnabled}
+          likedCommentIds={likedCommentIds}
+        />
       </div>
     </div>
   );

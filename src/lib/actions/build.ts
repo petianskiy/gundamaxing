@@ -429,3 +429,120 @@ export async function deleteBuildImage(formData: FormData) {
     return { error: "An unexpected error occurred." };
   }
 }
+
+export async function forkBuild(buildId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in to fork a build." };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, emailVerified: true },
+    });
+
+    if (!user) {
+      return { error: "User not found." };
+    }
+
+    if (!user.emailVerified) {
+      return { error: "You must verify your email before forking builds." };
+    }
+
+    const sourceBuild = await db.build.findUnique({
+      where: { id: buildId },
+      include: {
+        images: { orderBy: { order: "asc" } },
+      },
+    });
+
+    if (!sourceBuild) {
+      return { error: "Build not found." };
+    }
+
+    const newBuild = await db.$transaction(async (tx) => {
+      const forked = await tx.build.create({
+        data: {
+          title: `Fork of ${sourceBuild.title}`,
+          kitName: sourceBuild.kitName,
+          grade: sourceBuild.grade,
+          timeline: sourceBuild.timeline,
+          scale: sourceBuild.scale,
+          status: "WIP",
+          techniques: sourceBuild.techniques,
+          paintSystem: sourceBuild.paintSystem,
+          topcoat: sourceBuild.topcoat,
+          timeInvested: null,
+          tools: sourceBuild.tools,
+          intentStatement: sourceBuild.intentStatement,
+          baseKit: sourceBuild.baseKit,
+          forkOfId: buildId,
+          userId: user.id,
+        },
+      });
+
+      // Copy images
+      if (sourceBuild.images.length > 0) {
+        await tx.buildImage.createMany({
+          data: sourceBuild.images.map((img, i) => ({
+            url: img.url,
+            alt: img.alt,
+            isPrimary: img.isPrimary,
+            order: i,
+            buildId: forked.id,
+          })),
+        });
+      }
+
+      // Increment source build's fork count
+      await tx.build.update({
+        where: { id: buildId },
+        data: { forkCount: { increment: 1 } },
+      });
+
+      return forked;
+    });
+
+    revalidatePath(`/builds/${buildId}`);
+    revalidatePath("/builds");
+
+    return { success: true, buildId: newBuild.id };
+  } catch (error) {
+    console.error("forkBuild error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function setPrimaryImage(buildId: string, imageId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "You must be signed in." };
+
+    const build = await db.build.findUnique({
+      where: { id: buildId },
+      select: { id: true, userId: true },
+    });
+
+    if (!build || build.userId !== session.user.id) {
+      return { error: "Not authorized." };
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.buildImage.updateMany({
+        where: { buildId },
+        data: { isPrimary: false },
+      });
+      await tx.buildImage.update({
+        where: { id: imageId },
+        data: { isPrimary: true },
+      });
+    });
+
+    revalidatePath(`/builds/${buildId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("setPrimaryImage error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}

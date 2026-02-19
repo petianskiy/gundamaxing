@@ -8,6 +8,8 @@ import { ProfileHeader } from "./components/profile-header";
 import { BuildGallery } from "./components/build-gallery";
 import { WorkshopSpecs } from "./components/workshop-specs";
 import { Achievements } from "./components/achievements";
+import { SavedBuilds } from "./components/saved-builds";
+import { getBookmarkedBuilds } from "@/lib/data/bookmarks";
 
 type Props = {
   params: Promise<{ handle: string }>;
@@ -83,6 +85,7 @@ export default async function ProfilePage({ params }: Props) {
 
   const session = await auth();
   const isOwner = session?.user?.id === user.id;
+  const bookmarkedBuilds = isOwner ? await getBookmarkedBuilds(user.id) : [];
 
   // Privacy check: if profile is private and viewer is not the owner, show limited view
   if (user.isProfilePrivate && !isOwner) {
@@ -175,6 +178,9 @@ export default async function ProfilePage({ params }: Props) {
           tier: ub.badge.tier,
         }))}
       />
+    ) : null,
+    saved: isOwner ? (
+      <SavedBuilds key="saved" builds={bookmarkedBuilds} />
     ) : null,
   };
 

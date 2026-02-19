@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, GitFork, Camera, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,20 +13,19 @@ import type { Build } from "@/lib/types";
 interface BuildGridCardProps {
   build: Build;
   isPinned?: boolean;
-  onInspect: (build: Build) => void;
 }
 
-export function BuildGridCard({ build, isPinned, onInspect }: BuildGridCardProps) {
+export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
   const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
   const shownTechniques = build.techniques.slice(0, 3);
   const remainingCount = build.techniques.length - 3;
 
   return (
+    <Link href={`/builds/${build.id}`}>
     <motion.article
       layoutId={`build-${build.id}`}
       whileHover={{ y: -2 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      onClick={() => onInspect(build)}
       className={cn(
         "group relative rounded-xl border overflow-hidden cursor-pointer",
         "bg-card shadow-sm hover:shadow-lg transition-[border-color,box-shadow] duration-300",
@@ -33,14 +33,6 @@ export function BuildGridCard({ build, isPinned, onInspect }: BuildGridCardProps
           ? "border-gx-red/30 hover:border-gx-red/50"
           : "border-border/50 hover:border-border"
       )}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onInspect(build);
-        }
-      }}
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -151,5 +143,6 @@ export function BuildGridCard({ build, isPinned, onInspect }: BuildGridCardProps
         </div>
       </div>
     </motion.article>
+    </Link>
   );
 }

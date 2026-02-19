@@ -201,10 +201,20 @@ export async function deleteComment(commentId: string) {
       return { error: "User not found." };
     }
 
-    const isOwner = comment.userId === user.id;
+    const isCommentOwner = comment.userId === user.id;
     const isModerator = user.role === "MODERATOR" || user.role === "ADMIN";
 
-    if (!isOwner && !isModerator) {
+    // Allow build owner to delete comments on their build
+    let isBuildOwner = false;
+    if (comment.buildId) {
+      const build = await db.build.findUnique({
+        where: { id: comment.buildId },
+        select: { userId: true },
+      });
+      isBuildOwner = build?.userId === user.id;
+    }
+
+    if (!isCommentOwner && !isModerator && !isBuildOwner) {
       return { error: "You do not have permission to delete this comment." };
     }
 
@@ -231,6 +241,38 @@ export async function deleteComment(commentId: string) {
     return { success: true };
   } catch (error) {
     console.error("deleteComment error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function toggleComments(buildId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const build = await db.build.findUnique({
+      where: { id: buildId },
+      select: { id: true, userId: true, commentsEnabled: true },
+    });
+
+    if (!build) {
+      return { error: "Build not found." };
+    }
+
+    if (build.userId !== session.user.id) {
+      return { error: "Only the build owner can toggle comments." };
+    }
+
+    await db.build.update({
+      where: { id: buildId },
+      data: { commentsEnabled: !build.commentsEnabled },
+    });
+
+    return { commentsEnabled: !build.commentsEnabled };
+  } catch (error) {
+    console.error("toggleComments error:", error);
     return { error: "An unexpected error occurred." };
   }
 }

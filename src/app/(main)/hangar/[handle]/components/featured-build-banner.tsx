@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,21 +12,20 @@ import type { Build } from "@/lib/types";
 
 interface FeaturedBuildBannerProps {
   build: Build;
-  onInspect: (build: Build) => void;
 }
 
-export function FeaturedBuildBanner({ build, onInspect }: FeaturedBuildBannerProps) {
+export function FeaturedBuildBanner({ build }: FeaturedBuildBannerProps) {
   const { t } = useTranslation();
   const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
 
   if (!primaryImage) return null;
 
   return (
+    <Link href={`/builds/${build.id}`}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      onClick={() => onInspect(build)}
       className="relative rounded-xl overflow-hidden cursor-pointer group border border-border/50"
     >
       {/* Cinematic aspect ratio */}
@@ -84,5 +84,6 @@ export function FeaturedBuildBanner({ build, onInspect }: FeaturedBuildBannerPro
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }

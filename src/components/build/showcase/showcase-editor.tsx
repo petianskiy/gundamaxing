@@ -430,6 +430,12 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
       if (e.key === "Escape") {
         if (editingTextId) {
+          // Save text content before exiting edit mode
+          const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+          if (editingEl) {
+            const newContent = editingEl.textContent || "";
+            dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+          }
           setEditingTextId(null);
           return;
         }
@@ -902,6 +908,14 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
             const x = ((e.clientX - rect.left) / rect.width) * 100;
             const y = ((e.clientY - rect.top) / rect.height) * 100;
             marqueeRef.current = { startX: x, startY: y, currentX: x, currentY: y };
+            // Save text content before deselecting (blur may fire too late)
+            if (editingTextId) {
+              const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+              if (editingEl) {
+                const newContent = editingEl.textContent || "";
+                dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+              }
+            }
             // Deselect immediately unless shift is held
             if (!e.shiftKey) {
               setSelectedIds([]);
