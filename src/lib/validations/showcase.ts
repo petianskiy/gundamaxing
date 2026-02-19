@@ -1,101 +1,94 @@
 import { z } from "zod";
 import type { ShowcaseLayout } from "@/lib/types";
 
+// Relaxed position/size bounds — elements can be dragged partially off-canvas
+const posX = z.number().min(-100).max(200);
+const posY = z.number().min(-100).max(200);
+const dimW = z.number().min(0.5).max(200);
+const dimH = z.number().min(0.5).max(200);
+const rot = z.number().min(-360).max(360);
+const colorHex = z.string();
+
 const showcaseImageElement = z.object({
   type: z.literal("image"),
   id: z.string().min(1),
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
-  rotation: z.number().min(-360).max(360),
+  rotation: rot,
   imageId: z.string().min(1),
-  imageUrl: z.string().url(),
+  imageUrl: z.string(),
   objectFit: z.enum(["cover", "contain"]),
-  borderRadius: z.number().min(0).max(50),
+  borderRadius: z.number().min(0).max(100),
   shadow: z.boolean(),
-  caption: z.string().max(200).nullable(),
+  caption: z.string().max(500).nullable(),
 });
 
 const showcaseTextElement = z.object({
   type: z.literal("text"),
   id: z.string().min(1),
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
-  rotation: z.number().min(-360).max(360),
-  content: z.string().min(1).max(2000),
-  fontSize: z.number().min(8).max(120),
-  fontFamily: z.enum(["geist", "orbitron", "rajdhani", "exo2", "shareTechMono", "audiowide", "chakraPetch"]),
-  color: z.string().regex(/^#[0-9a-fA-F]{6,8}$/),
+  rotation: rot,
+  content: z.string().max(5000),
+  fontSize: z.number().min(1).max(500),
+  fontFamily: z.string(),
+  color: colorHex,
   textAlign: z.enum(["left", "center", "right"]),
-  backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6,8}$/).nullable(),
+  backgroundColor: colorHex.nullable(),
   bold: z.boolean(),
   italic: z.boolean(),
   underline: z.boolean(),
   strikethrough: z.boolean(),
   gradient: z.boolean(),
-  gradientColors: z.array(z.string().regex(/^#[0-9a-fA-F]{6,8}$/)).min(2).max(6),
-  gradientSpeed: z.number().min(0.5).max(10),
+  gradientColors: z.array(colorHex).max(10),
+  gradientSpeed: z.number().min(0).max(100),
   fuzzy: z.boolean(),
-  fuzzyIntensity: z.number().min(0.05).max(1),
-  fuzzyHoverIntensity: z.number().min(0).max(2).default(0.5),
-  fuzzyFuzzRange: z.number().min(0.01).max(0.5).default(0.08),
+  fuzzyIntensity: z.number(),
+  fuzzyHoverIntensity: z.number().default(0.5),
+  fuzzyFuzzRange: z.number().default(0.08),
   fuzzyDirection: z.enum(["horizontal", "vertical", "both"]).default("horizontal"),
-  fuzzyTransitionDuration: z.number().min(0.01).max(2).default(0.15),
-  fuzzyLetterSpacing: z.number().min(-5).max(20).default(0),
+  fuzzyTransitionDuration: z.number().default(0.15),
+  fuzzyLetterSpacing: z.number().default(0),
   fuzzyEnableHover: z.boolean().default(true),
   fuzzyClickEffect: z.boolean().default(false),
   fuzzyGlitchMode: z.boolean().default(false),
-  fuzzyGlitchInterval: z.number().min(0.5).max(30).default(5),
-  fuzzyGlitchDuration: z.number().min(0.1).max(5).default(0.3),
+  fuzzyGlitchInterval: z.number().default(5),
+  fuzzyGlitchDuration: z.number().default(0.3),
 });
 
 const showcaseMetadataElement = z.object({
   type: z.literal("metadata"),
   id: z.string().min(1),
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
-  rotation: z.number().min(-360).max(360),
+  rotation: rot,
   variant: z.enum(["compact", "full"]),
 });
 
 const showcaseEffectElement = z.object({
   type: z.literal("effect"),
   id: z.string().min(1),
-  x: z.number().min(-50).max(150),
-  y: z.number().min(-50).max(150),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
-  rotation: z.number().min(-360).max(360),
+  rotation: rot,
   effectType: z.enum(["electric"]),
-  color: z.string().regex(/^#[0-9a-fA-F]{6,8}$/),
-  speed: z.number().min(0.1).max(5),
+  color: colorHex,
+  speed: z.number().min(0).max(100),
   chaos: z.number().min(0).max(1),
-  borderRadius: z.number().min(0).max(50),
+  borderRadius: z.number().min(0).max(100),
 });
 
 const showcaseVideoElement = z.object({
   type: z.literal("video"),
   id: z.string().min(1),
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
-  width: z.number().min(1).max(100),
-  height: z.number().min(1).max(100),
+  x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
-  rotation: z.number().min(-360).max(360),
-  url: z.string().url(),
+  rotation: rot,
+  url: z.string(),
   objectFit: z.enum(["cover", "contain"]),
   muted: z.boolean(),
   loop: z.boolean(),
-  borderRadius: z.number().min(0).max(50),
+  borderRadius: z.number().min(0).max(100),
 });
 
 const showcaseElement = z.discriminatedUnion("type", [
@@ -110,12 +103,12 @@ export const showcaseLayoutSchema = z.object({
   version: z.literal(1),
   canvas: z.object({
     backgroundImageUrl: z.string().nullable(),
-    backgroundColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).nullable(),
+    backgroundColor: z.string().nullable(),
     backgroundOpacity: z.number().min(0).max(1),
-    backgroundBlur: z.number().min(0).max(20),
-    aspectRatio: z.string().regex(/^\d+\s*\/\s*\d+$/).optional().default("4 / 5"),
+    backgroundBlur: z.number().min(0).max(100),
+    aspectRatio: z.string().optional().default("4 / 5"),
   }),
-  elements: z.array(showcaseElement).max(50),
+  elements: z.array(showcaseElement).max(100),
 });
 
 // ─── Migration for backward compatibility ──────────────────────
