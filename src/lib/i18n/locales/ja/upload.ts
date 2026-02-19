@@ -66,5 +66,5 @@ export const upload = {
   "upload.setPrimary": "プライマリに設定",
   "upload.removeImage": "削除",
   "upload.primaryBadge": "プライマリ",
-  "upload.createPassport": "ビルドパスポートを作成",
+  "upload.createPassport": "ビルドをアップロード",
 } as const;

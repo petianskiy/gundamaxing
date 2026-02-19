@@ -255,8 +255,15 @@ export function UploadForm() {
   }
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="relative pt-24 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen">
+      {/* Background image */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10"
+        style={{ backgroundImage: "url(/upload-bg.jpg)" }}
+      />
+      <div className="fixed inset-0 bg-black/75 -z-10" />
+
+      <div className="mx-auto max-w-2xl relative">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("upload.title")}</h1>

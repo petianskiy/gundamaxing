@@ -66,5 +66,5 @@ export const upload = {
   "upload.setPrimary": "Set as primary",
   "upload.removeImage": "Remove",
   "upload.primaryBadge": "Primary",
-  "upload.createPassport": "Create Build Passport",
+  "upload.createPassport": "Upload Your Build",
 } as const;

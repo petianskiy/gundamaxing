@@ -25,6 +25,18 @@ const buildSchema = z.object({
   primaryIndex: z.number().int().min(0).optional(),
 });
 
+// Map UI status strings to Prisma BuildStatus enum values
+function toDbStatus(uiStatus: string | undefined): BuildStatus {
+  const map: Record<string, BuildStatus> = {
+    WIP: "WIP",
+    Completed: "COMPLETED",
+    COMPLETED: "COMPLETED",
+    Abandoned: "ABANDONED",
+    ABANDONED: "ABANDONED",
+  };
+  return map[uiStatus ?? "WIP"] ?? "WIP";
+}
+
 export async function createBuild(formData: FormData) {
   try {
     const session = await auth();
@@ -71,7 +83,8 @@ export async function createBuild(formData: FormData) {
 
     const parsed = buildSchema.safeParse(raw);
     if (!parsed.success) {
-      return { error: "Invalid build data." };
+      console.error("Build validation errors:", parsed.error.issues);
+      return { error: "Invalid build data. Please check all required fields." };
     }
 
     const data = parsed.data;
@@ -85,7 +98,7 @@ export async function createBuild(formData: FormData) {
           grade: data.grade,
           timeline: data.timeline ?? "",
           scale: data.scale ?? "",
-          status: (data.status as BuildStatus) ?? "WIP",
+          status: toDbStatus(data.status),
           techniques: data.techniques ?? [],
           paintSystem: data.paintSystem ?? null,
           topcoat: data.topcoat ?? null,
@@ -174,7 +187,7 @@ export async function updateBuild(formData: FormData) {
     const scale = formData.get("scale") as string;
     if (scale) updateData.scale = scale;
     const status = formData.get("status") as string;
-    if (status) updateData.status = status as BuildStatus;
+    if (status) updateData.status = toDbStatus(status);
     if (techniquesRaw) updateData.techniques = JSON.parse(techniquesRaw);
     const paintSystem = formData.get("paintSystem") as string;
     if (paintSystem !== null) updateData.paintSystem = paintSystem || null;
