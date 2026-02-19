@@ -6,6 +6,39 @@ import { Pin, MessageSquare, Eye, ThumbsUp } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import type { Thread, Comment } from "@/lib/types";
 
+// URL detection regex — matches http(s)://, www., and bare domains ending in common TLDs
+const URL_PATTERN = /(?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
+
+function renderCommentContent(text: string) {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(URL_PATTERN.source, "gi");
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <span
+        key={match.index}
+        className="inline-block bg-zinc-700 text-zinc-700 rounded px-1 select-none cursor-not-allowed"
+        title="Link removed for security"
+        aria-label="Redacted link"
+      >
+        {"[link removed]"}
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
   return (
     <div className={depth > 0 ? "ml-8 mt-4" : ""}>
@@ -29,7 +62,7 @@ function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number 
             </Link>
             <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
           </div>
-          <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
+          <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content)}</p>
           <button className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <ThumbsUp className="h-3 w-3" />
             {comment.likes}
@@ -101,11 +134,9 @@ export function ThreadView({
           </div>
 
           <div className="prose prose-invert prose-sm max-w-none">
-            {thread.content.split("\n").map((paragraph, i) => (
-              <p key={i} className="text-sm text-zinc-300 leading-relaxed mb-3">
-                {paragraph}
-              </p>
-            ))}
+            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words">
+              {renderCommentContent(thread.content)}
+            </p>
           </div>
 
           <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">

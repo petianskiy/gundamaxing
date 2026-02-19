@@ -16,9 +16,10 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const volumePopupRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(element.muted ? 0 : 0.5);
+  const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   // Sync volume to video element
   useEffect(() => {
@@ -27,16 +28,6 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       videoRef.current.muted = volume === 0;
     }
   }, [volume]);
-
-  // Sync muted prop changes from props panel
-  useEffect(() => {
-    if (element.muted && volume > 0) {
-      setVolume(0);
-    } else if (!element.muted && volume === 0) {
-      setVolume(0.5);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [element.muted]);
 
   // Close volume popup on click outside
   useEffect(() => {
@@ -64,10 +55,12 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
         activeVideoRef.current.pause();
       }
       activeVideoRef.current = video;
+      video.volume = volume;
+      video.muted = volume === 0;
       video.play().catch(() => {});
       setIsPlaying(true);
     }
-  }, [isPlaying]);
+  }, [isPlaying, volume]);
 
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -86,11 +79,14 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       }
     };
     const handlePause = () => setIsPlaying(false);
+    const handleLoadedData = () => setHasLoaded(true);
     video.addEventListener("ended", handleEnded);
     video.addEventListener("pause", handlePause);
+    video.addEventListener("loadeddata", handleLoadedData);
     return () => {
       video.removeEventListener("ended", handleEnded);
       video.removeEventListener("pause", handlePause);
+      video.removeEventListener("loadeddata", handleLoadedData);
       if (activeVideoRef.current === video) activeVideoRef.current = null;
     };
   }, [element.loop]);
@@ -105,23 +101,37 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       <video
         ref={videoRef}
         src={element.url}
-        muted={volume === 0}
+        muted
         loop={element.loop}
         playsInline
-        preload="metadata"
+        preload="auto"
         className="w-full h-full"
         style={{ objectFit: "cover" }}
         onContextMenu={(e) => e.preventDefault()}
         controlsList="nodownload"
       />
 
-      {/* Play overlay */}
-      {!isPlaying && (
+      {/* Loading placeholder before video loads */}
+      {!hasLoaded && (
+        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
+          <Play className="h-6 w-6 text-white/40" />
+        </div>
+      )}
+
+      {/* Click-to-play/pause overlay — covers entire video */}
+      {!isEditing && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer"
+          className="absolute inset-0 cursor-pointer"
           onClick={togglePlay}
+        />
+      )}
+
+      {/* Play icon overlay when paused */}
+      {!isPlaying && hasLoaded && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none"
         >
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
             <Play className="h-5 w-5 text-white ml-0.5" fill="white" />
           </div>
         </div>

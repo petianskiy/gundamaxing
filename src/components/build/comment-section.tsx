@@ -21,6 +21,43 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import type { Comment } from "@/lib/types";
 
+// URL detection regex — matches http(s)://, www., and bare domains ending in common TLDs
+const URL_PATTERN = /(?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
+
+function renderCommentContent(text: string) {
+  // Split on URL matches, replace them with redacted blocks
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(URL_PATTERN.source, "gi");
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    // Add redacted block for the URL
+    parts.push(
+      <span
+        key={match.index}
+        className="inline-block bg-zinc-700 text-zinc-700 rounded px-1 select-none cursor-not-allowed"
+        title="Link removed for security"
+        aria-label="Redacted link"
+      >
+        {"[link removed]"}
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last match
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 interface CommentSectionProps {
   buildId: string;
   comments: Comment[];
@@ -102,7 +139,7 @@ function CommentItem({
     if (!replyContent.trim()) return;
     setIsSubmittingReply(true);
     const formData = new FormData();
-    formData.append("content", replyContent.trim());
+    formData.append("content", replyContent);
     formData.append("buildId", buildId);
     formData.append("parentId", comment.id);
     // Honeypot + timing fields
@@ -146,7 +183,7 @@ function CommentItem({
           </Link>
           <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
         </div>
-        <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
+        <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content)}</p>
 
         {/* Action buttons */}
         <div className="flex items-center gap-3 mt-2">
@@ -256,7 +293,7 @@ export function CommentSection({
     }
     setIsSubmitting(true);
     const formData = new FormData();
-    formData.append("content", content.trim());
+    formData.append("content", content);
     formData.append("buildId", buildId);
     // Honeypot field
     formData.append("website", "");
