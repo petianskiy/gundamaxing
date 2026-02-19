@@ -40,6 +40,9 @@ function createAdapter() {
         username = `${prefix}_${suffix}`;
       }
 
+      // If the OAuth provider verified the email, promote to VERIFIED tier
+      const tier = data.emailVerified ? "VERIFIED" : "UNVERIFIED";
+
       const user = await db.user.create({
         data: {
           displayName: data.name ?? null,
@@ -47,12 +50,13 @@ function createAdapter() {
           emailVerified: data.emailVerified ?? null,
           avatar: data.image ?? null,
           username,
+          verificationTier: tier,
           onboardingComplete: false,
           onboardingStep: 0,
         },
       });
 
-      console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}`);
+      console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=${tier}`);
 
       return {
         id: user.id,
@@ -62,7 +66,7 @@ function createAdapter() {
         image: user.avatar,
         role: "USER" as const,
         username: user.username,
-        verificationTier: "UNVERIFIED" as const,
+        verificationTier: tier as "VERIFIED" | "UNVERIFIED",
         onboardingComplete: user.onboardingComplete,
       };
     },

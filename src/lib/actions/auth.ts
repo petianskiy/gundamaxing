@@ -167,10 +167,13 @@ export async function verifyEmailAction(
       return { error: "User not found" };
     }
 
-    // Update user emailVerified
+    // Update user emailVerified and promote to VERIFIED tier (only if still UNVERIFIED)
     await db.user.update({
       where: { id: user.id },
-      data: { emailVerified: new Date() },
+      data: {
+        emailVerified: new Date(),
+        ...(user!.verificationTier === "UNVERIFIED" && { verificationTier: "VERIFIED" }),
+      },
     });
 
     // Delete the used token
@@ -537,12 +540,13 @@ export async function verifyEmailChangeAction(
       return { error: "User not found" };
     }
 
-    // Update email and mark as verified
+    // Update email, mark as verified, and ensure tier is at least VERIFIED
     await db.user.update({
       where: { id: user.id },
       data: {
         email: changeToken.newEmail,
         emailVerified: new Date(),
+        ...(user.verificationTier === "UNVERIFIED" && { verificationTier: "VERIFIED" }),
       },
     });
 
