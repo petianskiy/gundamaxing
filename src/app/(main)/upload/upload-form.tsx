@@ -245,7 +245,8 @@ export function UploadForm() {
         return;
       }
 
-      router.push(`/builds/${result.slug}?edit=1`);
+      const guideParam = result.isFirstBuild ? "&guide=1" : "";
+      router.push(`/builds/${result.slug}?edit=1${guideParam}`);
     } catch (err) {
       setUploading(false);
       setSubmitting(false);

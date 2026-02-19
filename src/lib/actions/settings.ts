@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/security/password";
-import { builderIdentitySchema, privacySettingsSchema, changePasswordSchema, deleteAccountSchema } from "@/lib/validations/settings";
+import { builderIdentitySchema, privacySettingsSchema, changePasswordSchema, setInitialPasswordSchema, deleteAccountSchema } from "@/lib/validations/settings";
 
 
 export async function updateBuilderIdentity(data: unknown) {
@@ -109,6 +109,42 @@ export async function changePassword(data: unknown) {
     return { success: true };
   } catch (error) {
     console.error("changePassword error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function setInitialPassword(data: unknown) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const parsed = setInitialPasswordSchema.safeParse(data);
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message ?? "Invalid data.";
+      return { error: firstError };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { passwordHash: true },
+    });
+
+    if (user?.passwordHash) {
+      return { error: "Password already set. Use change password instead." };
+    }
+
+    const newHash = await hashPassword(parsed.data.newPassword);
+
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { passwordHash: newHash },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("setInitialPassword error:", error);
     return { error: "An unexpected error occurred." };
   }
 }

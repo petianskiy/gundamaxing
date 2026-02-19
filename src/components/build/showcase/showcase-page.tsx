@@ -9,6 +9,7 @@ import { useTranslation } from "@/lib/i18n/context";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { ShowcaseCanvas } from "./showcase-canvas";
 import { ShowcaseEditor } from "./showcase-editor";
+import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
 import type { Build, Comment, ShowcaseLayout } from "@/lib/types";
@@ -34,30 +35,51 @@ interface ShowcasePageProps {
   isBookmarked: boolean;
   likedCommentIds: string[];
   startEditing?: boolean;
+  showGuide?: boolean;
 }
 
-export function ShowcasePage({ build, comments, currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing }: ShowcasePageProps) {
+export function ShowcasePage({ build, comments, currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing, showGuide }: ShowcasePageProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(!!startEditing);
   const isOwner = currentUserId === build.userId;
   const layout = (build.showcaseLayout as ShowcaseLayout) || DEFAULT_LAYOUT;
+
+  // Editor guide state: show only if server says to AND localStorage hasn't dismissed it
+  const [showGuideState, setShowGuideState] = useState(() => {
+    if (!showGuide) return false;
+    if (typeof window !== "undefined" && localStorage.getItem("gm:editorGuideSeen:v1") === "true") {
+      return false;
+    }
+    return true;
+  });
 
   const handleExit = useCallback(() => {
     setIsEditing(false);
     window.location.reload();
   }, []);
 
+  const handleGuideDismiss = useCallback(() => {
+    setShowGuideState(false);
+    localStorage.setItem("gm:editorGuideSeen:v1", "true");
+    fetch("/api/user/guide-seen", { method: "POST" }).catch(() => {
+      // Non-critical; localStorage is the fallback
+    });
+  }, []);
+
   if (isEditing && isOwner) {
     return (
-      <div className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <ShowcaseEditor
-            build={build}
-            initialLayout={layout}
-            onExit={handleExit}
-          />
+      <>
+        <div className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <ShowcaseEditor
+              build={build}
+              initialLayout={layout}
+              onExit={handleExit}
+            />
+          </div>
         </div>
-      </div>
+        {showGuideState && <EditorGuideOverlay onDismiss={handleGuideDismiss} />}
+      </>
     );
   }
 

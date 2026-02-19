@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/context";
-import { changePassword, unlinkAccount } from "@/lib/actions/settings";
+import { changePassword, setInitialPassword, unlinkAccount } from "@/lib/actions/settings";
 import { requestEmailChangeAction } from "@/lib/actions/auth";
 import { Lock, Mail, Link2, Unlink, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -283,7 +283,77 @@ export function SecuritySettingsForm({
           </div>
 
           {!hasPassword ? (
-            <p className="text-sm text-muted-foreground">{t("settings.security.noPassword")}</p>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!passwordsMatch) {
+                  toast.error("Passwords don't match");
+                  return;
+                }
+                setSaving(true);
+                const result = await setInitialPassword({
+                  newPassword,
+                  confirmPassword,
+                });
+                setSaving(false);
+                if ("error" in result) {
+                  toast.error(result.error);
+                } else {
+                  toast.success("Password set successfully!");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  router.refresh();
+                }
+              }}
+              className="space-y-4"
+            >
+              <p className="text-xs text-muted-foreground mb-3">
+                You signed up via OAuth. Set a password to also log in with your handle + password.
+              </p>
+              <div className="space-y-2">
+                <PasswordInput
+                  label="New Password"
+                  id="new-password-set"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                {newPassword && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "h-1 flex-1 rounded-full transition-colors",
+                            i < strength.score ? strength.color : "bg-zinc-700"
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{strength.label}</p>
+                  </div>
+                )}
+              </div>
+              <PasswordInput
+                label="Confirm Password"
+                id="confirm-password-set"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                error={confirmPassword && !passwordsMatch ? "Passwords don't match" : undefined}
+              />
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={saving}
+                  disabled={!newPassword || !confirmPassword || !passwordsMatch}
+                >
+                  Set Password
+                </Button>
+              </div>
+            </form>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <PasswordInput

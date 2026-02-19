@@ -18,6 +18,7 @@ const publicRoutes = [
   "/forgot-password",
   "/reset-password",
   "/verify-email-change",
+  "/complete-profile",
 ];
 
 const publicRoutePatterns = [

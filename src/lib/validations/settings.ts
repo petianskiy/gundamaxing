@@ -31,6 +31,17 @@ export const changePasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+export const setInitialPasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password must be at most 128 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 export const deleteAccountSchema = z.object({
   password: z.string().min(1, "Password is required"),
   confirmation: z.literal("DELETE", { message: 'Type "DELETE" to confirm' }),
@@ -39,4 +50,5 @@ export const deleteAccountSchema = z.object({
 export type BuilderIdentityInput = z.infer<typeof builderIdentitySchema>;
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type SetInitialPasswordInput = z.infer<typeof setInitialPasswordSchema>;
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

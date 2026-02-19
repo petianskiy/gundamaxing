@@ -155,6 +155,7 @@ model User {
   registrationIp   String?
   onboardingStep   Int              @default(0)
   onboardingComplete Boolean        @default(false)
+  editorGuideSeen  Boolean          @default(false)
 
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt

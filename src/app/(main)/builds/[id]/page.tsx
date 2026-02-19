@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { getBuildById, getBuilds } from "@/lib/data/builds";
 import { getCommentsByBuildId } from "@/lib/data/comments";
 import { getUserLikeForBuild, getUserBookmarkForBuild, getUserCommentLikes } from "@/lib/data/likes";
@@ -8,7 +9,7 @@ import { ShowcasePage } from "@/components/build/showcase/showcase-page";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; guide?: string }>;
 };
 
 export default async function BuildPage({ params, searchParams }: Props) {
@@ -25,6 +26,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
   const currentUserId = session?.user?.id;
   const isOwner = currentUserId === build.userId;
   const wantsEdit = sp.edit === "1";
+  const wantsGuide = sp.guide === "1";
 
   // Fetch engagement status if logged in
   const [isLiked, isBookmarked, likedCommentIds] = currentUserId
@@ -34,6 +36,16 @@ export default async function BuildPage({ params, searchParams }: Props) {
         getUserCommentLikes(currentUserId, id),
       ])
     : [false, false, [] as string[]];
+
+  // Check if editor guide should be shown (first build, not yet seen)
+  let showGuide = false;
+  if (wantsGuide && isOwner && currentUserId) {
+    const userData = await db.user.findUnique({
+      where: { id: currentUserId },
+      select: { editorGuideSeen: true },
+    });
+    showGuide = !(userData?.editorGuideSeen);
+  }
 
   // If owner opened with ?edit=1, go directly to showcase editor
   if ((build.showcaseLayout || (wantsEdit && isOwner))) {
@@ -47,6 +59,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
         isBookmarked={isBookmarked}
         likedCommentIds={likedCommentIds}
         startEditing={wantsEdit && isOwner}
+        showGuide={showGuide}
       />
     );
   }

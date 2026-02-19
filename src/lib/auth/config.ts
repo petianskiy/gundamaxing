@@ -18,8 +18,11 @@ function createAdapter() {
   return {
     ...base,
     async createUser(data: { name?: string | null; email: string; emailVerified?: Date | null; image?: string | null }) {
+      // For Discord users without verified email, generate a unique placeholder
+      // to avoid unique constraint violations on the email column
+      const email = data.email || `discord_noemail_${Date.now()}_${Math.random().toString(36).slice(2, 8)}@placeholder.invalid`;
+
       // Generate a username from the email prefix
-      const email = data.email ?? "";
       const prefix = email
         .split("@")[0]
         .toLowerCase()
@@ -49,6 +52,8 @@ function createAdapter() {
         },
       });
 
+      console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}`);
+
       return {
         id: user.id,
         name: user.displayName,
@@ -60,6 +65,10 @@ function createAdapter() {
         verificationTier: "UNVERIFIED" as const,
         onboardingComplete: user.onboardingComplete,
       };
+    },
+    async linkAccount(account: any) {
+      console.log(`[auth] linked_account: provider=${account.provider}, userId=${account.userId}`);
+      return base.linkAccount!(account);
     },
   } as NextAuthConfig["adapter"];
 }
@@ -206,7 +215,7 @@ const authConfig: NextAuthConfig = {
       if (user.id) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { riskScore: true, emailVerified: true },
+          select: { riskScore: true, emailVerified: true, onboardingComplete: true },
         });
 
         // Block banned users (riskScore >= 100)
@@ -221,6 +230,15 @@ const authConfig: NextAuthConfig = {
           !dbUser.emailVerified
         ) {
           return "/login?error=EmailNotVerified";
+        }
+
+        // Redirect OAuth users who haven't completed onboarding to set their handle
+        if (
+          account?.provider !== "credentials" &&
+          dbUser &&
+          !dbUser.onboardingComplete
+        ) {
+          return "/complete-profile";
         }
       }
       return true;

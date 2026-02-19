@@ -117,6 +117,9 @@ export async function createBuild(formData: FormData) {
     const primaryIdx = data.primaryIndex ?? 0;
     const slug = await uniqueSlug(generateSlug(data.title));
 
+    // Check if this is the user's first build (for editor guide overlay)
+    const existingBuildCount = await db.build.count({ where: { userId: user.id } });
+
     const build = await db.$transaction(async (tx) => {
       const newBuild = await tx.build.create({
         data: {
@@ -152,7 +155,7 @@ export async function createBuild(formData: FormData) {
 
     revalidatePath("/builds");
 
-    return { success: true, buildId: build.id, slug: build.slug };
+    return { success: true, buildId: build.id, slug: build.slug, isFirstBuild: existingBuildCount === 0 };
   } catch (error) {
     console.error("createBuild error:", error);
     return { error: "An unexpected error occurred." };

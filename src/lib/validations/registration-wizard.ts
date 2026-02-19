@@ -77,7 +77,32 @@ export const stepDSchema = z.object({
   socialLinks: socialLinksSchema.optional(),
 });
 
+/**
+ * OAuth Complete Profile: set handle after first OAuth sign-in
+ */
+export const completeProfileSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Handle must be at least 3 characters")
+    .max(20, "Handle must be at most 20 characters")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Handle can only contain letters, numbers, and underscores"
+    ),
+  displayName: z
+    .string()
+    .max(50, "Display name must be at most 50 characters")
+    .optional()
+    .or(z.literal("")),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .optional()
+    .or(z.literal("")),
+});
+
 export type StepAInput = z.infer<typeof stepASchema>;
 export type StepBInput = z.infer<typeof stepBSchema>;
 export type StepCInput = z.infer<typeof stepCSchema>;
 export type StepDInput = z.infer<typeof stepDSchema>;
+export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
