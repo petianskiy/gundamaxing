@@ -119,7 +119,7 @@ export function ShowcasePage({ build, comments, currentUserId, isLiked, isBookma
             />
           </div>
           <div>
-            <Link href={`/u/${build.username}`} className="text-sm font-medium text-foreground hover:underline">
+            <Link href={`/u/${build.userHandle}`} className="text-sm font-medium text-foreground hover:underline">
               {build.username}
             </Link>
             <p className="text-xs text-muted-foreground">Posted {build.createdAt}</p>

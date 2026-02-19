@@ -85,6 +85,7 @@ export interface Build {
   forks?: string[];
   userId: string;
   username: string;
+  userHandle: string;
   userAvatar: string;
   likes: number;
   comments: number;
@@ -143,6 +144,7 @@ export interface Thread {
   categoryName: string;
   userId: string;
   username: string;
+  userHandle: string;
   userAvatar: string;
   replies: number;
   views: number;
@@ -156,6 +158,7 @@ export interface Comment {
   content: string;
   userId: string;
   username: string;
+  userHandle: string;
   userAvatar: string;
   likes: number;
   createdAt: string;

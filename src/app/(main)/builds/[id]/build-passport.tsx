@@ -442,7 +442,7 @@ export function BuildPassport({
               />
             </div>
             <div>
-              <Link href={`/u/${build.username}`} className="text-sm font-medium text-foreground hover:underline">
+              <Link href={`/u/${build.userHandle}`} className="text-sm font-medium text-foreground hover:underline">
                 {build.username}
               </Link>
               <p className="text-xs text-muted-foreground">{t("shared.posted")} {build.createdAt}</p>

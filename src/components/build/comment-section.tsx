@@ -107,7 +107,7 @@ function CommentItem({
     formData.append("parentId", comment.id);
     // Honeypot + timing fields
     formData.append("website", "");
-    formData.append("formRenderedAt", String(Date.now() - 5000));
+    formData.append("_timing", btoa(String(Date.now() - 5000)));
 
     const result = await createComment(formData);
     setIsSubmittingReply(false);
@@ -122,7 +122,7 @@ function CommentItem({
 
   return (
     <div className={cn("flex gap-3", depth > 0 && "ml-8 mt-3")}>
-      <Link href={`/u/${comment.username}`} className="flex-shrink-0">
+      <Link href={`/u/${comment.userHandle}`} className="flex-shrink-0">
         <div
           className="relative rounded-full overflow-hidden"
           style={{ width: size, height: size }}
@@ -139,7 +139,7 @@ function CommentItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <Link
-            href={`/u/${comment.username}`}
+            href={`/u/${comment.userHandle}`}
             className="text-sm font-medium text-foreground hover:underline"
           >
             {comment.username}
@@ -260,8 +260,8 @@ export function CommentSection({
     formData.append("buildId", buildId);
     // Honeypot field
     formData.append("website", "");
-    // Timing field
-    formData.append("formRenderedAt", String(formRenderedAt.current));
+    // Timing field — base64 encoded timestamp expected by validateTiming
+    formData.append("_timing", btoa(String(formRenderedAt.current)));
 
     const result = await createComment(formData);
     setIsSubmitting(false);

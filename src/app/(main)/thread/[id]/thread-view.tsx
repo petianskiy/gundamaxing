@@ -24,7 +24,7 @@ function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Link href={`/u/${comment.username}`} className="text-sm font-medium text-foreground hover:underline">
+            <Link href={`/u/${comment.userHandle}`} className="text-sm font-medium text-foreground hover:underline">
               {comment.username}
             </Link>
             <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
@@ -93,7 +93,7 @@ export function ThreadView({
               />
             </div>
             <div>
-              <Link href={`/u/${thread.username}`} className="text-sm font-semibold text-foreground hover:underline">
+              <Link href={`/u/${thread.userHandle}`} className="text-sm font-semibold text-foreground hover:underline">
                 {thread.username}
               </Link>
               <p className="text-xs text-muted-foreground">{thread.createdAt}</p>
