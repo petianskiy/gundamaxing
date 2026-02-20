@@ -333,7 +333,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                 />
               </FormField>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField label={t("upload.grade")}>
                   <select
                     className={selectClass}
@@ -433,7 +433,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                     <p className="text-xs text-muted-foreground mb-2">
                       {images.length} / 25 images
                     </p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {images.map((img, i) => (
                         <div
                           key={img.previewUrl || img.url}

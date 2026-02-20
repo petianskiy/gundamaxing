@@ -107,9 +107,9 @@ export function ShowcaseDock({
   const loadColor = loadPercent >= 90 ? "bg-red-500" : loadPercent >= 70 ? "bg-amber-500" : "bg-blue-500";
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[600] flex flex-col items-center gap-1.5">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[600] flex flex-col items-center gap-1.5 max-w-[calc(100vw-2rem)]">
       {/* Capacity indicator */}
-      <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/40 text-[10px]">
+      <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/40 text-[10px]">
         <div className="flex items-center gap-1.5">
           <ImagePlus className="h-3 w-3 text-zinc-500" />
           <span className={imageCount >= maxImages ? "text-red-400 font-medium" : "text-zinc-400"}>
@@ -141,7 +141,8 @@ export function ShowcaseDock({
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="flex items-end gap-1 px-3 py-2 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-zinc-700/50 shadow-2xl"
+        className="flex items-end gap-1 px-2 sm:px-3 py-2 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-zinc-700/50 shadow-2xl overflow-x-auto max-w-full"
+        style={{ scrollbarWidth: "none" }}
       >
         {items.map((item) => (
           <DockIcon key={item.label} mouseX={mouseX} item={item} />
@@ -159,10 +160,16 @@ function DockIcon({ mouseX, item }: { mouseX: MotionValue<number>; item: DockIte
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [40, 64, 40]);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const baseSize = isMobile ? 34 : 40;
+  const hoverSize = isMobile ? 34 : 64;
+  const baseIcon = isMobile ? 16 : 18;
+  const hoverIcon = isMobile ? 16 : 28;
+
+  const widthSync = useTransform(distance, [-150, 0, 150], [baseSize, hoverSize, baseSize]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
-  const iconSizeSync = useTransform(distance, [-150, 0, 150], [18, 28, 18]);
+  const iconSizeSync = useTransform(distance, [-150, 0, 150], [baseIcon, hoverIcon, baseIcon]);
   const iconSize = useSpring(iconSizeSync, { mass: 0.1, stiffness: 150, damping: 12 });
 
   const Icon = item.icon;

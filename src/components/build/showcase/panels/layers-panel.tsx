@@ -22,14 +22,14 @@ export function LayersPanel({ elements, selectedId, onSelect, onReorder, onClose
   const sorted = [...elements].sort((a, b) => b.zIndex - a.zIndex);
 
   return (
-    <div className="fixed top-20 right-4 z-[500] w-64 max-h-[60vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:right-4 z-[500] w-full sm:w-64 max-h-[50vh] sm:max-h-[60vh] bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <h3 className="text-sm font-semibold text-white">Layers</h3>
         <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="overflow-y-auto max-h-[calc(60vh-3rem)]">
+      <div className="overflow-y-auto max-h-[calc(50vh-3rem)] sm:max-h-[calc(60vh-3rem)]">
         {sorted.map((el) => {
           const isSelected = el.id === selectedId;
           const label = el.type === "image" ? "Image" : el.type === "text" ? (el as { content: string }).content.slice(0, 20) : "Info Card";

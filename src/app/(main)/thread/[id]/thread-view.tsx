@@ -41,7 +41,7 @@ function renderCommentContent(text: string) {
 
 function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
   return (
-    <div className={depth > 0 ? "ml-8 mt-4" : ""}>
+    <div className={depth > 0 ? "ml-4 sm:ml-8 mt-4" : ""}>
       <div className="flex gap-3">
         <div
           className="relative rounded-full overflow-hidden flex-shrink-0"

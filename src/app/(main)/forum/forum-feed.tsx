@@ -45,17 +45,17 @@ export function ForumFeed({
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{cat.description}</p>
                 </div>
-                <div className="hidden sm:flex items-center gap-6 text-xs text-muted-foreground flex-shrink-0">
+                <div className="flex items-center gap-3 sm:gap-6 text-xs text-muted-foreground flex-shrink-0">
                   <div className="text-right">
                     <p className="font-semibold text-foreground">{cat.threadCount.toLocaleString()}</p>
-                    <p>{t("shared.threads")}</p>
+                    <p className="hidden sm:block">{t("shared.threads")}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-foreground">{cat.postCount.toLocaleString()}</p>
-                    <p>{t("shared.posts")}</p>
+                    <p className="hidden sm:block">{t("shared.posts")}</p>
                   </div>
                   {cat.lastActivity && (
-                    <div className="text-right w-20">
+                    <div className="hidden sm:block text-right w-20">
                       <p className="text-muted-foreground">{cat.lastActivity}</p>
                     </div>
                   )}
@@ -102,7 +102,7 @@ export function ForumFeed({
                     <span>{thread.createdAt}</span>
                   </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground flex-shrink-0">
+                <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground flex-shrink-0">
                   <span className="flex items-center gap-1">
                     <MessageSquare className="h-3 w-3" />
                     {thread.replies}

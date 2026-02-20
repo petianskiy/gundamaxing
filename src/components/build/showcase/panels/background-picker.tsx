@@ -173,7 +173,7 @@ export function BackgroundPicker({
     currentBackground.backgroundImageUrl === url;
 
   return (
-    <div className="fixed top-20 right-4 z-[500] w-80 max-h-[80vh] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:right-4 z-[500] w-full sm:w-80 max-h-[60vh] sm:max-h-[80vh] bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 shrink-0">
         <h3 className="text-sm font-semibold text-white">Background</h3>
