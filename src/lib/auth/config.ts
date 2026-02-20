@@ -51,8 +51,8 @@ function createAdapter() {
           avatar: data.image ?? null,
           username,
           verificationTier: tier,
-          onboardingComplete: false,
-          onboardingStep: 0,
+          onboardingComplete: true,
+          onboardingStep: 4,
         },
       });
 
@@ -219,7 +219,7 @@ const authConfig: NextAuthConfig = {
       if (user.id) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { riskScore: true, emailVerified: true, onboardingComplete: true },
+          select: { riskScore: true, emailVerified: true },
         });
 
         // Block banned users (riskScore >= 100)
@@ -234,15 +234,6 @@ const authConfig: NextAuthConfig = {
           !dbUser.emailVerified
         ) {
           return "/login?error=EmailNotVerified";
-        }
-
-        // Redirect OAuth users who haven't completed onboarding to set their handle
-        if (
-          account?.provider !== "credentials" &&
-          dbUser &&
-          !dbUser.onboardingComplete
-        ) {
-          return "/complete-profile";
         }
       }
       return true;
