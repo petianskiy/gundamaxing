@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { Trash2, Maximize2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShowcaseElement } from "./showcase-element";
 import { ShowcaseDock } from "./showcase-dock";
@@ -53,13 +53,6 @@ const MAX_IMAGES = 50;
 const MAX_VIDEOS = 2;
 const MAX_VIDEO_DURATION_SECONDS = 60;
 
-const ASPECT_RATIO_OPTIONS = [
-  { label: "4:5", value: "4 / 5" },
-  { label: "3:4", value: "3 / 4" },
-  { label: "2:3", value: "2 / 3" },
-  { label: "9:16", value: "9 / 16" },
-  { label: "1:2", value: "1 / 2" },
-];
 
 // ─── State Management ───────────────────────────────────────────
 
@@ -185,7 +178,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
-  const [showSizeMenu, setShowSizeMenu] = useState(false);
+
   // Group state: maps elementId → groupId (local only, not persisted)
   const [groups, setGroups] = useState<Record<string, string>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -873,42 +866,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   return (
     <div className="relative">
-      {/* Canvas size selector */}
-      <div className="absolute -top-10 right-0 z-30 flex items-center gap-2">
-        <div className="relative">
-          <button
-            onClick={() => setShowSizeMenu(!showSizeMenu)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
-          >
-            <Maximize2 className="h-3.5 w-3.5" />
-            <span>
-              {ASPECT_RATIO_OPTIONS.find((o) => o.value === layout.canvas.aspectRatio)?.label ?? "4:5"}
-            </span>
-          </button>
-          {showSizeMenu && (
-            <div className="absolute top-full right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-50">
-              {ASPECT_RATIO_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    dispatch({ type: "SET_ASPECT_RATIO", aspectRatio: opt.value });
-                    setShowSizeMenu(false);
-                  }}
-                  className={cn(
-                    "block w-full px-4 py-2 text-xs text-left transition-colors",
-                    layout.canvas.aspectRatio === opt.value
-                      ? "bg-blue-500/20 text-blue-400"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Canvas */}
       <div
         ref={canvasRef}
@@ -936,13 +893,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
               setSelectedIds([]);
               setEditingTextId(null);
             }
-            setShowSizeMenu(false);
-          }
-        }}
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (!target.closest("[data-element-wrapper]")) {
-            setShowSizeMenu(false);
           }
         }}
       >
