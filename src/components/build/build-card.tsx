@@ -101,7 +101,11 @@ export function BuildCard({ build }: { build: Build }) {
           {/* Footer */}
           <div className="flex items-center justify-between pt-2 border-t border-border/50">
             {/* User */}
-            <div className="flex items-center gap-1.5 min-w-0">
+            <Link
+              href={`/u/${build.userHandle}`}
+              className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="relative w-[18px] h-[18px] rounded-full overflow-hidden shrink-0">
                 <Image
                   src={build.userAvatar}
@@ -114,7 +118,7 @@ export function BuildCard({ build }: { build: Build }) {
               <span className="text-xs text-muted-foreground truncate">
                 {build.username}
               </span>
-            </div>
+            </Link>
 
             {/* Stats */}
             <div className="flex items-center gap-3 text-muted-foreground shrink-0">

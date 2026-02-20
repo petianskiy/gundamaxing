@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Bookmark } from "lucide-react";
 import { BuildCard } from "@/components/build/build-card";
 import { useTranslation } from "@/lib/i18n/context";
@@ -13,8 +14,19 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="relative min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      {/* Background image */}
+      <Image
+        src="/bookmarks-bg.jpg"
+        alt=""
+        fill
+        className="object-cover object-center"
+        priority
+        unoptimized
+      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+
+      <div className="relative z-10 mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">

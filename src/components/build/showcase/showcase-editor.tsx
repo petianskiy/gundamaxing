@@ -523,10 +523,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     const element: ShowcaseTextElement = {
       id: generateId(),
       type: "text",
-      x: 20,
+      x: 30,
       y: 40,
-      width: 60,
-      height: 10,
+      width: 40,
+      height: 6,
       zIndex: maxZ + 1,
       rotation: 0,
       content: "Double-click to edit...",
