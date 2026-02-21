@@ -822,12 +822,53 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       {/* WebGL preset backgrounds */}
       {bgUrl === "preset:faulty-terminal" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <FaultyTerminal />
+          <FaultyTerminal
+            scale={3}
+            gridMul={[2, 1]}
+            digitSize={2.5}
+            timeScale={0.5}
+            pause={false}
+            scanlineIntensity={0.5}
+            glitchAmount={1}
+            flickerAmount={1}
+            noiseAmp={0.7}
+            chromaticAberration={0}
+            dither={0}
+            curvature={0.1}
+            tint="#d357fe"
+            mouseReact
+            mouseStrength={0.5}
+            pageLoadAnimation
+            brightness={0.6}
+          />
         </div>
       )}
       {bgUrl === "preset:grainient" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <Grainient />
+          <Grainient
+            color1="#FF9FFC"
+            color2="#785700"
+            color3="#B19EEF"
+            timeSpeed={0.25}
+            colorBalance={0}
+            warpStrength={1}
+            warpFrequency={5}
+            warpSpeed={2}
+            warpAmplitude={50}
+            blendAngle={0}
+            blendSoftness={0.05}
+            rotationAmount={500}
+            noiseScale={2}
+            grainAmount={0.1}
+            grainScale={2}
+            grainAnimated={false}
+            contrast={1.5}
+            gamma={1}
+            saturation={1}
+            centerX={0}
+            centerY={0}
+            zoom={0.9}
+          />
         </div>
       )}
 
