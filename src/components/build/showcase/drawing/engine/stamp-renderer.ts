@@ -106,12 +106,17 @@ function getTempCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRe
 
   if (!_tempCanvas || !_tempCtx) {
     _tempCanvas = document.createElement("canvas");
+    // Pre-allocate at 512×512 to avoid frequent GPU memory reallocs
+    const initSize = Math.min(2048, Math.max(s, 512));
+    _tempCanvas.width = initSize;
+    _tempCanvas.height = initSize;
     _tempCtx = _tempCanvas.getContext("2d");
     if (!_tempCtx) return null;
   }
 
   if (_tempCanvas.width < s || _tempCanvas.height < s) {
-    const newSize = Math.min(2048, Math.max(s, 64));
+    // Doubling strategy: allocate 2x current size to reduce future resizes
+    const newSize = Math.min(2048, Math.max(s, _tempCanvas.width * 2));
     _tempCanvas.width = newSize;
     _tempCanvas.height = newSize;
   }

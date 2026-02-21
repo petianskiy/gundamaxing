@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import type { BrushPreset, BrushCategory } from "../engine/brush-types";
 import { clamp } from "../engine/brush-types";
 import { CATEGORY_META, getPresetsByCategory, searchPresets } from "../brushes/presets";
+import { preloadCategoryAssets } from "../engine/stamp-renderer";
+import { EditableValue } from "./editable-value";
 
 // ─── Preview dab renderer ───────────────────────────────────────
 // Simplified dab renderer for brush thumbnails.
@@ -113,6 +115,12 @@ export function BrushSettingsPanel({
   const [activeCategory, setActiveCategory] = useState<BrushCategory>("pencils");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Preload brush assets when category changes
+  useEffect(() => {
+    const presets = getPresetsByCategory(activeCategory);
+    preloadCategoryAssets(presets).catch(() => {});
+  }, [activeCategory]);
+
   const displayPresets = useMemo(() => {
     if (searchQuery.trim()) {
       return searchPresets(searchQuery);
@@ -152,21 +160,33 @@ export function BrushSettingsPanel({
             onChange={(e) => onSetSize(parseInt(e.target.value))}
             className="flex-1 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
           />
-          <span className="text-[10px] text-zinc-400 w-8 text-right">{brushSize}px</span>
+          <EditableValue
+            value={brushSize}
+            onChange={onSetSize}
+            min={1}
+            max={200}
+            suffix="px"
+            className="w-8 text-right"
+          />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-zinc-500 w-8">Opacity</span>
           <input
             type="range"
-            min={5}
+            min={1}
             max={100}
             value={Math.round(brushOpacity * 100)}
             onChange={(e) => onSetOpacity(parseInt(e.target.value) / 100)}
             className="flex-1 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
           />
-          <span className="text-[10px] text-zinc-400 w-8 text-right">
-            {Math.round(brushOpacity * 100)}%
-          </span>
+          <EditableValue
+            value={Math.round(brushOpacity * 100)}
+            onChange={(v) => onSetOpacity(v / 100)}
+            min={1}
+            max={100}
+            suffix="%"
+            className="w-8 text-right"
+          />
         </div>
       </div>
 

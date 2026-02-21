@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import {
   Pen,
   Eraser,
@@ -24,15 +25,60 @@ interface ToolStripProps {
 }
 
 const tools = [
-  { id: "brush", icon: Pen, label: "Brush", implemented: true },
-  { id: "eraser", icon: Eraser, label: "Eraser", implemented: true },
-  { id: "shape", icon: Pentagon, label: "Shape", implemented: true },
-  { id: "eyedropper", icon: Pipette, label: "Eyedropper", implemented: true },
-  { id: "fill", icon: PaintBucket, label: "Fill", implemented: true },
-  { id: "smudge", icon: Blend, label: "Smudge", implemented: true },
-  { id: "move", icon: Move, label: "Move", implemented: false },
-  { id: "select", icon: SquareDashed, label: "Select", implemented: false },
+  { id: "brush", icon: Pen, label: "Brush", shortcut: "B", implemented: true },
+  { id: "eraser", icon: Eraser, label: "Eraser", shortcut: "E", implemented: true },
+  { id: "shape", icon: Pentagon, label: "Shape", shortcut: "U", implemented: true },
+  { id: "eyedropper", icon: Pipette, label: "Eyedropper", shortcut: "I", implemented: true },
+  { id: "fill", icon: PaintBucket, label: "Fill", shortcut: "G", implemented: true },
+  { id: "smudge", icon: Blend, label: "Smudge", shortcut: "R", implemented: true },
+  { id: "move", icon: Move, label: "Move", shortcut: "V", implemented: false },
+  { id: "select", icon: SquareDashed, label: "Select", shortcut: "M", implemented: false },
 ];
+
+interface TooltipState {
+  toolId: string;
+  label: string;
+  shortcut: string;
+  rect: DOMRect;
+}
+
+function ToolTooltip({
+  tooltip,
+  position,
+}: {
+  tooltip: TooltipState;
+  position: "right" | "top";
+}) {
+  if (position === "right") {
+    return (
+      <div
+        className="fixed pointer-events-none z-[10002] px-2 py-1 rounded bg-zinc-800 border border-zinc-700 shadow-lg whitespace-nowrap"
+        style={{
+          left: tooltip.rect.right + 8,
+          top: tooltip.rect.top + tooltip.rect.height / 2,
+          transform: "translateY(-50%)",
+        }}
+      >
+        <span className="text-[11px] text-zinc-200">{tooltip.label}</span>
+        <span className="text-[10px] text-zinc-500 ml-1.5">({tooltip.shortcut})</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed pointer-events-none z-[10002] px-2 py-1 rounded bg-zinc-800 border border-zinc-700 shadow-lg whitespace-nowrap"
+      style={{
+        left: tooltip.rect.left + tooltip.rect.width / 2,
+        top: tooltip.rect.top - 8,
+        transform: "translate(-50%, -100%)",
+      }}
+    >
+      <span className="text-[11px] text-zinc-200">{tooltip.label}</span>
+      <span className="text-[10px] text-zinc-500 ml-1.5">({tooltip.shortcut})</span>
+    </div>
+  );
+}
 
 export function ToolStrip({
   activeTool,
@@ -42,6 +88,23 @@ export function ToolStrip({
   onUndo,
   onRedo,
 }: ToolStripProps) {
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+  const showTooltip = useCallback(
+    (e: React.MouseEvent, toolId: string, label: string, shortcut: string) => {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setTooltip({ toolId, label, shortcut, rect });
+    },
+    []
+  );
+
+  const hideTooltip = useCallback(() => {
+    setTooltip(null);
+  }, []);
+
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
+  const modKey = isMac ? "\u2318" : "Ctrl+";
+
   return (
     <>
       {/* Desktop: Vertical column */}
@@ -55,10 +118,13 @@ export function ToolStrip({
               key={tool.id}
               onClick={() => tool.implemented && onSetTool(tool.id)}
               disabled={!tool.implemented}
-              title={tool.implemented ? tool.label : "Coming soon"}
+              onMouseEnter={(e) =>
+                tool.implemented && showTooltip(e, tool.id, tool.label, tool.shortcut)
+              }
+              onMouseLeave={hideTooltip}
               className={cn(
                 "w-9 h-9 rounded flex items-center justify-center transition-all",
-                "hover:bg-zinc-800 disabled:cursor-not-allowed",
+                "hover:bg-zinc-800 hover:scale-110 disabled:cursor-not-allowed",
                 isActive && "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50",
                 !isActive && tool.implemented && "text-zinc-400",
                 !tool.implemented && "opacity-40"
@@ -76,10 +142,13 @@ export function ToolStrip({
         <button
           onClick={onUndo}
           disabled={!canUndo}
-          title="Undo"
+          onMouseEnter={(e) =>
+            showTooltip(e, "undo", "Undo", `${modKey}Z`)
+          }
+          onMouseLeave={hideTooltip}
           className={cn(
             "w-9 h-9 rounded flex items-center justify-center transition-all",
-            "hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40",
+            "hover:bg-zinc-800 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40",
             canUndo ? "text-zinc-400" : "text-zinc-600"
           )}
         >
@@ -90,15 +159,21 @@ export function ToolStrip({
         <button
           onClick={onRedo}
           disabled={!canRedo}
-          title="Redo"
+          onMouseEnter={(e) =>
+            showTooltip(e, "redo", "Redo", `${modKey}${isMac ? "\u21e7" : "Shift+"}Z`)
+          }
+          onMouseLeave={hideTooltip}
           className={cn(
             "w-9 h-9 rounded flex items-center justify-center transition-all",
-            "hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40",
+            "hover:bg-zinc-800 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40",
             canRedo ? "text-zinc-400" : "text-zinc-600"
           )}
         >
           <Redo className="w-5 h-5" />
         </button>
+
+        {/* Desktop tooltip */}
+        {tooltip && <ToolTooltip tooltip={tooltip} position="right" />}
       </div>
 
       {/* Mobile: Horizontal row */}
@@ -113,10 +188,13 @@ export function ToolStrip({
                 key={tool.id}
                 onClick={() => tool.implemented && onSetTool(tool.id)}
                 disabled={!tool.implemented}
-                title={tool.implemented ? tool.label : "Coming soon"}
+                onMouseEnter={(e) =>
+                  tool.implemented && showTooltip(e, tool.id, tool.label, tool.shortcut)
+                }
+                onMouseLeave={hideTooltip}
                 className={cn(
                   "w-9 h-9 flex-shrink-0 rounded flex items-center justify-center transition-all",
-                  "active:bg-zinc-800 disabled:cursor-not-allowed",
+                  "active:scale-95 disabled:cursor-not-allowed",
                   isActive && "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50",
                   !isActive && tool.implemented && "text-zinc-400",
                   !tool.implemented && "opacity-40"
@@ -134,10 +212,9 @@ export function ToolStrip({
           <button
             onClick={onUndo}
             disabled={!canUndo}
-            title="Undo"
             className={cn(
               "w-9 h-9 flex-shrink-0 rounded flex items-center justify-center transition-all",
-              "active:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40",
+              "active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
               canUndo ? "text-zinc-400" : "text-zinc-600"
             )}
           >
@@ -148,16 +225,18 @@ export function ToolStrip({
           <button
             onClick={onRedo}
             disabled={!canRedo}
-            title="Redo"
             className={cn(
               "w-9 h-9 flex-shrink-0 rounded flex items-center justify-center transition-all",
-              "active:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40",
+              "active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
               canRedo ? "text-zinc-400" : "text-zinc-600"
             )}
           >
             <Redo className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Mobile tooltip */}
+        {tooltip && <ToolTooltip tooltip={tooltip} position="top" />}
       </div>
     </>
   );

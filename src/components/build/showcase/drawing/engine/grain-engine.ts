@@ -138,13 +138,19 @@ function getGrainTempCanvas(
 ): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   if (!_grainTempCanvas || !_grainTempCtx) {
     _grainTempCanvas = document.createElement("canvas");
+    // Pre-allocate at 512×512 to avoid frequent GPU memory reallocs
+    const initW = Math.max(w, 512);
+    const initH = Math.max(h, 512);
+    _grainTempCanvas.width = initW;
+    _grainTempCanvas.height = initH;
     _grainTempCtx = _grainTempCanvas.getContext("2d");
     if (!_grainTempCtx) return null;
   }
 
   if (_grainTempCanvas.width < w || _grainTempCanvas.height < h) {
-    _grainTempCanvas.width = Math.max(w, _grainTempCanvas.width);
-    _grainTempCanvas.height = Math.max(h, _grainTempCanvas.height);
+    // Doubling strategy to reduce future resizes
+    _grainTempCanvas.width = Math.max(w, _grainTempCanvas.width * 2);
+    _grainTempCanvas.height = Math.max(h, _grainTempCanvas.height * 2);
   }
 
   return { canvas: _grainTempCanvas, ctx: _grainTempCtx };
@@ -225,6 +231,41 @@ export function applyGrain(
     }
   }
 
+  const scaledGrainW = grainW * scale;
+  const scaledGrainH = grainH * scale;
+
+  // Map our blend mode names to Canvas2D composite operations
+  const blendOp = mapGrainBlendMode(preset.grainBlendMode);
+
+  // ─── Fast path: dab fits in a single grain tile ───────────────
+  // Skip temp canvas entirely and composite grain directly onto dab
+  if (w <= scaledGrainW && h <= scaledGrainH) {
+    const dabCtx = dabCanvas.getContext("2d");
+    if (!dabCtx) return;
+
+    // Normalize offset into one tile period
+    const normOffsetX =
+      ((offsetX % scaledGrainW) + scaledGrainW) % scaledGrainW;
+    const normOffsetY =
+      ((offsetY % scaledGrainH) + scaledGrainH) % scaledGrainH;
+
+    dabCtx.save();
+    dabCtx.globalCompositeOperation = blendOp;
+    dabCtx.globalAlpha = preset.grainIntensity;
+
+    // Draw up to 4 tiles to cover the dab area with offset
+    const startX = -normOffsetX;
+    const startY = -normOffsetY;
+    for (let ty = startY; ty < h; ty += scaledGrainH) {
+      for (let tx = startX; tx < w; tx += scaledGrainW) {
+        dabCtx.drawImage(grainSource, tx, ty, scaledGrainW, scaledGrainH);
+      }
+    }
+
+    dabCtx.restore();
+    return;
+  }
+
   // ─── Draw tiled grain into temp canvas ────────────────────────
   const shared = getGrainTempCanvas(w, h);
   if (!shared) return;
@@ -234,12 +275,6 @@ export function applyGrain(
   tempCtx.save();
   tempCtx.globalCompositeOperation = "source-over";
   tempCtx.globalAlpha = 1;
-
-  // The grain texture is tiled at the given scale. We figure out
-  // how many tiles we need to cover the dab area and draw them
-  // with the computed offset.
-  const scaledGrainW = grainW * scale;
-  const scaledGrainH = grainH * scale;
 
   // Normalize offset into one tile period (always positive)
   const normOffsetX =
@@ -264,9 +299,6 @@ export function applyGrain(
   if (!dabCtx) return;
 
   dabCtx.save();
-
-  // Map our blend mode names to Canvas2D composite operations
-  const blendOp = mapGrainBlendMode(preset.grainBlendMode);
   dabCtx.globalCompositeOperation = blendOp;
   dabCtx.globalAlpha = preset.grainIntensity;
 

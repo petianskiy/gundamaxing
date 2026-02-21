@@ -30,15 +30,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRUSH_PRESETS, getBrushPreset } from "./brushes";
-import type { BrushPreset, DabParams } from "./engine/brush-types";
+import type { BrushPreset, DabParams, DirtyRect } from "./engine/brush-types";
 import { lerp, clamp } from "./engine/brush-types";
 import { LayerManager, type BlendMode } from "./engine/layer-manager";
 import { Compositor } from "./engine/compositor";
-import { renderDab, preloadPresetAssets } from "./engine/stamp-renderer";
+import { renderDab, preloadPresetAssets, preloadCategoryAssets } from "./engine/stamp-renderer";
 import { LayerPanel } from "./ui/layer-panel";
 import { BrushSettingsPanel } from "./ui/brush-settings-panel";
 import { BrushStudioPanel } from "./ui/brush-studio/brush-studio-panel";
 import { ToolStrip } from "./ui/tool-strip";
+import { EditableValue } from "./ui/editable-value";
 import { sampleColor } from "./tools/eyedropper-tool";
 import { floodFill } from "./tools/fill-tool";
 import {
@@ -67,6 +68,19 @@ function makeDab(
 ): DabParams {
   return { x, y, size, opacity, flow, rotation, strokePosition };
 }
+
+/** Perceptual opacity curve: softens high opacity values for more natural feel */
+const perceptualOpacity = (v: number) => Math.pow(v, 1.5);
+
+/** Tool shortcut key map */
+const TOOL_SHORTCUTS: Record<string, string> = {
+  b: "brush",
+  e: "eraser",
+  u: "shape",
+  i: "eyedropper",
+  g: "fill",
+  r: "smudge",
+};
 
 // ─── Brush icon mapping ──────────────────────────────────────────
 
@@ -157,6 +171,11 @@ export function DrawingOverlay({
   const strokePositionRef = useRef(0);
   const strokeLengthRef = useRef(0);
 
+  // rAF batching for compositing during strokes
+  const rafIdRef = useRef<number>(0);
+  const needsRecompositeRef = useRef(false);
+  const strokeBoundsRef = useRef<DirtyRect | null>(null);
+
   // Drawing state
   const isDrawingRef = useRef(false);
   const strokeInfoRef = useRef<StrokeInfo | null>(null);
@@ -189,12 +208,18 @@ export function DrawingOverlay({
     setCanRedoDraw(redoStackRef.current.length > 0);
   }, []);
 
-  const recomposite = useCallback(() => {
+  const recomposite = useCallback((dirtyRect?: DirtyRect | null) => {
     const c = compositorRef.current;
     const lm = layerManagerRef.current;
     if (c && lm) {
-      c.markDirty();
-      c.composite(lm.layers);
+      if (dirtyRect) {
+        // Partial update: skip markDirty() to use dirty-rect path
+        c.composite(lm.layers, dirtyRect);
+      } else {
+        // Full update
+        c.markDirty();
+        c.composite(lm.layers);
+      }
     }
   }, []);
 
@@ -217,6 +242,11 @@ export function DrawingOverlay({
     syncState();
   }, [canvasWidth, canvasHeight, syncState]);
 
+  // ─── Preload all brush assets on mount ──────────────────────────
+  useEffect(() => {
+    preloadCategoryAssets(BRUSH_PRESETS).catch(() => {});
+  }, []);
+
   // ─── Preload brush assets when brush changes ──────────────────
   useEffect(() => {
     const preset = getBrushPreset(activeBrushId);
@@ -224,6 +254,31 @@ export function DrawingOverlay({
       preloadPresetAssets(preset).catch(() => {});
     }
   }, [activeBrushId]);
+
+  // ─── rAF-batched recomposite for stroke rendering ─────────────
+  const scheduleRecomposite = useCallback(() => {
+    needsRecompositeRef.current = true;
+    if (rafIdRef.current) return; // already scheduled
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = 0;
+      if (needsRecompositeRef.current) {
+        needsRecompositeRef.current = false;
+        const bounds = strokeBoundsRef.current;
+        recomposite(bounds);
+        // Don't clear strokeBounds — accumulate for next frame
+      }
+    });
+  }, [recomposite]);
+
+  // Clean up rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = 0;
+      }
+    };
+  }, []);
 
   // ─── Tool switching ────────────────────────────────────────────
 
@@ -383,6 +438,7 @@ export function DrawingOverlay({
       // Reset stroke position tracking
       strokePositionRef.current = 0;
       strokeLengthRef.current = 0;
+      strokeBoundsRef.current = null;
 
       // Calculate first dab
       const sizeMult = lerp(
@@ -401,7 +457,7 @@ export function DrawingOverlay({
         preset.flowDynamics.pressureMax,
         pressure
       );
-      const dabOpacity = brushOpacity * opMult;
+      const dabOpacity = perceptualOpacity(brushOpacity) * opMult;
 
       const dab = makeDab(x, y, dabSize, dabOpacity, flowMult, 0, 0);
       renderDab(ctx, dab, brushColor, preset);
@@ -413,6 +469,7 @@ export function DrawingOverlay({
         lastPressure: pressure,
       };
 
+      // Immediate recomposite for first dab feedback
       recomposite();
     }
 
@@ -535,7 +592,7 @@ export function DrawingOverlay({
           preset.flowDynamics.pressureMax,
           p
         );
-        let dabOpacity = brushOpacity * opMult;
+        let dabOpacity = perceptualOpacity(brushOpacity) * opMult;
 
         if (preset.jitterOpacity > 0) {
           const jNorm =
@@ -571,6 +628,33 @@ export function DrawingOverlay({
         const dab = makeDab(dabX, dabY, dabSize, dabOpacity, flowMult, dabRotation, strokePos);
         renderDab(ctx, dab, brushColor, preset);
 
+        // Expand dirty rect to include this dab
+        const halfDab = dabSize / 2 + 2; // +2 for anti-alias bleed
+        const dabMinX = dabX - halfDab;
+        const dabMinY = dabY - halfDab;
+        const dabMaxX = dabX + halfDab;
+        const dabMaxY = dabY + halfDab;
+        const bounds = strokeBoundsRef.current;
+        if (bounds) {
+          const bMaxX = bounds.x + bounds.width;
+          const bMaxY = bounds.y + bounds.height;
+          const nx = Math.min(bounds.x, dabMinX);
+          const ny = Math.min(bounds.y, dabMinY);
+          strokeBoundsRef.current = {
+            x: nx,
+            y: ny,
+            width: Math.max(bMaxX, dabMaxX) - nx,
+            height: Math.max(bMaxY, dabMaxY) - ny,
+          };
+        } else {
+          strokeBoundsRef.current = {
+            x: dabMinX,
+            y: dabMinY,
+            width: dabSize + 4,
+            height: dabSize + 4,
+          };
+        }
+
         d += spacing;
       }
 
@@ -580,7 +664,7 @@ export function DrawingOverlay({
       stroke.lastY = y;
       stroke.lastPressure = pressure;
 
-      recomposite();
+      scheduleRecomposite();
     }
 
     function onPointerUp(e: PointerEvent) {
@@ -622,11 +706,18 @@ export function DrawingOverlay({
       }
 
       // ── Brush / Eraser ──
+      // Cancel pending rAF and do a full recomposite on stroke end
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = 0;
+        needsRecompositeRef.current = false;
+      }
       strokeInfoRef.current = null;
       strokePositionRef.current = 0;
       strokeLengthRef.current = 0;
+      strokeBoundsRef.current = null;
       pushUndo();
-      recomposite();
+      recomposite(); // full recomposite on stroke end
       syncState();
     }
 
@@ -652,6 +743,7 @@ export function DrawingOverlay({
     shapeFilled,
     syncState,
     recomposite,
+    scheduleRecomposite,
   ]);
 
   // ─── Layer operations ─────────────────────────────────────────
@@ -828,6 +920,52 @@ export function DrawingOverlay({
     recomposite();
     syncState();
   }, [recomposite, syncState]);
+
+  // ─── Keyboard shortcuts ────────────────────────────────────────
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // Skip when typing in inputs
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      // Tool shortcuts
+      const tool = TOOL_SHORTCUTS[e.key.toLowerCase()];
+      if (tool && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        handleSetTool(tool);
+        return;
+      }
+
+      // Undo: Ctrl/Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Redo: Ctrl/Cmd+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      // Brush size: [ decrease, ] increase
+      if (e.key === "[" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setBrushSize((s) => Math.max(1, s - (s > 20 ? 5 : 2)));
+        return;
+      }
+      if (e.key === "]" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setBrushSize((s) => Math.min(200, s + (s > 20 ? 5 : 2)));
+        return;
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSetTool, handleUndo, handleRedo]);
 
   const handleClear = useCallback(() => {
     const lm = layerManagerRef.current;
@@ -1129,9 +1267,13 @@ export function DrawingOverlay({
                 >
                   <Plus className="h-3 w-3" />
                 </button>
-                <span className="text-[10px] text-zinc-400 w-6 text-center">
-                  {brushSize}
-                </span>
+                <EditableValue
+                  value={brushSize}
+                  onChange={setBrushSize}
+                  min={1}
+                  max={200}
+                  className="w-6 text-center"
+                />
               </div>
 
               {/* Opacity control */}
@@ -1139,7 +1281,7 @@ export function DrawingOverlay({
                 <span className="text-[9px] text-zinc-500 w-5">Op</span>
                 <input
                   type="range"
-                  min={5}
+                  min={1}
                   max={100}
                   value={Math.round(brushOpacity * 100)}
                   onChange={(e) =>
@@ -1147,9 +1289,14 @@ export function DrawingOverlay({
                   }
                   className="w-12 sm:w-16 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
                 />
-                <span className="text-[10px] text-zinc-400 w-7 text-center">
-                  {Math.round(brushOpacity * 100)}%
-                </span>
+                <EditableValue
+                  value={Math.round(brushOpacity * 100)}
+                  onChange={(v) => setBrushOpacity(v / 100)}
+                  min={1}
+                  max={100}
+                  suffix="%"
+                  className="w-7 text-center"
+                />
               </div>
 
               <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
