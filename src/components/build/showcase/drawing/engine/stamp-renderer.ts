@@ -1,6 +1,6 @@
 // ─── Stamp Renderer ──────────────────────────────────────────────
 // Renders a single brush dab (stamp) onto a canvas context.
-// Shape mask × grain texture composited at calculated params.
+// Uses a shared reusable temp canvas to avoid per-dab allocation.
 
 import type { BrushPreset, DabParams } from "./brush-types";
 import { clamp } from "./brush-types";
@@ -8,7 +8,7 @@ import { clamp } from "./brush-types";
 // ─── Stamp cache ─────────────────────────────────────────────────
 // Pre-render shape masks at discrete sizes to avoid per-dab computation.
 
-const stampCache = new Map<string, ImageBitmap | HTMLCanvasElement>();
+const stampCache = new Map<string, HTMLCanvasElement>();
 const MAX_CACHE_SIZE = 64;
 
 function getCacheKey(shape: string, hardness: number, size: number): string {
@@ -49,7 +49,6 @@ function createCircleStamp(
     ctx.fill();
   } else {
     // Soft brush: radial gradient falloff
-    // Hardness controls where the gradient starts (higher = more solid center)
     const innerRadius = radius * hardness;
     const gradient = ctx.createRadialGradient(cx, cy, innerRadius, cx, cy, radius);
     gradient.addColorStop(0, "rgba(255,255,255,1)");
@@ -77,7 +76,6 @@ function createSquareStamp(
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, side, side);
   } else {
-    // Soft square: feathered edges
     const feather = side * (1 - hardness) * 0.5;
     const gradient = ctx.createRadialGradient(
       side / 2, side / 2, side / 2 - feather,
@@ -112,38 +110,30 @@ function getOrCreateStamp(
   return newStamp;
 }
 
-// ─── Grain texture application ───────────────────────────────────
+// ─── Shared temp canvas for colorizing stamps ───────────────────
+// Reused across all dabs to avoid per-dab document.createElement
 
-const grainImageCache = new Map<string, HTMLCanvasElement>();
+let _sharedTempCanvas: HTMLCanvasElement | null = null;
+let _sharedTempCtx: CanvasRenderingContext2D | null = null;
 
-function getGrainImage(grainDataUrl: string): HTMLCanvasElement | null {
-  if (grainImageCache.has(grainDataUrl)) {
-    return grainImageCache.get(grainDataUrl)!;
+function getSharedTempCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
+  const s = Math.max(2, Math.ceil(size));
+
+  if (!_sharedTempCanvas || !_sharedTempCtx) {
+    _sharedTempCanvas = document.createElement("canvas");
+    _sharedTempCtx = _sharedTempCanvas.getContext("2d");
+    if (!_sharedTempCtx) return null;
   }
 
-  // Create image and draw to canvas (synchronous if already loaded)
-  const img = new Image();
-  img.src = grainDataUrl;
-  if (!img.complete) {
-    // Asynchronously load — first few dabs may skip grain
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      grainImageCache.set(grainDataUrl, canvas);
-    };
-    return null;
+  // Resize only if needed (grow but never shrink to avoid frequent reallocs)
+  if (_sharedTempCanvas.width < s || _sharedTempCanvas.height < s) {
+    // Round up to nearest power of 2 for cache-friendliness
+    const newSize = Math.min(2048, Math.max(s, 64));
+    _sharedTempCanvas.width = newSize;
+    _sharedTempCanvas.height = newSize;
   }
 
-  const canvas = document.createElement("canvas");
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(img, 0, 0);
-  grainImageCache.set(grainDataUrl, canvas);
-  return canvas;
+  return { canvas: _sharedTempCanvas, ctx: _sharedTempCtx };
 }
 
 // ─── Main stamp rendering function ───────────────────────────────
@@ -166,9 +156,6 @@ export function renderDab(
   const stampW = size;
   const stampH = size * clamp(preset.roundness, 0.1, 1);
 
-  // Get or create the shape mask
-  const stamp = getOrCreateStamp(preset.shape, preset.hardness, Math.max(stampW, stampH));
-
   ctx.save();
 
   // Move to dab center
@@ -190,14 +177,40 @@ export function renderDab(
   // Set opacity (opacity × flow)
   ctx.globalAlpha = clamp(opacity * flow, 0, 1);
 
-  // Create a temporary canvas for the colored stamp
-  const tempCanvas = document.createElement("canvas");
-  const tempSize = Math.max(2, Math.ceil(Math.max(stampW, stampH)));
-  tempCanvas.width = tempSize;
-  tempCanvas.height = tempSize;
-  const tempCtx = tempCanvas.getContext("2d")!;
+  // For hard brushes with no grain, use a fast path — draw directly
+  if (preset.hardness >= 0.9 && !preset.grain && preset.shape === "circle") {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, stampW / 2, stampH / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  // For soft brushes, use stamp-based rendering with shared temp canvas
+  const stampSize = Math.max(stampW, stampH);
+  const stamp = getOrCreateStamp(preset.shape, preset.hardness, stampSize);
+  const tempSize = Math.max(2, Math.ceil(stampSize));
+
+  const shared = getSharedTempCanvas(tempSize);
+  if (!shared) {
+    // Fallback: draw a simple circle if temp canvas fails
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, stampW / 2, stampH / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  const { ctx: tempCtx } = shared;
+
+  // Clear the region we'll use
+  tempCtx.clearRect(0, 0, tempSize, tempSize);
 
   // Draw the shape mask
+  tempCtx.globalCompositeOperation = "source-over";
+  tempCtx.globalAlpha = 1;
   tempCtx.drawImage(
     stamp,
     0, 0, stamp.width, stamp.height,
@@ -209,42 +222,12 @@ export function renderDab(
   tempCtx.fillStyle = color;
   tempCtx.fillRect(0, 0, tempSize, tempSize);
 
-  // Apply grain texture if present
-  if (preset.grain && preset.grainIntensity > 0) {
-    const grainCanvas = getGrainImage(preset.grain);
-    if (grainCanvas) {
-      tempCtx.globalCompositeOperation = preset.grainBlendMode;
-      tempCtx.globalAlpha = preset.grainIntensity;
-
-      // Tile grain across stamp
-      const scale = preset.grainScale;
-      const gw = grainCanvas.width * scale;
-      const gh = grainCanvas.height * scale;
-
-      let grainOffsetX = 0;
-      let grainOffsetY = 0;
-      if (preset.grainMovement === "rolling") {
-        grainOffsetX = x % gw;
-        grainOffsetY = y % gh;
-      } else if (preset.grainMovement === "random") {
-        grainOffsetX = Math.random() * gw;
-        grainOffsetY = Math.random() * gh;
-      }
-
-      for (let gx = -gw + grainOffsetX; gx < tempSize; gx += gw) {
-        for (let gy = -gh + grainOffsetY; gy < tempSize; gy += gh) {
-          tempCtx.drawImage(grainCanvas, gx, gy, gw, gh);
-        }
-      }
-      tempCtx.globalAlpha = 1;
-    }
-  }
-
   // Draw the final colored stamp onto the target canvas
   ctx.drawImage(
-    tempCanvas,
-    -tempSize / 2,
-    -tempSize / 2,
+    shared.canvas,
+    0, 0, tempSize, tempSize,
+    -stampW / 2,
+    -stampH / 2,
     stampW,
     stampH
   );
@@ -257,5 +240,4 @@ export function renderDab(
  */
 export function clearStampCache(): void {
   stampCache.clear();
-  grainImageCache.clear();
 }

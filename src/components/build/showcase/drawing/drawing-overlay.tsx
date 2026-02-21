@@ -87,7 +87,7 @@ export function DrawingOverlay({
   const compositorRef = useRef<Compositor | null>(null);
   const undoManagerRef = useRef<UndoManager | null>(null);
 
-  const [activeBrushId, setActiveBrushId] = useState("pen");
+  const [activeBrushId, setActiveBrushId] = useState("pencil-hb");
   const [brushColor, setBrushColor] = useState("#ffffff");
   const [brushSize, setBrushSize] = useState(8);
   const [brushOpacity, setBrushOpacity] = useState(1);
@@ -180,7 +180,12 @@ export function DrawingOverlay({
     function onPointerDown(e: PointerEvent) {
       e.preventDefault();
       e.stopPropagation();
-      canvas!.setPointerCapture(e.pointerId);
+
+      try {
+        canvas!.setPointerCapture(e.pointerId);
+      } catch {
+        // Pointer capture may fail on some browsers
+      }
 
       const lm = layerManagerRef.current;
       const um = undoManagerRef.current;
@@ -194,31 +199,48 @@ export function DrawingOverlay({
 
       isDrawingRef.current = true;
 
-      // Record undo checkpoint BEFORE drawing
-      pendingUndoActionRef.current = um.recordStrokeBefore(activeLayer.id);
+      // Record undo checkpoint BEFORE drawing (wrap in try-catch since it copies ImageData)
+      try {
+        pendingUndoActionRef.current = um.recordStrokeBefore(activeLayer.id);
+      } catch {
+        pendingUndoActionRef.current = null;
+      }
 
       const point = getStrokePoint(e);
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
 
-      // Begin stroke on the active layer's canvas
-      strokeStateRef.current = beginStroke(
-        preset,
-        brushColor,
-        brushSize,
-        brushOpacity,
-        point,
-        ctx
-      );
+      try {
+        // Begin stroke on the active layer's canvas
+        strokeStateRef.current = beginStroke(
+          preset,
+          brushColor,
+          brushSize,
+          brushOpacity,
+          point,
+          ctx
+        );
+      } catch (err) {
+        // Fallback: draw a simple dot directly if the brush engine fails
+        console.error("[DrawingOverlay] beginStroke failed:", err);
+        ctx.save();
+        ctx.fillStyle = brushColor;
+        ctx.globalAlpha = brushOpacity;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
-      // Immediately composite to show the first dab
+      // Always do a full recomposite after first dab for guaranteed visibility
       const comp = compositorRef.current;
       if (comp) {
-        comp.composite(lm.layers, strokeStateRef.current.dirtyRect);
+        comp.markDirty();
+        comp.composite(lm.layers);
       }
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (!isDrawingRef.current || !strokeStateRef.current) return;
+      if (!isDrawingRef.current) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -232,27 +254,74 @@ export function DrawingOverlay({
       if (!ctx) return;
 
       const point = getStrokePoint(e);
-      const dirtyRect = strokeTo(strokeStateRef.current, point, ctx);
 
-      // Partial composite for performance
-      const comp = compositorRef.current;
-      if (comp) {
-        comp.composite(lm.layers, dirtyRect);
+      if (strokeStateRef.current) {
+        try {
+          const dirtyRect = strokeTo(strokeStateRef.current, point, ctx);
+
+          // Partial composite for performance
+          const comp = compositorRef.current;
+          if (comp) {
+            comp.composite(lm.layers, dirtyRect);
+          }
+        } catch (err) {
+          // Fallback: draw directly on canvas
+          console.error("[DrawingOverlay] strokeTo failed:", err);
+          ctx.save();
+          ctx.fillStyle = brushColor;
+          ctx.globalAlpha = brushOpacity;
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          // Full recomposite
+          const comp = compositorRef.current;
+          if (comp) {
+            comp.markDirty();
+            comp.composite(lm.layers);
+          }
+        }
+      } else {
+        // No stroke state (engine failed on begin), draw directly
+        ctx.save();
+        ctx.fillStyle = brushColor;
+        ctx.globalAlpha = brushOpacity;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        const comp = compositorRef.current;
+        if (comp) {
+          comp.markDirty();
+          comp.composite(lm.layers);
+        }
       }
     }
 
     function onPointerUp(e: PointerEvent) {
       e.preventDefault();
       e.stopPropagation();
-      if (isDrawingRef.current && strokeStateRef.current) {
-        endStroke(strokeStateRef.current);
+      if (isDrawingRef.current) {
+        if (strokeStateRef.current) {
+          try {
+            endStroke(strokeStateRef.current);
+          } catch {
+            // Ignore end stroke errors
+          }
+        }
         strokeStateRef.current = null;
         isDrawingRef.current = false;
 
         // Commit the undo action
         const um = undoManagerRef.current;
         if (um && pendingUndoActionRef.current) {
-          um.commitStroke(pendingUndoActionRef.current);
+          try {
+            um.commitStroke(pendingUndoActionRef.current);
+          } catch {
+            // Ignore undo commit errors
+          }
           pendingUndoActionRef.current = null;
         }
 
