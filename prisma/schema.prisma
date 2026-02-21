@@ -176,6 +176,7 @@ model User {
   eventLogs        EventLog[]
   eras             BuildEra[]
   reactions        Reaction[]
+  brushPresets     UserBrushPreset[]
 
   @@index([email])
   @@index([reputation])
@@ -597,6 +598,28 @@ model Reaction {
   @@unique([userId, buildId, type])
   @@index([buildId])
   @@index([userId])
+}
+
+// ─── BRUSH PRESETS ─────────────────────────────────────────────
+
+model UserBrushPreset {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  category    String   @default("custom")
+  folder      String?
+  tags        String[] @default([])
+  isFavorite  Boolean  @default(false)
+  presetData  Json
+  stampUrl    String?
+  grainUrl    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, category])
+  @@index([userId, isFavorite])
 }
 
 // ─── RATE LIMIT (DB fallback) ─────────────────────────────────────

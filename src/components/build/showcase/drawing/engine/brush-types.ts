@@ -11,7 +11,10 @@ export type BrushCategory =
   | "textures"
   | "fx"
   | "mecha"
-  | "erasers";
+  | "erasers"
+  | "custom";
+
+export type RenderMode = "normal" | "buildup" | "wet";
 
 export type BlendMode = GlobalCompositeOperation;
 
@@ -30,6 +33,8 @@ export interface BrushPreset {
   id: string;
   name: string;
   category: BrushCategory;
+  /** Optional folder for user organization */
+  folder?: string;
 
   // ─── Shape ─────────────────────────────────────
   /** Brush tip shape */
@@ -94,6 +99,16 @@ export interface BrushPreset {
   blendMode: GlobalCompositeOperation;
   /** If true, uses destination-out for erasing */
   isEraser: boolean;
+
+  // ─── v2: Image-based stamps ──────────────────
+  /** URL to stamp PNG alpha mask (undefined = use procedural shape) */
+  stampUrl?: string;
+  /** URL to tileable grain texture PNG (undefined = use procedural noise) */
+  grainUrl?: string;
+  /** Rendering mode for dab compositing */
+  renderMode?: RenderMode;
+  /** Smudge strength for smudge/wet tools (0-1) */
+  smudgeStrength?: number;
 }
 
 // ─── Runtime stroke data ─────────────────────────────────────────

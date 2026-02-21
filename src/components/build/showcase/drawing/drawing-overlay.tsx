@@ -23,15 +23,21 @@ import {
   Layers,
   Square,
   Circle,
+  Triangle,
+  Star,
+  Hexagon,
+  Blend,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRUSH_PRESETS, getBrushPreset } from "./brushes";
-import type { BrushPreset } from "./engine/brush-types";
+import type { BrushPreset, DabParams } from "./engine/brush-types";
 import { lerp, clamp } from "./engine/brush-types";
 import { LayerManager, type BlendMode } from "./engine/layer-manager";
 import { Compositor } from "./engine/compositor";
+import { renderDab, preloadPresetAssets } from "./engine/stamp-renderer";
 import { LayerPanel } from "./ui/layer-panel";
 import { BrushSettingsPanel } from "./ui/brush-settings-panel";
+import { BrushStudioPanel } from "./ui/brush-studio/brush-studio-panel";
 import { ToolStrip } from "./ui/tool-strip";
 import { sampleColor } from "./tools/eyedropper-tool";
 import { floodFill } from "./tools/fill-tool";
@@ -44,66 +50,22 @@ import {
 } from "./tools/shape-tool";
 import { createShapeState } from "./tools/tool-types";
 import type { ShapeType } from "./tools/tool-types";
+import { beginSmudge, continueSmudge, endSmudge } from "./tools/smudge-tool";
+import type { SmudgeState } from "./engine/smudge-engine";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-/**
- * Render a single circular dab onto the canvas context.
- * Hardness controls the edge falloff (1 = hard, 0 = very soft/diffuse).
- */
-function drawDab(
-  ctx: CanvasRenderingContext2D,
+/** Build a DabParams struct for renderDab() */
+function makeDab(
   x: number,
   y: number,
   size: number,
   opacity: number,
-  hardness: number,
-  color: string,
-  isEraser: boolean
-): void {
-  if (size < 0.5 || opacity <= 0) return;
-
-  const r = size / 2;
-  ctx.save();
-  ctx.globalAlpha = clamp(opacity, 0, 1);
-
-  if (isEraser) {
-    ctx.globalCompositeOperation = "destination-out";
-  }
-
-  if (hardness >= 0.85 || size < 4) {
-    // Hard brush: solid circle (also for tiny dabs where gradient is invisible)
-    ctx.fillStyle = isEraser ? "black" : color;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    // Soft brush: radial gradient with falloff controlled by hardness
-    const innerR = r * Math.max(0, hardness);
-    const gradient = ctx.createRadialGradient(x, y, innerR, x, y, r);
-
-    if (isEraser) {
-      gradient.addColorStop(0, "rgba(0,0,0,1)");
-      gradient.addColorStop(1, "rgba(0,0,0,0)");
-    } else {
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, hexToRgba(color, 0));
-    }
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
+  flow: number,
+  rotation: number,
+  strokePosition: number
+): DabParams {
+  return { x, y, size, opacity, flow, rotation, strokePosition };
 }
 
 // ─── Brush icon mapping ──────────────────────────────────────────
@@ -177,6 +139,8 @@ export function DrawingOverlay({
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [showBrushPicker, setShowBrushPicker] = useState(false);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [showBrushStudio, setShowBrushStudio] = useState(false);
+  const [studioEditPreset, setStudioEditPreset] = useState<BrushPreset | undefined>(undefined);
 
   // Shape tool state
   const [shapeType, setShapeType] = useState<ShapeType>("rect");
@@ -185,6 +149,13 @@ export function DrawingOverlay({
 
   // Track last non-eraser brush for switching back from eraser tool
   const lastBrushIdRef = useRef("pencil-hb");
+
+  // Smudge tool state
+  const smudgeStateRef = useRef<SmudgeState | null>(null);
+
+  // Stroke position counter for taper / grain rolling
+  const strokePositionRef = useRef(0);
+  const strokeLengthRef = useRef(0);
 
   // Drawing state
   const isDrawingRef = useRef(false);
@@ -245,6 +216,14 @@ export function DrawingOverlay({
     comp.composite(lm.layers);
     syncState();
   }, [canvasWidth, canvasHeight, syncState]);
+
+  // ─── Preload brush assets when brush changes ──────────────────
+  useEffect(() => {
+    const preset = getBrushPreset(activeBrushId);
+    if (preset) {
+      preloadPresetAssets(preset).catch(() => {});
+    }
+  }, [activeBrushId]);
 
   // ─── Tool switching ────────────────────────────────────────────
 
@@ -372,9 +351,26 @@ export function DrawingOverlay({
         ss.type = shapeType;
         ss.filled = shapeFilled;
         ss.strokeWidth = brushSize;
+        ss.opacity = brushOpacity;
         beginShape(ss, x, y);
         isDrawingRef.current = true;
         saveUndoSnapshot();
+        return;
+      }
+
+      // ── Smudge tool ──
+      if (activeTool === "smudge") {
+        isDrawingRef.current = true;
+        saveUndoSnapshot();
+        const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+        const strength = preset.smudgeStrength ?? 0.5;
+        smudgeStateRef.current = beginSmudge(ctx, x, y, brushSize, strength);
+        strokeInfoRef.current = {
+          lastX: x,
+          lastY: y,
+          distanceRemainder: 0,
+          lastPressure: pressure,
+        };
         return;
       }
 
@@ -383,7 +379,10 @@ export function DrawingOverlay({
       saveUndoSnapshot();
 
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
-      const isEraser = preset.isEraser;
+
+      // Reset stroke position tracking
+      strokePositionRef.current = 0;
+      strokeLengthRef.current = 0;
 
       // Calculate first dab
       const sizeMult = lerp(
@@ -402,18 +401,10 @@ export function DrawingOverlay({
         preset.flowDynamics.pressureMax,
         pressure
       );
-      const dabOpacity = brushOpacity * opMult * flowMult;
+      const dabOpacity = brushOpacity * opMult;
 
-      drawDab(
-        ctx,
-        x,
-        y,
-        dabSize,
-        dabOpacity,
-        preset.hardness,
-        brushColor,
-        isEraser
-      );
+      const dab = makeDab(x, y, dabSize, dabOpacity, flowMult, 0, 0);
+      renderDab(ctx, dab, brushColor, preset);
 
       strokeInfoRef.current = {
         lastX: x,
@@ -444,6 +435,28 @@ export function DrawingOverlay({
         return;
       }
 
+      // ── Smudge tool ──
+      if (activeTool === "smudge") {
+        const stroke = strokeInfoRef.current;
+        const smState = smudgeStateRef.current;
+        if (!stroke || !smState) return;
+
+        const lm = layerManagerRef.current;
+        if (!lm) return;
+        const activeLayer = lm.getActiveLayer();
+        if (!activeLayer) return;
+        const ctx = activeLayer.canvas.getContext("2d");
+        if (!ctx) return;
+
+        continueSmudge(ctx, smState, x, y, brushSize, brushOpacity);
+
+        stroke.lastX = x;
+        stroke.lastY = y;
+        stroke.lastPressure = pressure;
+        recomposite();
+        return;
+      }
+
       // ── Brush / Eraser ──
       const stroke = strokeInfoRef.current;
       if (!stroke) return;
@@ -458,13 +471,15 @@ export function DrawingOverlay({
       if (!ctx) return;
 
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
-      const isEraser = preset.isEraser;
 
       const dx = x - stroke.lastX;
       const dy = y - stroke.lastY;
       const segDist = Math.sqrt(dx * dx + dy * dy);
 
       if (segDist < 0.1) return;
+
+      // Update stroke length for position tracking
+      strokeLengthRef.current += segDist;
 
       // Calculate spacing: preset.spacing is % of brush diameter (1-500)
       const avgPressure =
@@ -520,7 +535,7 @@ export function DrawingOverlay({
           preset.flowDynamics.pressureMax,
           p
         );
-        let dabOpacity = brushOpacity * opMult * flowMult;
+        let dabOpacity = brushOpacity * opMult;
 
         if (preset.jitterOpacity > 0) {
           const jNorm =
@@ -541,16 +556,20 @@ export function DrawingOverlay({
           dabY += (Math.random() - 0.5) * scatterAmt * 2;
         }
 
-        drawDab(
-          ctx,
-          dabX,
-          dabY,
-          dabSize,
-          dabOpacity,
-          preset.hardness,
-          brushColor,
-          isEraser
-        );
+        // Rotation jitter
+        let dabRotation = 0;
+        if (preset.jitterRotation > 0) {
+          dabRotation = (Math.random() - 0.5) * preset.jitterRotation;
+        }
+
+        // Stroke position for taper + grain rolling
+        strokePositionRef.current += spacing;
+        const strokePos = strokeLengthRef.current > 0
+          ? clamp(strokePositionRef.current / Math.max(strokeLengthRef.current, 1), 0, 1)
+          : 0;
+
+        const dab = makeDab(dabX, dabY, dabSize, dabOpacity, flowMult, dabRotation, strokePos);
+        renderDab(ctx, dab, brushColor, preset);
 
         d += spacing;
       }
@@ -591,8 +610,21 @@ export function DrawingOverlay({
         return;
       }
 
+      // ── Smudge tool ──
+      if (activeTool === "smudge" && smudgeStateRef.current) {
+        endSmudge(smudgeStateRef.current);
+        smudgeStateRef.current = null;
+        strokeInfoRef.current = null;
+        pushUndo();
+        recomposite();
+        syncState();
+        return;
+      }
+
       // ── Brush / Eraser ──
       strokeInfoRef.current = null;
+      strokePositionRef.current = 0;
+      strokeLengthRef.current = 0;
       pushUndo();
       recomposite();
       syncState();
@@ -965,7 +997,14 @@ export function DrawingOverlay({
               {/* Shape: shape type + fill toggle */}
               {activeTool === "shape" && (
                 <>
-                  {(["line", "rect", "ellipse"] as const).map((type) => (
+                  {([
+                    { type: "line" as ShapeType, icon: Minus, label: "Line" },
+                    { type: "rect" as ShapeType, icon: Square, label: "Rect" },
+                    { type: "ellipse" as ShapeType, icon: Circle, label: "Ellipse" },
+                    { type: "triangle" as ShapeType, icon: Triangle, label: "Triangle" },
+                    { type: "polygon" as ShapeType, icon: Hexagon, label: "Polygon" },
+                    { type: "star" as ShapeType, icon: Star, label: "Star" },
+                  ]).map(({ type, icon: Icon, label }) => (
                     <button
                       key={type}
                       onClick={() => setShapeType(type)}
@@ -975,17 +1014,48 @@ export function DrawingOverlay({
                           ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
                           : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                       )}
-                      title={type.charAt(0).toUpperCase() + type.slice(1)}
+                      title={label}
                     >
-                      {type === "line" ? (
-                        <Minus className="h-4 w-4" />
-                      ) : type === "rect" ? (
-                        <Square className="h-4 w-4" />
-                      ) : (
-                        <Circle className="h-4 w-4" />
-                      )}
+                      <Icon className="h-4 w-4" />
                     </button>
                   ))}
+
+                  {/* Polygon side count */}
+                  {shapeType === "polygon" && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-[9px] text-zinc-500">Sides</span>
+                      <input
+                        type="number"
+                        min={3}
+                        max={20}
+                        value={shapeStateRef.current.sideCount}
+                        onChange={(e) => {
+                          const v = clamp(parseInt(e.target.value) || 6, 3, 20);
+                          shapeStateRef.current.sideCount = v;
+                        }}
+                        className="w-10 bg-zinc-800 text-xs text-zinc-300 px-1 py-0.5 rounded border border-zinc-700 text-center"
+                      />
+                    </div>
+                  )}
+
+                  {/* Star controls */}
+                  {shapeType === "star" && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-[9px] text-zinc-500">Pts</span>
+                      <input
+                        type="number"
+                        min={3}
+                        max={20}
+                        value={shapeStateRef.current.starPointCount}
+                        onChange={(e) => {
+                          const v = clamp(parseInt(e.target.value) || 5, 3, 20);
+                          shapeStateRef.current.starPointCount = v;
+                        }}
+                        className="w-10 bg-zinc-800 text-xs text-zinc-300 px-1 py-0.5 rounded border border-zinc-700 text-center"
+                      />
+                    </div>
+                  )}
+
                   <button
                     onClick={() => setShapeFilled(!shapeFilled)}
                     className={cn(
@@ -1178,6 +1248,37 @@ export function DrawingOverlay({
                 brushOpacity={brushOpacity}
                 onSetOpacity={setBrushOpacity}
                 onClose={() => setShowBrushPicker(false)}
+                onOpenStudio={() => {
+                  setStudioEditPreset(undefined);
+                  setShowBrushStudio(true);
+                }}
+                onEditPreset={(preset) => {
+                  setStudioEditPreset(preset);
+                  setShowBrushStudio(true);
+                }}
+              />
+            )}
+
+            {/* Brush Studio panel */}
+            {showBrushStudio && (
+              <BrushStudioPanel
+                initialPreset={studioEditPreset}
+                color={brushColor}
+                size={brushSize}
+                onSave={(preset) => {
+                  // For now, just close the studio
+                  // Cloud persistence can be wired in later
+                  setShowBrushStudio(false);
+                  setStudioEditPreset(undefined);
+                }}
+                onDelete={studioEditPreset ? (id) => {
+                  setShowBrushStudio(false);
+                  setStudioEditPreset(undefined);
+                } : undefined}
+                onClose={() => {
+                  setShowBrushStudio(false);
+                  setStudioEditPreset(undefined);
+                }}
               />
             )}
 

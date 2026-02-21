@@ -1,10 +1,91 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BrushPreset, BrushCategory } from "../engine/brush-types";
+import { clamp } from "../engine/brush-types";
 import { CATEGORY_META, getPresetsByCategory, searchPresets } from "../brushes/presets";
+
+// ─── Preview dab renderer ───────────────────────────────────────
+// Simplified dab renderer for brush thumbnails.
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function drawPreviewDab(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  preset: BrushPreset,
+  color: string
+): void {
+  if (size < 0.5) return;
+
+  const rx = size / 2;
+  const ry = rx * clamp(preset.roundness, 0.1, 1);
+  const angle = preset.angle * (Math.PI / 180);
+
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+
+  // Use the preset's blend mode for preview (lighter → additive glow, etc.)
+  if (!preset.isEraser && preset.blendMode !== "source-over") {
+    ctx.globalCompositeOperation = preset.blendMode;
+  }
+
+  ctx.translate(x, y);
+  if (Math.abs(angle) > 0.001) ctx.rotate(angle);
+
+  if (preset.hardness >= 0.85 || size < 3) {
+    ctx.fillStyle = color;
+    if (preset.shape === "square") {
+      ctx.fillRect(-rx, -ry, rx * 2, ry * 2);
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    const innerR = Math.max(rx, ry) * Math.max(0, preset.hardness);
+    const outerR = Math.max(rx, ry);
+    const gradient = ctx.createRadialGradient(0, 0, innerR, 0, 0, outerR);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, hexToRgba(color, 0));
+    ctx.fillStyle = gradient;
+    if (preset.shape === "square") {
+      ctx.fillRect(-rx, -ry, rx * 2, ry * 2);
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Simulate grain as speckled alpha punch-out
+  if (preset.grainIntensity > 0.1) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = clamp(preset.grainIntensity * 0.6, 0, 0.7);
+    const speckleCount = Math.round(8 + preset.grainIntensity * 20);
+    for (let i = 0; i < speckleCount; i++) {
+      const sx = (Math.random() - 0.5) * rx * 2;
+      const sy = (Math.random() - 0.5) * ry * 2;
+      const sr = Math.random() * size * 0.12 + 0.3;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+// ─── Panel Component ────────────────────────────────────────────
 
 interface BrushSettingsPanelProps {
   activeBrushId: string;
@@ -14,6 +95,8 @@ interface BrushSettingsPanelProps {
   brushOpacity: number;
   onSetOpacity: (opacity: number) => void;
   onClose: () => void;
+  onOpenStudio?: () => void;
+  onEditPreset?: (preset: BrushPreset) => void;
 }
 
 export function BrushSettingsPanel({
@@ -24,6 +107,8 @@ export function BrushSettingsPanel({
   brushOpacity,
   onSetOpacity,
   onClose,
+  onOpenStudio,
+  onEditPreset,
 }: BrushSettingsPanelProps) {
   const [activeCategory, setActiveCategory] = useState<BrushCategory>("pencils");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,9 +125,19 @@ export function BrushSettingsPanel({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <h3 className="text-sm font-semibold text-white">Brushes</h3>
-        <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenStudio && (
+            <button
+              onClick={onOpenStudio}
+              className="text-[10px] px-2 py-1 rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+            >
+              + New
+            </button>
+          )}
+          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Size + Opacity sliders */}
@@ -140,6 +235,40 @@ function BrushPresetButton({
   isActive: boolean;
   onSelect: () => void;
 }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = 36;
+    canvas.height = 36;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, 36, 36);
+
+    // Calculate a reasonable preview size based on preset character
+    const baseSize = clamp(preset.hardness * 10 + 4, 4, 14);
+    const color = preset.isEraser ? "#888888" : "#ffffff";
+
+    // Draw a short diagonal stroke preview (5 dabs)
+    const dabCount = preset.spacing > 10 ? 3 : 5;
+    const scatter = preset.scatter > 0 ? clamp(preset.scatter / 100, 0, 0.3) : 0;
+
+    for (let i = 0; i < dabCount; i++) {
+      const t = i / (dabCount - 1);
+      let px = 5 + t * 26;
+      let py = 31 - t * 26;
+
+      if (scatter > 0) {
+        px += (Math.random() - 0.5) * baseSize * scatter;
+        py += (Math.random() - 0.5) * baseSize * scatter;
+      }
+
+      drawPreviewDab(ctx, px, py, baseSize, preset, color);
+    }
+  }, [preset]);
+
   return (
     <button
       onClick={onSelect}
@@ -151,12 +280,10 @@ function BrushPresetButton({
       )}
       title={preset.name}
     >
-      {/* Brush preview circle */}
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center"
-        style={{
-          background: `radial-gradient(circle, rgba(255,255,255,${preset.hardness * 0.8 + 0.2}) 0%, rgba(255,255,255,${preset.hardness * 0.1}) ${Math.round(preset.hardness * 60 + 40)}%, transparent 100%)`,
-        }}
+      <canvas
+        ref={canvasRef}
+        className="w-9 h-9"
+        style={{ imageRendering: "auto" }}
       />
       <span className={cn(
         "text-[9px] leading-tight text-center truncate w-full",

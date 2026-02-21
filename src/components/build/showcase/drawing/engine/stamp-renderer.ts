@@ -1,71 +1,60 @@
-// ─── Stamp Renderer ──────────────────────────────────────────────
-// Renders a single brush dab (stamp) onto a canvas context.
-// Uses a shared reusable temp canvas to avoid per-dab allocation.
+// ─── Stamp Renderer v2 ─────────────────────────────────────────
+// Renders brush dabs using either PNG stamp images or procedural shapes.
+// Integrates with stamp-loader for image-based stamps and grain-engine for textures.
 
 import type { BrushPreset, DabParams } from "./brush-types";
 import { clamp } from "./brush-types";
+import { getStampSync, loadStamp, preloadStamps } from "./stamp-loader";
+import { getGrainSync, applyGrain, loadGrainTexture } from "./grain-engine";
 
-// ─── Stamp cache ─────────────────────────────────────────────────
-// Pre-render shape masks at discrete sizes to avoid per-dab computation.
+// ─── Procedural stamp cache ────────────────────────────────────
+// Fallback for presets without stampUrl (procedural circle/square)
 
-const stampCache = new Map<string, HTMLCanvasElement>();
-const MAX_CACHE_SIZE = 64;
+const proceduralCache = new Map<string, HTMLCanvasElement>();
+const MAX_PROCEDURAL_CACHE = 64;
 
-function getCacheKey(shape: string, hardness: number, size: number): string {
-  // Round size to nearest 2px for cache efficiency
+function getProceduralKey(shape: string, hardness: number, size: number): string {
   const roundedSize = Math.round(size / 2) * 2;
   const roundedHardness = Math.round(hardness * 10) / 10;
   return `${shape}_${roundedHardness}_${roundedSize}`;
 }
 
-function evictOldEntries(): void {
-  if (stampCache.size > MAX_CACHE_SIZE) {
-    const firstKey = stampCache.keys().next().value;
-    if (firstKey) stampCache.delete(firstKey);
+function evictProcedural(): void {
+  if (proceduralCache.size > MAX_PROCEDURAL_CACHE) {
+    const firstKey = proceduralCache.keys().next().value;
+    if (firstKey) proceduralCache.delete(firstKey);
   }
 }
 
-// ─── Shape mask generation ───────────────────────────────────────
-
-function createCircleStamp(
-  size: number,
-  hardness: number
-): HTMLCanvasElement {
+function createCircleStamp(size: number, hardness: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   const diameter = Math.max(2, Math.round(size));
   canvas.width = diameter;
   canvas.height = diameter;
   const ctx = canvas.getContext("2d")!;
-
   const cx = diameter / 2;
-  const cy = diameter / 2;
   const radius = diameter / 2;
 
   if (hardness >= 0.95) {
-    // Hard brush: solid circle
     ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, cx, radius, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Soft brush: radial gradient falloff
     const innerRadius = radius * hardness;
-    const gradient = ctx.createRadialGradient(cx, cy, innerRadius, cx, cy, radius);
+    const gradient = ctx.createRadialGradient(cx, cx, innerRadius, cx, cx, radius);
     gradient.addColorStop(0, "rgba(255,255,255,1)");
     gradient.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(cx, cx, radius, 0, Math.PI * 2);
     ctx.fill();
   }
 
   return canvas;
 }
 
-function createSquareStamp(
-  size: number,
-  hardness: number
-): HTMLCanvasElement {
+function createSquareStamp(size: number, hardness: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   const side = Math.max(2, Math.round(size));
   canvas.width = side;
@@ -90,57 +79,66 @@ function createSquareStamp(
   return canvas;
 }
 
-function getOrCreateStamp(
+function getProceduralStamp(
   shape: BrushPreset["shape"],
   hardness: number,
   size: number
 ): HTMLCanvasElement {
-  const key = getCacheKey(shape, hardness, size);
-  let stamp = stampCache.get(key);
-  if (stamp && stamp instanceof HTMLCanvasElement) return stamp;
+  const key = getProceduralKey(shape, hardness, size);
+  let stamp = proceduralCache.get(key);
+  if (stamp) return stamp;
 
-  evictOldEntries();
-
-  const newStamp =
-    shape === "square"
-      ? createSquareStamp(size, hardness)
-      : createCircleStamp(size, hardness);
-
-  stampCache.set(key, newStamp);
+  evictProcedural();
+  const newStamp = shape === "square"
+    ? createSquareStamp(size, hardness)
+    : createCircleStamp(size, hardness);
+  proceduralCache.set(key, newStamp);
   return newStamp;
 }
 
-// ─── Shared temp canvas for colorizing stamps ───────────────────
-// Reused across all dabs to avoid per-dab document.createElement
+// ─── Shared temp canvas for colorizing ─────────────────────────
 
-let _sharedTempCanvas: HTMLCanvasElement | null = null;
-let _sharedTempCtx: CanvasRenderingContext2D | null = null;
+let _tempCanvas: HTMLCanvasElement | null = null;
+let _tempCtx: CanvasRenderingContext2D | null = null;
 
-function getSharedTempCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
+function getTempCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   const s = Math.max(2, Math.ceil(size));
 
-  if (!_sharedTempCanvas || !_sharedTempCtx) {
-    _sharedTempCanvas = document.createElement("canvas");
-    _sharedTempCtx = _sharedTempCanvas.getContext("2d");
-    if (!_sharedTempCtx) return null;
+  if (!_tempCanvas || !_tempCtx) {
+    _tempCanvas = document.createElement("canvas");
+    _tempCtx = _tempCanvas.getContext("2d");
+    if (!_tempCtx) return null;
   }
 
-  // Resize only if needed (grow but never shrink to avoid frequent reallocs)
-  if (_sharedTempCanvas.width < s || _sharedTempCanvas.height < s) {
-    // Round up to nearest power of 2 for cache-friendliness
+  if (_tempCanvas.width < s || _tempCanvas.height < s) {
     const newSize = Math.min(2048, Math.max(s, 64));
-    _sharedTempCanvas.width = newSize;
-    _sharedTempCanvas.height = newSize;
+    _tempCanvas.width = newSize;
+    _tempCanvas.height = newSize;
   }
 
-  return { canvas: _sharedTempCanvas, ctx: _sharedTempCtx };
+  return { canvas: _tempCanvas, ctx: _tempCtx };
 }
 
-// ─── Main stamp rendering function ───────────────────────────────
+// ─── Stamp resolver ────────────────────────────────────────────
+// Returns the appropriate stamp canvas for a preset + size.
+// Uses PNG stamp if available, otherwise falls back to procedural.
+
+function resolveStamp(preset: BrushPreset, size: number): HTMLCanvasElement {
+  // Try PNG stamp from stamp-loader cache
+  if (preset.stampUrl) {
+    const pngStamp = getStampSync(preset.stampUrl);
+    if (pngStamp) return pngStamp;
+  }
+
+  // Fallback to procedural generation
+  return getProceduralStamp(preset.shape, preset.hardness, size);
+}
+
+// ─── Main rendering function ───────────────────────────────────
 
 /**
  * Render a single dab onto the target canvas context.
- * The context should belong to the active layer's canvas.
+ * Supports PNG stamp images, grain textures, and all brush dynamics.
  */
 export function renderDab(
   ctx: CanvasRenderingContext2D,
@@ -155,13 +153,14 @@ export function renderDab(
   // Apply ellipse roundness
   const stampW = size;
   const stampH = size * clamp(preset.roundness, 0.1, 1);
+  const stampSize = Math.max(stampW, stampH);
 
   ctx.save();
 
   // Move to dab center
   ctx.translate(x, y);
 
-  // Apply rotation (brush angle + dab-specific rotation + jitter)
+  // Apply rotation (brush angle + per-dab rotation)
   const totalRotation = (preset.angle + rotation) * (Math.PI / 180);
   if (Math.abs(totalRotation) > 0.001) {
     ctx.rotate(totalRotation);
@@ -174,11 +173,16 @@ export function renderDab(
     ctx.globalCompositeOperation = preset.blendMode;
   }
 
-  // Set opacity (opacity × flow)
+  // Set opacity (opacity * flow)
   ctx.globalAlpha = clamp(opacity * flow, 0, 1);
 
-  // For hard brushes with no grain, use a fast path — draw directly
-  if (preset.hardness >= 0.9 && !preset.grain && preset.shape === "circle") {
+  // Fast path: hard procedural circle with no grain, no PNG stamp
+  if (
+    !preset.stampUrl &&
+    preset.hardness >= 0.9 &&
+    preset.grainIntensity <= 0 &&
+    preset.shape === "circle"
+  ) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.ellipse(0, 0, stampW / 2, stampH / 2, 0, 0, Math.PI * 2);
@@ -187,14 +191,13 @@ export function renderDab(
     return;
   }
 
-  // For soft brushes, use stamp-based rendering with shared temp canvas
-  const stampSize = Math.max(stampW, stampH);
-  const stamp = getOrCreateStamp(preset.shape, preset.hardness, stampSize);
+  // Get the stamp (PNG or procedural)
+  const stamp = resolveStamp(preset, stampSize);
   const tempSize = Math.max(2, Math.ceil(stampSize));
 
-  const shared = getSharedTempCanvas(tempSize);
+  const shared = getTempCanvas(tempSize);
   if (!shared) {
-    // Fallback: draw a simple circle if temp canvas fails
+    // Fallback: simple ellipse
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.ellipse(0, 0, stampW / 2, stampH / 2, 0, 0, Math.PI * 2);
@@ -203,12 +206,12 @@ export function renderDab(
     return;
   }
 
-  const { ctx: tempCtx } = shared;
+  const { canvas: tempCanvas, ctx: tempCtx } = shared;
 
-  // Clear the region we'll use
+  // Clear the temp region
   tempCtx.clearRect(0, 0, tempSize, tempSize);
 
-  // Draw the shape mask
+  // Draw the stamp mask (either PNG image or procedural shape)
   tempCtx.globalCompositeOperation = "source-over";
   tempCtx.globalAlpha = 1;
   tempCtx.drawImage(
@@ -217,14 +220,26 @@ export function renderDab(
     0, 0, tempSize, tempSize
   );
 
+  // Apply grain texture if intensity > 0
+  if (preset.grainIntensity > 0) {
+    applyGrain(
+      tempCanvas,
+      tempSize,
+      preset,
+      x, // canvas X for static grain alignment
+      y, // canvas Y for static grain alignment
+      dab.strokePosition // stroke offset for rolling grain
+    );
+  }
+
   // Colorize: use source-in to apply color through the shape mask
   tempCtx.globalCompositeOperation = "source-in";
   tempCtx.fillStyle = color;
   tempCtx.fillRect(0, 0, tempSize, tempSize);
 
-  // Draw the final colored stamp onto the target canvas
+  // Draw the final colored+grained stamp onto target canvas
   ctx.drawImage(
-    shared.canvas,
+    tempCanvas,
     0, 0, tempSize, tempSize,
     -stampW / 2,
     -stampH / 2,
@@ -235,9 +250,49 @@ export function renderDab(
   ctx.restore();
 }
 
+// ─── Preloading ────────────────────────────────────────────────
+
 /**
- * Clear stamp caches (call when switching brushes or on cleanup)
+ * Preload stamp and grain images for a preset.
+ * Call when a brush is selected to avoid latency on first stroke.
+ */
+export async function preloadPresetAssets(preset: BrushPreset): Promise<void> {
+  const urls: string[] = [];
+
+  if (preset.stampUrl) {
+    urls.push(preset.stampUrl);
+    // Also trigger stamp-loader preload
+    await loadStamp(preset.stampUrl).catch(() => {});
+  }
+
+  if (preset.grainUrl) {
+    await loadGrainTexture(preset.grainUrl).catch(() => {});
+  }
+}
+
+/**
+ * Preload stamps for multiple presets (e.g. all presets in active category).
+ */
+export async function preloadCategoryAssets(presets: BrushPreset[]): Promise<void> {
+  const stampUrls = presets
+    .map((p) => p.stampUrl)
+    .filter((url): url is string => !!url);
+
+  const grainUrls = presets
+    .map((p) => p.grainUrl)
+    .filter((url): url is string => !!url);
+
+  await Promise.all([
+    preloadStamps([...new Set(stampUrls)]),
+    ...([...new Set(grainUrls)].map((url) => loadGrainTexture(url).catch(() => {}))),
+  ]);
+}
+
+// ─── Cleanup ───────────────────────────────────────────────────
+
+/**
+ * Clear all caches (procedural stamps + temp canvas)
  */
 export function clearStampCache(): void {
-  stampCache.clear();
+  proceduralCache.clear();
 }

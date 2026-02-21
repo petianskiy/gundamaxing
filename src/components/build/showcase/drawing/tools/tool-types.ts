@@ -37,7 +37,7 @@ export interface TransformState {
   active: boolean;
 }
 
-export type ShapeType = "line" | "rect" | "ellipse" | "polygon";
+export type ShapeType = "line" | "rect" | "ellipse" | "polygon" | "triangle" | "star";
 
 export interface ShapeState {
   type: ShapeType;
@@ -45,6 +45,10 @@ export interface ShapeState {
   filled: boolean;
   /** Stroke width for shape outline */
   strokeWidth: number;
+  sideCount: number;
+  starPointCount: number;
+  starInnerRatio: number;
+  opacity: number;
   /** Starting point */
   start: { x: number; y: number } | null;
   /** Current/end point */
@@ -83,6 +87,10 @@ export function createShapeState(): ShapeState {
     type: "rect",
     filled: false,
     strokeWidth: 2,
+    sideCount: 6,
+    starPointCount: 5,
+    starInnerRatio: 0.4,
+    opacity: 1,
     start: null,
     end: null,
     active: false,

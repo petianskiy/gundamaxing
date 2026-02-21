@@ -32,6 +32,7 @@ export function renderShapePreview(
   ctx.lineWidth = state.strokeWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  ctx.globalAlpha = state.opacity;
 
   drawShape(state, ctx, state.start.x, state.start.y, state.end.x, state.end.y);
 
@@ -55,6 +56,7 @@ export function commitShape(
   ctx.lineWidth = size;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  ctx.globalAlpha = state.opacity;
 
   drawShape(state, ctx, state.start.x, state.start.y, state.end.x, state.end.y);
 
@@ -119,10 +121,52 @@ function drawShape(
       const cx = (x1 + x2) / 2;
       const cy = (y1 + y2) / 2;
       const r = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) / 2;
-      const sides = 6;
+      const sides = state.sideCount;
       ctx.beginPath();
       for (let i = 0; i <= sides; i++) {
         const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
+        const px = cx + r * Math.cos(a);
+        const py = cy + r * Math.sin(a);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      if (state.filled) {
+        ctx.fill();
+      } else {
+        ctx.stroke();
+      }
+      break;
+    }
+
+    case "triangle": {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const halfW = Math.abs(x2 - x1) / 2;
+      const halfH = Math.abs(y2 - y1) / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - halfH);
+      ctx.lineTo(cx + halfW, cy + halfH);
+      ctx.lineTo(cx - halfW, cy + halfH);
+      ctx.closePath();
+      if (state.filled) {
+        ctx.fill();
+      } else {
+        ctx.stroke();
+      }
+      break;
+    }
+
+    case "star": {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const outerR = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) / 2;
+      const innerR = outerR * state.starInnerRatio;
+      const points = state.starPointCount;
+      ctx.beginPath();
+      for (let i = 0; i <= points * 2; i++) {
+        const a = (i * Math.PI) / points - Math.PI / 2;
+        const r = i % 2 === 0 ? outerR : innerR;
         const px = cx + r * Math.cos(a);
         const py = cy + r * Math.sin(a);
         if (i === 0) ctx.moveTo(px, py);

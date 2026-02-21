@@ -8,6 +8,7 @@ import {
   Pentagon,
   Pipette,
   PaintBucket,
+  Blend,
   Undo,
   Redo,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const tools = [
   { id: "shape", icon: Pentagon, label: "Shape", implemented: true },
   { id: "eyedropper", icon: Pipette, label: "Eyedropper", implemented: true },
   { id: "fill", icon: PaintBucket, label: "Fill", implemented: true },
+  { id: "smudge", icon: Blend, label: "Smudge", implemented: true },
   { id: "move", icon: Move, label: "Move", implemented: false },
   { id: "select", icon: SquareDashed, label: "Select", implemented: false },
 ];
