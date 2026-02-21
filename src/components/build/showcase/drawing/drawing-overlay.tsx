@@ -185,6 +185,11 @@ export function DrawingOverlay({
   const shapeTypeRef = useRef(shapeType);
   const shapeFilledRef = useRef(shapeFilled);
 
+  // Pending pointer events for rAF-deferred dab rendering
+  const pendingPointsRef = useRef<Array<{x: number; y: number; pressure: number}>>([]);
+  const processDabsRef = useRef<(() => void) | null>(null);
+  const canvasRectRef = useRef<DOMRect | null>(null);
+
   // Drawing state
   const isDrawingRef = useRef(false);
   const strokeInfoRef = useRef<StrokeInfo | null>(null);
@@ -286,6 +291,8 @@ export function DrawingOverlay({
     if (rafIdRef.current) return; // already scheduled
     rafIdRef.current = requestAnimationFrame(() => {
       rafIdRef.current = 0;
+      // Render pending dabs first (deferred from pointerMove for smooth 60fps)
+      if (processDabsRef.current) processDabsRef.current();
       if (needsRecompositeRef.current) {
         needsRecompositeRef.current = false;
         const bounds = strokeBoundsRef.current;
@@ -333,7 +340,11 @@ export function DrawingOverlay({
     (e: PointerEvent): { x: number; y: number; pressure: number } => {
       const canvas = displayCanvasRef.current;
       if (!canvas) return { x: 0, y: 0, pressure: 0.5 };
-      const rect = canvas.getBoundingClientRect();
+      // Use cached rect to avoid layout thrashing during strokes
+      if (!canvasRectRef.current) {
+        canvasRectRef.current = canvas.getBoundingClientRect();
+      }
+      const rect = canvasRectRef.current;
       return {
         x: ((e.clientX - rect.left) / rect.width) * canvas.width,
         y: ((e.clientY - rect.top) / rect.height) * canvas.height,
@@ -387,10 +398,163 @@ export function DrawingOverlay({
       }
     }
 
+    // ─── Deferred dab renderer (called from rAF) ──────────────────
+    // Drains the pending pointer queue and renders all dabs in one batch.
+    // This is the KEY performance fix: dab rendering is capped to 60fps
+    // instead of running synchronously on every pointer event.
+    function processPendingDabs(): void {
+      const points = pendingPointsRef.current;
+      if (points.length === 0) return;
+      pendingPointsRef.current = [];
+
+      const stroke = strokeInfoRef.current;
+      if (!stroke) return;
+
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      const activeLayer = lm.getActiveLayer();
+      if (!activeLayer) return;
+      const ctx = activeLayer.canvas.getContext("2d");
+      if (!ctx) return;
+
+      const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
+
+      for (let pi = 0; pi < points.length; pi++) {
+        const { x, y, pressure } = points[pi];
+
+        const dx = x - stroke.lastX;
+        const dy = y - stroke.lastY;
+        const segDist = Math.sqrt(dx * dx + dy * dy);
+
+        if (segDist < 0.1) continue;
+
+        strokeLengthRef.current += segDist;
+
+        const avgPressure = (stroke.lastPressure + pressure) / 2;
+        const avgSizeMult = lerp(
+          preset.sizeDynamics.pressureMin,
+          preset.sizeDynamics.pressureMax,
+          avgPressure
+        );
+        const avgSize = brushSizeRef.current * avgSizeMult;
+        const spacing = Math.max(
+          2,
+          avgSize * (Math.max(preset.spacing, 1) / 100)
+        );
+
+        let d = spacing - stroke.distanceRemainder;
+
+        while (d <= segDist) {
+          const t = d / segDist;
+
+          let dabX = stroke.lastX + dx * t;
+          let dabY = stroke.lastY + dy * t;
+          const p = stroke.lastPressure + (pressure - stroke.lastPressure) * t;
+
+          const sizeMult = lerp(
+            preset.sizeDynamics.pressureMin,
+            preset.sizeDynamics.pressureMax,
+            p
+          );
+          let dabSize = brushSizeRef.current * sizeMult;
+
+          if (preset.jitterSize > 0) {
+            const jNorm =
+              preset.jitterSize > 1
+                ? preset.jitterSize / 100
+                : preset.jitterSize;
+            dabSize *= 1 + (Math.random() - 0.5) * jNorm;
+          }
+          dabSize = Math.max(0.5, dabSize);
+
+          const opMult = lerp(
+            preset.opacityDynamics.pressureMin,
+            preset.opacityDynamics.pressureMax,
+            p
+          );
+          const flowMult = lerp(
+            preset.flowDynamics.pressureMin,
+            preset.flowDynamics.pressureMax,
+            p
+          );
+          let dabOpacity = perceptualOpacity(brushOpacityRef.current) * opMult;
+
+          if (preset.jitterOpacity > 0) {
+            const jNorm =
+              preset.jitterOpacity > 1
+                ? preset.jitterOpacity / 100
+                : preset.jitterOpacity;
+            dabOpacity *= 1 + (Math.random() - 0.5) * jNorm;
+          }
+
+          if (preset.scatter > 0) {
+            const scNorm =
+              preset.scatter > 1
+                ? preset.scatter / 100
+                : preset.scatter;
+            const scatterAmt = dabSize * scNorm;
+            dabX += (Math.random() - 0.5) * scatterAmt * 2;
+            dabY += (Math.random() - 0.5) * scatterAmt * 2;
+          }
+
+          let dabRotation = 0;
+          if (preset.jitterRotation > 0) {
+            dabRotation = (Math.random() - 0.5) * preset.jitterRotation;
+          }
+
+          strokePositionRef.current += spacing;
+          const strokePos = strokeLengthRef.current > 0
+            ? clamp(strokePositionRef.current / Math.max(strokeLengthRef.current, 1), 0, 1)
+            : 0;
+
+          const dab = makeDab(dabX, dabY, dabSize, dabOpacity, flowMult, dabRotation, strokePos);
+          renderDab(ctx, dab, brushColorRef.current, preset);
+
+          const halfDab = dabSize / 2 + 2;
+          const dabMinX = dabX - halfDab;
+          const dabMinY = dabY - halfDab;
+          const dabMaxX = dabX + halfDab;
+          const dabMaxY = dabY + halfDab;
+          const bounds = strokeBoundsRef.current;
+          if (bounds) {
+            const bMaxX = bounds.x + bounds.width;
+            const bMaxY = bounds.y + bounds.height;
+            const nx = Math.min(bounds.x, dabMinX);
+            const ny = Math.min(bounds.y, dabMinY);
+            strokeBoundsRef.current = {
+              x: nx,
+              y: ny,
+              width: Math.max(bMaxX, dabMaxX) - nx,
+              height: Math.max(bMaxY, dabMaxY) - ny,
+            };
+          } else {
+            strokeBoundsRef.current = {
+              x: dabMinX,
+              y: dabMinY,
+              width: dabSize + 4,
+              height: dabSize + 4,
+            };
+          }
+
+          d += spacing;
+        }
+
+        stroke.distanceRemainder = segDist - (d - spacing);
+        stroke.lastX = x;
+        stroke.lastY = y;
+        stroke.lastPressure = pressure;
+      }
+    }
+
+    processDabsRef.current = processPendingDabs;
+
     function onPointerDown(e: PointerEvent) {
       if (e.button !== 0 && e.pointerType === "mouse") return;
       e.preventDefault();
       e.stopPropagation(); // Prevent showcase editor marquee selection
+
+      // Refresh cached canvas rect on stroke start
+      canvasRectRef.current = canvas!.getBoundingClientRect();
 
       try {
         canvas!.setPointerCapture(e.pointerId);
@@ -542,156 +706,8 @@ export function DrawingOverlay({
         return;
       }
 
-      // ── Brush / Eraser ──
-      const stroke = strokeInfoRef.current;
-      if (!stroke) return;
-
-      const lm = layerManagerRef.current;
-      if (!lm) return;
-
-      const activeLayer = lm.getActiveLayer();
-      if (!activeLayer) return;
-
-      const ctx = activeLayer.canvas.getContext("2d");
-      if (!ctx) return;
-
-      const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
-
-      const dx = x - stroke.lastX;
-      const dy = y - stroke.lastY;
-      const segDist = Math.sqrt(dx * dx + dy * dy);
-
-      if (segDist < 0.1) return;
-
-      // Update stroke length for position tracking
-      strokeLengthRef.current += segDist;
-
-      // Calculate spacing: preset.spacing is % of brush diameter (1-500)
-      const avgPressure =
-        (stroke.lastPressure + pressure) / 2;
-      const avgSizeMult = lerp(
-        preset.sizeDynamics.pressureMin,
-        preset.sizeDynamics.pressureMax,
-        avgPressure
-      );
-      const avgSize = brushSizeRef.current * avgSizeMult;
-      const spacing = Math.max(
-        2,
-        avgSize * (Math.max(preset.spacing, 1) / 100)
-      );
-
-      // Walk along segment placing dabs at spacing intervals
-      let d = spacing - stroke.distanceRemainder;
-
-      while (d <= segDist) {
-        const t = d / segDist;
-
-        // Interpolated position & pressure
-        let dabX = stroke.lastX + dx * t;
-        let dabY = stroke.lastY + dy * t;
-        const p =
-          stroke.lastPressure + (pressure - stroke.lastPressure) * t;
-
-        // Size with pressure dynamics + jitter
-        const sizeMult = lerp(
-          preset.sizeDynamics.pressureMin,
-          preset.sizeDynamics.pressureMax,
-          p
-        );
-        let dabSize = brushSizeRef.current * sizeMult;
-
-        if (preset.jitterSize > 0) {
-          const jNorm =
-            preset.jitterSize > 1
-              ? preset.jitterSize / 100
-              : preset.jitterSize;
-          dabSize *= 1 + (Math.random() - 0.5) * jNorm;
-        }
-        dabSize = Math.max(0.5, dabSize);
-
-        // Opacity with pressure dynamics + flow
-        const opMult = lerp(
-          preset.opacityDynamics.pressureMin,
-          preset.opacityDynamics.pressureMax,
-          p
-        );
-        const flowMult = lerp(
-          preset.flowDynamics.pressureMin,
-          preset.flowDynamics.pressureMax,
-          p
-        );
-        let dabOpacity = perceptualOpacity(brushOpacityRef.current) * opMult;
-
-        if (preset.jitterOpacity > 0) {
-          const jNorm =
-            preset.jitterOpacity > 1
-              ? preset.jitterOpacity / 100
-              : preset.jitterOpacity;
-          dabOpacity *= 1 + (Math.random() - 0.5) * jNorm;
-        }
-
-        // Scatter: random offset perpendicular to stroke
-        if (preset.scatter > 0) {
-          const scNorm =
-            preset.scatter > 1
-              ? preset.scatter / 100
-              : preset.scatter;
-          const scatterAmt = dabSize * scNorm;
-          dabX += (Math.random() - 0.5) * scatterAmt * 2;
-          dabY += (Math.random() - 0.5) * scatterAmt * 2;
-        }
-
-        // Rotation jitter
-        let dabRotation = 0;
-        if (preset.jitterRotation > 0) {
-          dabRotation = (Math.random() - 0.5) * preset.jitterRotation;
-        }
-
-        // Stroke position for taper + grain rolling
-        strokePositionRef.current += spacing;
-        const strokePos = strokeLengthRef.current > 0
-          ? clamp(strokePositionRef.current / Math.max(strokeLengthRef.current, 1), 0, 1)
-          : 0;
-
-        const dab = makeDab(dabX, dabY, dabSize, dabOpacity, flowMult, dabRotation, strokePos);
-        renderDab(ctx, dab, brushColorRef.current, preset);
-
-        // Expand dirty rect to include this dab
-        const halfDab = dabSize / 2 + 2; // +2 for anti-alias bleed
-        const dabMinX = dabX - halfDab;
-        const dabMinY = dabY - halfDab;
-        const dabMaxX = dabX + halfDab;
-        const dabMaxY = dabY + halfDab;
-        const bounds = strokeBoundsRef.current;
-        if (bounds) {
-          const bMaxX = bounds.x + bounds.width;
-          const bMaxY = bounds.y + bounds.height;
-          const nx = Math.min(bounds.x, dabMinX);
-          const ny = Math.min(bounds.y, dabMinY);
-          strokeBoundsRef.current = {
-            x: nx,
-            y: ny,
-            width: Math.max(bMaxX, dabMaxX) - nx,
-            height: Math.max(bMaxY, dabMaxY) - ny,
-          };
-        } else {
-          strokeBoundsRef.current = {
-            x: dabMinX,
-            y: dabMinY,
-            width: dabSize + 4,
-            height: dabSize + 4,
-          };
-        }
-
-        d += spacing;
-      }
-
-      // Update distance remainder for next segment
-      stroke.distanceRemainder = segDist - (d - spacing);
-      stroke.lastX = x;
-      stroke.lastY = y;
-      stroke.lastPressure = pressure;
-
+      // ── Brush / Eraser ── defer dab rendering to rAF for smooth 60fps
+      pendingPointsRef.current.push({ x, y, pressure });
       scheduleRecomposite();
     }
 
@@ -734,12 +750,14 @@ export function DrawingOverlay({
       }
 
       // ── Brush / Eraser ──
-      // Cancel pending rAF and do a full recomposite on stroke end
+      // Cancel pending rAF and process remaining dabs before final composite
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = 0;
         needsRecompositeRef.current = false;
       }
+      processPendingDabs();
+      pendingPointsRef.current = [];
       strokeInfoRef.current = null;
       strokePositionRef.current = 0;
       strokeLengthRef.current = 0;
@@ -755,6 +773,8 @@ export function DrawingOverlay({
     canvas.addEventListener("pointerleave", onPointerUp);
 
     return () => {
+      processDabsRef.current = null;
+      pendingPointsRef.current = [];
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerup", onPointerUp);

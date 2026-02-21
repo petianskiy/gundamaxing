@@ -16,6 +16,7 @@ interface GrainCacheEntry {
 
 const grainCache = new Map<string, GrainCacheEntry>();
 const pendingLoads = new Map<string, Promise<HTMLCanvasElement>>();
+let _grainAccessCounter = 0;
 
 /** Procedural noise key used for the fallback grain */
 const PROCEDURAL_KEY = "__procedural_noise_128__";
@@ -39,7 +40,7 @@ function evictIfNeeded(): void {
 function createProceduralNoise(): HTMLCanvasElement {
   const cached = grainCache.get(PROCEDURAL_KEY);
   if (cached) {
-    cached.lastUsed = Date.now();
+    cached.lastUsed = ++_grainAccessCounter;
     return cached.canvas;
   }
 
@@ -62,7 +63,7 @@ function createProceduralNoise(): HTMLCanvasElement {
   ctx.putImageData(imageData, 0, 0);
 
   evictIfNeeded();
-  grainCache.set(PROCEDURAL_KEY, { canvas, lastUsed: Date.now() });
+  grainCache.set(PROCEDURAL_KEY, { canvas, lastUsed: ++_grainAccessCounter });
   return canvas;
 }
 
@@ -77,7 +78,7 @@ export async function loadGrainTexture(
 ): Promise<HTMLCanvasElement> {
   const cached = grainCache.get(url);
   if (cached) {
-    cached.lastUsed = Date.now();
+    cached.lastUsed = ++_grainAccessCounter;
     return cached.canvas;
   }
 
@@ -96,7 +97,7 @@ export async function loadGrainTexture(
       ctx.drawImage(img, 0, 0);
 
       evictIfNeeded();
-      grainCache.set(url, { canvas, lastUsed: Date.now() });
+      grainCache.set(url, { canvas, lastUsed: ++_grainAccessCounter });
       pendingLoads.delete(url);
       resolve(canvas);
     };
@@ -120,7 +121,7 @@ export async function loadGrainTexture(
 export function getGrainSync(url: string): HTMLCanvasElement | null {
   const cached = grainCache.get(url);
   if (cached) {
-    cached.lastUsed = Date.now();
+    cached.lastUsed = ++_grainAccessCounter;
     return cached.canvas;
   }
   return null;
