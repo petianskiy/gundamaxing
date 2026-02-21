@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Ban } from "lucide-react";
+import { ImageUploadButton } from "./image-upload-button";
 
 const BUILT_IN_GRAINS = [
   { id: "paper", name: "Paper" },
@@ -12,6 +13,9 @@ const BUILT_IN_GRAINS = [
   { id: "concrete", name: "Concrete" },
   { id: "noise", name: "Noise" },
   { id: "dots", name: "Dots" },
+  { id: "waterpaper-1", name: "Waterpaper 1" },
+  { id: "waterpaper-2", name: "Waterpaper 2" },
+  { id: "waterpaper-3", name: "Waterpaper 3" },
 ] as const;
 
 interface GrainPickerProps {
@@ -79,6 +83,9 @@ export function GrainPicker({ value, onChange }: GrainPickerProps) {
           </button>
         );
       })}
+
+      {/* Upload custom grain */}
+      <ImageUploadButton label="Upload" onUpload={(dataUrl) => onChange(dataUrl)} />
     </div>
   );
 }

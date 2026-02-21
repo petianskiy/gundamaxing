@@ -55,6 +55,7 @@ export class Compositor {
       }
 
       ctx.restore();
+      this.dirty = false;
     } else {
       // Full composite
       ctx.clearRect(0, 0, this.width, this.height);

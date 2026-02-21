@@ -176,16 +176,39 @@ export function DrawingOverlay({
   const needsRecompositeRef = useRef(false);
   const strokeBoundsRef = useRef<DirtyRect | null>(null);
 
+  // Stable refs for event handler values (prevents useEffect re-registration)
+  const activeBrushIdRef = useRef(activeBrushId);
+  const activeToolRef = useRef(activeTool);
+  const brushColorRef = useRef(brushColor);
+  const brushSizeRef = useRef(brushSize);
+  const brushOpacityRef = useRef(brushOpacity);
+  const shapeTypeRef = useRef(shapeType);
+  const shapeFilledRef = useRef(shapeFilled);
+
   // Drawing state
   const isDrawingRef = useRef(false);
   const strokeInfoRef = useRef<StrokeInfo | null>(null);
   const pendingUndoRef = useRef<UndoSnapshot | null>(null);
+
+  // Asset loading gate
+  const [assetsReady, setAssetsReady] = useState(false);
+  const assetsReadyRef = useRef(false);
 
   // Portal mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync refs with state for stable event handlers
+  useEffect(() => { activeBrushIdRef.current = activeBrushId; }, [activeBrushId]);
+  useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+  useEffect(() => { brushColorRef.current = brushColor; }, [brushColor]);
+  useEffect(() => { brushSizeRef.current = brushSize; }, [brushSize]);
+  useEffect(() => { brushOpacityRef.current = brushOpacity; }, [brushOpacity]);
+  useEffect(() => { shapeTypeRef.current = shapeType; }, [shapeType]);
+  useEffect(() => { shapeFilledRef.current = shapeFilled; }, [shapeFilled]);
+  useEffect(() => { assetsReadyRef.current = assetsReady; }, [assetsReady]);
 
   // Layer state (mirrored for React rendering)
   const [layerState, setLayerState] = useState<{
@@ -244,7 +267,9 @@ export function DrawingOverlay({
 
   // ─── Preload all brush assets on mount ──────────────────────────
   useEffect(() => {
-    preloadCategoryAssets(BRUSH_PRESETS).catch(() => {});
+    preloadCategoryAssets(BRUSH_PRESETS)
+      .then(() => setAssetsReady(true))
+      .catch(() => setAssetsReady(true));
   }, []);
 
   // ─── Preload brush assets when brush changes ──────────────────
@@ -264,8 +289,8 @@ export function DrawingOverlay({
       if (needsRecompositeRef.current) {
         needsRecompositeRef.current = false;
         const bounds = strokeBoundsRef.current;
+        strokeBoundsRef.current = null; // Reset per-frame for efficient dirty rects
         recomposite(bounds);
-        // Don't clear strokeBounds — accumulate for next frame
       }
     });
   }, [recomposite]);
@@ -377,7 +402,7 @@ export function DrawingOverlay({
       const { x, y, pressure } = getCanvasPoint(e);
 
       // ── Eyedropper tool ──
-      if (activeTool === "eyedropper") {
+      if (activeToolRef.current === "eyedropper") {
         const hex = sampleColor(canvas!, x, y);
         setBrushColor(hex);
         setActiveTool("brush");
@@ -391,9 +416,9 @@ export function DrawingOverlay({
       if (!ctx) return;
 
       // ── Fill tool ──
-      if (activeTool === "fill") {
+      if (activeToolRef.current === "fill") {
         saveUndoSnapshot();
-        floodFill(ctx, x, y, brushColor, 32);
+        floodFill(ctx, x, y, brushColorRef.current, 32);
         pushUndo();
         recomposite();
         syncState();
@@ -401,12 +426,12 @@ export function DrawingOverlay({
       }
 
       // ── Shape tool ──
-      if (activeTool === "shape") {
+      if (activeToolRef.current === "shape") {
         const ss = shapeStateRef.current;
-        ss.type = shapeType;
-        ss.filled = shapeFilled;
-        ss.strokeWidth = brushSize;
-        ss.opacity = brushOpacity;
+        ss.type = shapeTypeRef.current;
+        ss.filled = shapeFilledRef.current;
+        ss.strokeWidth = brushSizeRef.current;
+        ss.opacity = brushOpacityRef.current;
         beginShape(ss, x, y);
         isDrawingRef.current = true;
         saveUndoSnapshot();
@@ -414,12 +439,12 @@ export function DrawingOverlay({
       }
 
       // ── Smudge tool ──
-      if (activeTool === "smudge") {
+      if (activeToolRef.current === "smudge") {
         isDrawingRef.current = true;
         saveUndoSnapshot();
-        const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+        const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
         const strength = preset.smudgeStrength ?? 0.5;
-        smudgeStateRef.current = beginSmudge(ctx, x, y, brushSize, strength);
+        smudgeStateRef.current = beginSmudge(ctx, x, y, brushSizeRef.current, strength);
         strokeInfoRef.current = {
           lastX: x,
           lastY: y,
@@ -430,10 +455,13 @@ export function DrawingOverlay({
       }
 
       // ── Brush / Eraser ──
+      // Gate drawing on asset readiness
+      if (!assetsReadyRef.current) return;
+
       isDrawingRef.current = true;
       saveUndoSnapshot();
 
-      const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+      const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
 
       // Reset stroke position tracking
       strokePositionRef.current = 0;
@@ -446,7 +474,7 @@ export function DrawingOverlay({
         preset.sizeDynamics.pressureMax,
         pressure
       );
-      const dabSize = Math.max(0.5, brushSize * sizeMult);
+      const dabSize = Math.max(0.5, brushSizeRef.current * sizeMult);
       const opMult = lerp(
         preset.opacityDynamics.pressureMin,
         preset.opacityDynamics.pressureMax,
@@ -457,10 +485,10 @@ export function DrawingOverlay({
         preset.flowDynamics.pressureMax,
         pressure
       );
-      const dabOpacity = perceptualOpacity(brushOpacity) * opMult;
+      const dabOpacity = perceptualOpacity(brushOpacityRef.current) * opMult;
 
       const dab = makeDab(x, y, dabSize, dabOpacity, flowMult, 0, 0);
-      renderDab(ctx, dab, brushColor, preset);
+      renderDab(ctx, dab, brushColorRef.current, preset);
 
       strokeInfoRef.current = {
         lastX: x,
@@ -481,19 +509,19 @@ export function DrawingOverlay({
       const { x, y, pressure } = getCanvasPoint(e);
 
       // ── Shape preview ──
-      if (activeTool === "shape") {
+      if (activeToolRef.current === "shape") {
         const ss = shapeStateRef.current;
         updateShape(ss, x, y);
         recomposite();
         const displayCtx = canvas!.getContext("2d");
         if (displayCtx) {
-          renderShapePreview(ss, displayCtx, brushColor);
+          renderShapePreview(ss, displayCtx, brushColorRef.current);
         }
         return;
       }
 
       // ── Smudge tool ──
-      if (activeTool === "smudge") {
+      if (activeToolRef.current === "smudge") {
         const stroke = strokeInfoRef.current;
         const smState = smudgeStateRef.current;
         if (!stroke || !smState) return;
@@ -505,7 +533,7 @@ export function DrawingOverlay({
         const ctx = activeLayer.canvas.getContext("2d");
         if (!ctx) return;
 
-        continueSmudge(ctx, smState, x, y, brushSize, brushOpacity);
+        continueSmudge(ctx, smState, x, y, brushSizeRef.current, brushOpacityRef.current);
 
         stroke.lastX = x;
         stroke.lastY = y;
@@ -527,7 +555,7 @@ export function DrawingOverlay({
       const ctx = activeLayer.canvas.getContext("2d");
       if (!ctx) return;
 
-      const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+      const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
 
       const dx = x - stroke.lastX;
       const dy = y - stroke.lastY;
@@ -546,7 +574,7 @@ export function DrawingOverlay({
         preset.sizeDynamics.pressureMax,
         avgPressure
       );
-      const avgSize = brushSize * avgSizeMult;
+      const avgSize = brushSizeRef.current * avgSizeMult;
       const spacing = Math.max(
         2,
         avgSize * (Math.max(preset.spacing, 1) / 100)
@@ -570,7 +598,7 @@ export function DrawingOverlay({
           preset.sizeDynamics.pressureMax,
           p
         );
-        let dabSize = brushSize * sizeMult;
+        let dabSize = brushSizeRef.current * sizeMult;
 
         if (preset.jitterSize > 0) {
           const jNorm =
@@ -592,7 +620,7 @@ export function DrawingOverlay({
           preset.flowDynamics.pressureMax,
           p
         );
-        let dabOpacity = perceptualOpacity(brushOpacity) * opMult;
+        let dabOpacity = perceptualOpacity(brushOpacityRef.current) * opMult;
 
         if (preset.jitterOpacity > 0) {
           const jNorm =
@@ -626,7 +654,7 @@ export function DrawingOverlay({
           : 0;
 
         const dab = makeDab(dabX, dabY, dabSize, dabOpacity, flowMult, dabRotation, strokePos);
-        renderDab(ctx, dab, brushColor, preset);
+        renderDab(ctx, dab, brushColorRef.current, preset);
 
         // Expand dirty rect to include this dab
         const halfDab = dabSize / 2 + 2; // +2 for anti-alias bleed
@@ -675,7 +703,7 @@ export function DrawingOverlay({
       isDrawingRef.current = false;
 
       // ── Shape commit ──
-      if (activeTool === "shape") {
+      if (activeToolRef.current === "shape") {
         const ss = shapeStateRef.current;
         const lm = layerManagerRef.current;
         if (lm && ss.start && ss.end) {
@@ -683,7 +711,7 @@ export function DrawingOverlay({
           if (activeLayer) {
             const ctx = activeLayer.canvas.getContext("2d");
             if (ctx) {
-              commitShape(ss, ctx, brushColor, brushSize);
+              commitShape(ss, ctx, brushColorRef.current, brushSizeRef.current);
             }
           }
         }
@@ -695,7 +723,7 @@ export function DrawingOverlay({
       }
 
       // ── Smudge tool ──
-      if (activeTool === "smudge" && smudgeStateRef.current) {
+      if (activeToolRef.current === "smudge" && smudgeStateRef.current) {
         endSmudge(smudgeStateRef.current);
         smudgeStateRef.current = null;
         strokeInfoRef.current = null;
@@ -732,19 +760,7 @@ export function DrawingOverlay({
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [
-    getCanvasPoint,
-    activeBrushId,
-    activeTool,
-    brushColor,
-    brushSize,
-    brushOpacity,
-    shapeType,
-    shapeFilled,
-    syncState,
-    recomposite,
-    scheduleRecomposite,
-  ]);
+  }, [getCanvasPoint, syncState, recomposite, scheduleRecomposite]);
 
   // ─── Layer operations ─────────────────────────────────────────
 
@@ -1090,6 +1106,13 @@ export function DrawingOverlay({
           className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
           style={{ zIndex: 201 }}
         />
+        {!assetsReady && (
+          <div className="absolute inset-0 flex items-center justify-center z-[202] pointer-events-none">
+            <div className="px-4 py-2 rounded-lg bg-zinc-900/90 text-zinc-400 text-sm">
+              Loading brushes...
+            </div>
+          </div>
+        )}
       </div>
 
       {/* All UI portaled to document.body to escape stacking context */}

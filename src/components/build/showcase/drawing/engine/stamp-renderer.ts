@@ -133,6 +133,8 @@ function resolveStamp(preset: BrushPreset, size: number): HTMLCanvasElement {
   if (preset.stampUrl) {
     const pngStamp = getStampSync(preset.stampUrl);
     if (pngStamp) return pngStamp;
+    // Cache miss: trigger async load so subsequent dabs in this stroke get the real stamp
+    loadStamp(preset.stampUrl).catch(() => {});
   }
 
   // Fallback to procedural generation

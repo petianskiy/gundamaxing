@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Circle } from "lucide-react";
+import { ImageUploadButton } from "./image-upload-button";
 
 const BUILT_IN_STAMPS = [
   { id: "soft-round", name: "Soft Round" },
@@ -91,6 +92,9 @@ export function StampPicker({ value, onChange }: StampPickerProps) {
           </button>
         );
       })}
+
+      {/* Upload custom stamp */}
+      <ImageUploadButton label="Upload" onUpload={(dataUrl) => onChange(dataUrl)} />
     </div>
   );
 }
