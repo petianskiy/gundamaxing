@@ -183,6 +183,18 @@ export function renderDab(
   // Set opacity (opacity * flow)
   ctx.globalAlpha = clamp(opacity * flow, 0, 1);
 
+  // Fast path: small dabs bypass stamp+grain pipeline entirely
+  // At ≤12px, stamp textures and grain are imperceptible — a filled ellipse
+  // is visually identical and avoids 10+ canvas operations per dab.
+  if (size <= 12) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, stampW / 2, stampH / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
   // Fast path: hard procedural circle with no grain, no PNG stamp
   if (
     !preset.stampUrl &&

@@ -403,9 +403,20 @@ export function DrawingOverlay({
     // This is the KEY performance fix: dab rendering is capped to 60fps
     // instead of running synchronously on every pointer event.
     function processPendingDabs(): void {
-      const points = pendingPointsRef.current;
+      let points = pendingPointsRef.current;
       if (points.length === 0) return;
       pendingPointsRef.current = [];
+
+      // Subsample if too many points accumulated (prevents frame cascade
+      // when pointer events fire faster than rAF can drain them)
+      if (points.length > 20) {
+        const sampled: Array<{ x: number; y: number; pressure: number }> = [];
+        const step = (points.length - 1) / 19;
+        for (let i = 0; i < 20; i++) {
+          sampled.push(points[Math.round(i * step)]);
+        }
+        points = sampled;
+      }
 
       const stroke = strokeInfoRef.current;
       if (!stroke) return;
@@ -418,8 +429,17 @@ export function DrawingOverlay({
       if (!ctx) return;
 
       const preset = getBrushPreset(activeBrushIdRef.current) ?? BRUSH_PRESETS[0];
+      const frameStart = performance.now();
 
       for (let pi = 0; pi < points.length; pi++) {
+        // Time-budget guard: if we've exceeded 8ms of dab rendering,
+        // push remaining points back and let the next frame handle them.
+        // This prevents dropped frames and "teleporting".
+        if (pi > 0 && (pi & 3) === 0 && performance.now() - frameStart > 8) {
+          pendingPointsRef.current = points.slice(pi).concat(pendingPointsRef.current);
+          break;
+        }
+
         const { x, y, pressure } = points[pi];
 
         const dx = x - stroke.lastX;
@@ -438,7 +458,7 @@ export function DrawingOverlay({
         );
         const avgSize = brushSizeRef.current * avgSizeMult;
         const spacing = Math.max(
-          2,
+          3,
           avgSize * (Math.max(preset.spacing, 1) / 100)
         );
 
