@@ -43,7 +43,7 @@ export function ToolStrip({
   return (
     <>
       {/* Desktop: Vertical column */}
-      <div className="hidden sm:flex fixed left-3 top-1/2 -translate-y-1/2 z-[210] flex-col gap-1 bg-zinc-900 rounded-lg p-2 border border-zinc-800 shadow-xl">
+      <div className="hidden sm:flex fixed left-3 top-1/2 -translate-y-1/2 z-[10000] flex-col gap-1 bg-zinc-900 rounded-lg p-2 border border-zinc-800 shadow-xl">
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeTool === tool.id;
@@ -100,7 +100,7 @@ export function ToolStrip({
       </div>
 
       {/* Mobile: Horizontal row */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-[210] bg-zinc-900 border-t border-zinc-800 shadow-xl">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-[10000] bg-zinc-900 border-t border-zinc-800 shadow-xl">
         <div className="flex items-center gap-1 p-2 overflow-x-auto">
           {tools.map((tool) => {
             const Icon = tool.icon;

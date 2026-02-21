@@ -36,7 +36,7 @@ export function BrushSettingsPanel({
   }, [activeCategory, searchQuery]);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:left-4 z-[500] w-full sm:w-72 bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:left-16 z-[10001] w-full sm:w-72 bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
         <h3 className="text-sm font-semibold text-white">Brushes</h3>
