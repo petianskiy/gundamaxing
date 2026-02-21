@@ -23,16 +23,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRUSH_PRESETS, getBrushPreset } from "./brushes";
-import type { BrushPreset, StrokePoint } from "./engine/brush-types";
-import {
-  beginStroke,
-  strokeTo,
-  endStroke,
-  type StrokeState,
-} from "./engine/brush-engine";
+import type { BrushPreset } from "./engine/brush-types";
 import { LayerManager, type BlendMode } from "./engine/layer-manager";
 import { Compositor } from "./engine/compositor";
-import { UndoManager } from "./engine/undo-manager";
 import { LayerPanel } from "./ui/layer-panel";
 import { BrushSettingsPanel } from "./ui/brush-settings-panel";
 
@@ -70,8 +63,26 @@ interface DrawingOverlayProps {
   onCancel: () => void;
 }
 
+// ─── Simple stroke tracking ─────────────────────────────────────
+
+interface StrokeInfo {
+  lastX: number;
+  lastY: number;
+  /** For smooth quadratic curves */
+  midX: number;
+  midY: number;
+  pointCount: number;
+}
+
 // ─── Max layers ─────────────────────────────────────────────────
 const MAX_LAYERS = 12;
+
+// ─── Undo snapshot ──────────────────────────────────────────────
+
+interface UndoSnapshot {
+  layerId: string;
+  imageData: ImageData;
+}
 
 export function DrawingOverlay({
   canvasWidth,
@@ -82,10 +93,13 @@ export function DrawingOverlay({
   // Display canvas — shows the composited result of all layers
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Core systems (refs to survive re-renders)
+  // Core systems
   const layerManagerRef = useRef<LayerManager | null>(null);
   const compositorRef = useRef<Compositor | null>(null);
-  const undoManagerRef = useRef<UndoManager | null>(null);
+
+  // Undo/redo stacks (simple ImageData snapshots)
+  const undoStackRef = useRef<UndoSnapshot[]>([]);
+  const redoStackRef = useRef<UndoSnapshot[]>([]);
 
   const [activeBrushId, setActiveBrushId] = useState("pencil-hb");
   const [brushColor, setBrushColor] = useState("#ffffff");
@@ -93,9 +107,11 @@ export function DrawingOverlay({
   const [brushOpacity, setBrushOpacity] = useState(1);
   const [showBrushPicker, setShowBrushPicker] = useState(false);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
+
+  // Drawing state
   const isDrawingRef = useRef(false);
-  const strokeStateRef = useRef<StrokeState | null>(null);
-  const pendingUndoActionRef = useRef<ReturnType<UndoManager["recordStrokeBefore"]> | null>(null);
+  const strokeInfoRef = useRef<StrokeInfo | null>(null);
+  const pendingUndoRef = useRef<UndoSnapshot | null>(null);
 
   // Layer state (mirrored from LayerManager for React rendering)
   const [layerState, setLayerState] = useState<{
@@ -103,27 +119,23 @@ export function DrawingOverlay({
     activeLayerId: string;
   }>({ layers: [], activeLayerId: "" });
 
-  // Undo/redo state
   const [canUndoDraw, setCanUndoDraw] = useState(false);
   const [canRedoDraw, setCanRedoDraw] = useState(false);
 
-  /** Sync React state from LayerManager + UndoManager */
+  /** Sync React state from refs */
   const syncState = useCallback(() => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
     if (lm) {
       setLayerState({
         layers: [...lm.layers],
         activeLayerId: lm.activeLayerId,
       });
     }
-    if (um) {
-      setCanUndoDraw(um.canUndo);
-      setCanRedoDraw(um.canRedo);
-    }
+    setCanUndoDraw(undoStackRef.current.length > 0);
+    setCanRedoDraw(redoStackRef.current.length > 0);
   }, []);
 
-  /** Recomposite and sync */
+  /** Recomposite all layers to display canvas */
   const recomposite = useCallback(() => {
     const c = compositorRef.current;
     const lm = layerManagerRef.current;
@@ -142,54 +154,48 @@ export function DrawingOverlay({
 
     const lm = new LayerManager(canvasWidth, canvasHeight);
     const comp = new Compositor(canvas);
-    const um = new UndoManager(lm);
 
     layerManagerRef.current = lm;
     compositorRef.current = comp;
-    undoManagerRef.current = um;
+    undoStackRef.current = [];
+    redoStackRef.current = [];
 
-    // Initial composite (blank)
     comp.composite(lm.layers);
     syncState();
   }, [canvasWidth, canvasHeight, syncState]);
 
   // ─── Canvas coordinate conversion ────────────────────────────
 
-  const getStrokePoint = useCallback(
-    (e: PointerEvent): StrokePoint => {
+  const getCanvasPoint = useCallback(
+    (e: PointerEvent): { x: number; y: number; pressure: number } => {
       const canvas = displayCanvasRef.current;
-      if (!canvas) return { x: 0, y: 0, pressure: 0.5, timestamp: Date.now() };
+      if (!canvas) return { x: 0, y: 0, pressure: 0.5 };
       const rect = canvas.getBoundingClientRect();
       return {
         x: ((e.clientX - rect.left) / rect.width) * canvas.width,
         y: ((e.clientY - rect.top) / rect.height) * canvas.height,
         pressure: e.pressure || 0.5,
-        tilt: e.tiltX !== undefined ? { x: e.tiltX, y: e.tiltY } : undefined,
-        timestamp: Date.now(),
       };
     },
     []
   );
 
-  // ─── Pointer event handlers ──────────────────────────────────
+  // ─── Simple direct Canvas2D drawing ───────────────────────────
+  // This is fast and proven — no stamp engine, no interpolation overhead.
 
   useEffect(() => {
     const canvas = displayCanvasRef.current;
     if (!canvas) return;
 
     function onPointerDown(e: PointerEvent) {
+      // Only respond to primary button / touch
+      if (e.button !== 0 && e.pointerType === "mouse") return;
       e.preventDefault();
-      e.stopPropagation();
 
-      try {
-        canvas!.setPointerCapture(e.pointerId);
-      } catch {
-        // Pointer capture may fail on some browsers
-      }
+      try { canvas!.setPointerCapture(e.pointerId); } catch {}
 
       const lm = layerManagerRef.current;
-      const um = undoManagerRef.current;
-      if (!lm || !um) return;
+      if (!lm) return;
 
       const activeLayer = lm.getActiveLayer();
       if (!activeLayer || activeLayer.locked || !activeLayer.visible) return;
@@ -199,50 +205,49 @@ export function DrawingOverlay({
 
       isDrawingRef.current = true;
 
-      // Record undo checkpoint BEFORE drawing (wrap in try-catch since it copies ImageData)
+      // Save undo snapshot BEFORE drawing
       try {
-        pendingUndoActionRef.current = um.recordStrokeBefore(activeLayer.id);
+        const data = ctx.getImageData(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
+        pendingUndoRef.current = { layerId: activeLayer.id, imageData: data };
       } catch {
-        pendingUndoActionRef.current = null;
+        pendingUndoRef.current = null;
       }
 
-      const point = getStrokePoint(e);
+      const { x, y, pressure } = getCanvasPoint(e);
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+      const isEraser = preset.isEraser;
 
-      try {
-        // Begin stroke on the active layer's canvas
-        strokeStateRef.current = beginStroke(
-          preset,
-          brushColor,
-          brushSize,
-          brushOpacity,
-          point,
-          ctx
-        );
-      } catch (err) {
-        // Fallback: draw a simple dot directly if the brush engine fails
-        console.error("[DrawingOverlay] beginStroke failed:", err);
-        ctx.save();
-        ctx.fillStyle = brushColor;
-        ctx.globalAlpha = brushOpacity;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+      // Configure context for this stroke
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brushSize * (0.5 + pressure * 0.5);
+      ctx.globalAlpha = brushOpacity;
+
+      if (isEraser) {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.strokeStyle = "rgba(0,0,0,1)";
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = brushColor;
       }
 
-      // Always do a full recomposite after first dab for guaranteed visibility
-      const comp = compositorRef.current;
-      if (comp) {
-        comp.markDirty();
-        comp.composite(lm.layers);
-      }
+      // Draw initial dot
+      ctx.beginPath();
+      ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fillStyle = isEraser ? "rgba(0,0,0,1)" : brushColor;
+      ctx.fill();
+      ctx.restore();
+
+      strokeInfoRef.current = { lastX: x, lastY: y, midX: x, midY: y, pointCount: 1 };
+
+      // Show immediately
+      recomposite();
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (!isDrawingRef.current) return;
+      if (!isDrawingRef.current || !strokeInfoRef.current) return;
       e.preventDefault();
-      e.stopPropagation();
 
       const lm = layerManagerRef.current;
       if (!lm) return;
@@ -253,87 +258,70 @@ export function DrawingOverlay({
       const ctx = activeLayer.canvas.getContext("2d");
       if (!ctx) return;
 
-      const point = getStrokePoint(e);
+      const { x, y, pressure } = getCanvasPoint(e);
+      const stroke = strokeInfoRef.current;
+      const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
+      const isEraser = preset.isEraser;
 
-      if (strokeStateRef.current) {
-        try {
-          const dirtyRect = strokeTo(strokeStateRef.current, point, ctx);
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brushSize * (0.5 + pressure * 0.5);
+      ctx.globalAlpha = brushOpacity;
 
-          // Partial composite for performance
-          const comp = compositorRef.current;
-          if (comp) {
-            comp.composite(lm.layers, dirtyRect);
-          }
-        } catch (err) {
-          // Fallback: draw directly on canvas
-          console.error("[DrawingOverlay] strokeTo failed:", err);
-          ctx.save();
-          ctx.fillStyle = brushColor;
-          ctx.globalAlpha = brushOpacity;
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-
-          // Full recomposite
-          const comp = compositorRef.current;
-          if (comp) {
-            comp.markDirty();
-            comp.composite(lm.layers);
-          }
-        }
+      if (isEraser) {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.strokeStyle = "rgba(0,0,0,1)";
       } else {
-        // No stroke state (engine failed on begin), draw directly
-        ctx.save();
-        ctx.fillStyle = brushColor;
-        ctx.globalAlpha = brushOpacity;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        const comp = compositorRef.current;
-        if (comp) {
-          comp.markDirty();
-          comp.composite(lm.layers);
-        }
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = brushColor;
       }
+
+      ctx.beginPath();
+
+      if (stroke.pointCount < 3) {
+        // For the first few points, use simple lineTo
+        ctx.moveTo(stroke.lastX, stroke.lastY);
+        ctx.lineTo(x, y);
+      } else {
+        // Use quadratic curve through midpoints for smooth strokes
+        const midX = (stroke.lastX + x) / 2;
+        const midY = (stroke.lastY + y) / 2;
+        ctx.moveTo(stroke.midX, stroke.midY);
+        ctx.quadraticCurveTo(stroke.lastX, stroke.lastY, midX, midY);
+        stroke.midX = midX;
+        stroke.midY = midY;
+      }
+
+      ctx.stroke();
+      ctx.restore();
+
+      stroke.lastX = x;
+      stroke.lastY = y;
+      stroke.pointCount++;
+
+      // Composite to display
+      recomposite();
     }
 
     function onPointerUp(e: PointerEvent) {
+      if (!isDrawingRef.current) return;
       e.preventDefault();
-      e.stopPropagation();
-      if (isDrawingRef.current) {
-        if (strokeStateRef.current) {
-          try {
-            endStroke(strokeStateRef.current);
-          } catch {
-            // Ignore end stroke errors
-          }
-        }
-        strokeStateRef.current = null;
-        isDrawingRef.current = false;
 
-        // Commit the undo action
-        const um = undoManagerRef.current;
-        if (um && pendingUndoActionRef.current) {
-          try {
-            um.commitStroke(pendingUndoActionRef.current);
-          } catch {
-            // Ignore undo commit errors
-          }
-          pendingUndoActionRef.current = null;
-        }
+      isDrawingRef.current = false;
+      strokeInfoRef.current = null;
 
-        // Full recomposite and sync state
-        const comp = compositorRef.current;
-        const lm = layerManagerRef.current;
-        if (comp && lm) {
-          comp.markDirty();
-          comp.composite(lm.layers);
-        }
-        syncState();
+      // Push undo snapshot
+      if (pendingUndoRef.current) {
+        undoStackRef.current.push(pendingUndoRef.current);
+        // Limit undo stack to 30 entries
+        if (undoStackRef.current.length > 30) undoStackRef.current.shift();
+        redoStackRef.current = []; // Clear redo on new action
+        pendingUndoRef.current = null;
       }
+
+      recomposite();
+      syncState();
     }
 
     canvas.addEventListener("pointerdown", onPointerDown);
@@ -347,35 +335,22 @@ export function DrawingOverlay({
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [getStrokePoint, activeBrushId, brushColor, brushSize, brushOpacity, syncState]);
+  }, [getCanvasPoint, activeBrushId, brushColor, brushSize, brushOpacity, syncState, recomposite]);
 
-  // ─── Layer operations (callbacks for LayerPanel) ────────────
+  // ─── Layer operations ─────────────────────────────────────────
 
   const handleAddLayer = useCallback(() => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
-    if (!lm || !um) return;
+    if (!lm) return;
     if (lm.layers.length >= MAX_LAYERS) return;
-    const newLayer = lm.addLayer();
-    um.recordAddLayer(newLayer.id);
+    lm.addLayer();
     recomposite();
     syncState();
   }, [recomposite, syncState]);
 
   const handleDeleteLayer = useCallback((id: string) => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
-    if (!lm || !um) return;
-    const layer = lm.layers.find((l) => l.id === id);
-    if (!layer) return;
-    const data = lm.getLayerSnapshot(id);
-    const idx = lm.layers.findIndex((l) => l.id === id);
-    if (!data) return;
-    um.recordDeleteLayer(
-      { id: layer.id, name: layer.name, visible: layer.visible, opacity: layer.opacity, blendMode: layer.blendMode },
-      data,
-      idx
-    );
+    if (!lm) return;
     lm.deleteLayer(id);
     recomposite();
     syncState();
@@ -383,35 +358,15 @@ export function DrawingOverlay({
 
   const handleDuplicateLayer = useCallback((id: string) => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
-    if (!lm || !um) return;
-    if (lm.layers.length >= MAX_LAYERS) return;
-    const dup = lm.duplicateLayer(id);
-    if (dup) {
-      um.recordAddLayer(dup.id);
-      recomposite();
-      syncState();
-    }
+    if (!lm || lm.layers.length >= MAX_LAYERS) return;
+    lm.duplicateLayer(id);
+    recomposite();
+    syncState();
   }, [recomposite, syncState]);
 
   const handleMergeDown = useCallback((id: string) => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
-    if (!lm || !um) return;
-    const idx = lm.layers.findIndex((l) => l.id === id);
-    if (idx <= 0) return;
-    const upper = lm.layers[idx];
-    const lower = lm.layers[idx - 1];
-    const upperData = lm.getLayerSnapshot(upper.id);
-    const lowerData = lm.getLayerSnapshot(lower.id);
-    if (!upperData || !lowerData) return;
-    um.recordMergeLayers(
-      { id: upper.id, name: upper.name, visible: upper.visible, opacity: upper.opacity, blendMode: upper.blendMode },
-      upperData,
-      idx,
-      lower.id,
-      lowerData
-    );
+    if (!lm) return;
     lm.mergeDown(id);
     recomposite();
     syncState();
@@ -473,28 +428,62 @@ export function DrawingOverlay({
   // ─── Undo / Redo / Clear / Done ──────────────────────────────
 
   const handleUndo = useCallback(() => {
-    const um = undoManagerRef.current;
-    if (!um) return;
-    um.undo();
+    const lm = layerManagerRef.current;
+    if (!lm) return;
+    const snapshot = undoStackRef.current.pop();
+    if (!snapshot) return;
+
+    // Save current state for redo
+    const layer = lm.layers.find((l) => l.id === snapshot.layerId);
+    if (layer) {
+      const ctx = layer.canvas.getContext("2d");
+      if (ctx) {
+        const current = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+        redoStackRef.current.push({ layerId: snapshot.layerId, imageData: current });
+        ctx.putImageData(snapshot.imageData, 0, 0);
+      }
+    }
+
     recomposite();
     syncState();
   }, [recomposite, syncState]);
 
   const handleRedo = useCallback(() => {
-    const um = undoManagerRef.current;
-    if (!um) return;
-    um.redo();
+    const lm = layerManagerRef.current;
+    if (!lm) return;
+    const snapshot = redoStackRef.current.pop();
+    if (!snapshot) return;
+
+    const layer = lm.layers.find((l) => l.id === snapshot.layerId);
+    if (layer) {
+      const ctx = layer.canvas.getContext("2d");
+      if (ctx) {
+        const current = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+        undoStackRef.current.push({ layerId: snapshot.layerId, imageData: current });
+        ctx.putImageData(snapshot.imageData, 0, 0);
+      }
+    }
+
     recomposite();
     syncState();
   }, [recomposite, syncState]);
 
   const handleClear = useCallback(() => {
     const lm = layerManagerRef.current;
-    const um = undoManagerRef.current;
-    if (!lm || !um) return;
+    if (!lm) return;
     const activeLayer = lm.getActiveLayer();
     if (!activeLayer) return;
-    um.recordClearLayer(activeLayer.id);
+
+    // Save undo
+    const ctx = activeLayer.canvas.getContext("2d");
+    if (ctx) {
+      try {
+        const data = ctx.getImageData(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
+        undoStackRef.current.push({ layerId: activeLayer.id, imageData: data });
+        redoStackRef.current = [];
+      } catch {}
+    }
+
     lm.clearLayer(activeLayer.id);
     recomposite();
     syncState();
@@ -505,12 +494,10 @@ export function DrawingOverlay({
     const comp = compositorRef.current;
     if (!lm || !comp) return;
 
-    // Flatten all layers
     const flatCanvas = comp.flatten(lm.layers);
     const ctx = flatCanvas.getContext("2d");
     if (!ctx) return;
 
-    // Find bounding box of drawn content
     const imageData = ctx.getImageData(0, 0, flatCanvas.width, flatCanvas.height);
     const { data, width, height } = imageData;
     let minX = width, minY = height, maxX = 0, maxY = 0;
@@ -565,35 +552,24 @@ export function DrawingOverlay({
     );
   }, [onComplete, onCancel]);
 
-  // Stop events from reaching the parent editor
-  const stopPropagation = useCallback((e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-  }, []);
-
   const activePreset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
   const ActiveIcon = getBrushIcon(activePreset);
 
   return (
-    <div
-      className="absolute inset-0 z-[200]"
-      onPointerDown={stopPropagation}
-      onPointerMove={stopPropagation}
-      onPointerUp={stopPropagation}
-      onClick={stopPropagation}
-    >
+    <div className="absolute inset-0" style={{ zIndex: 200 }}>
       {/* Display canvas — shows composited layers */}
       <canvas
         ref={displayCanvasRef}
         className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
-        style={{ zIndex: 200 }}
+        style={{ zIndex: 201 }}
       />
 
-      {/* Toolbar — fixed to viewport */}
+      {/* Toolbar — fixed to viewport, high z-index to always be above canvas */}
       <div
         className="fixed top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl max-w-[calc(100vw-1rem)] overflow-x-auto"
-        style={{ zIndex: 210, scrollbarWidth: "none" }}
+        style={{ zIndex: 9999, scrollbarWidth: "none" }}
       >
-        {/* Active brush button — opens brush settings panel */}
+        {/* Active brush button */}
         <button
           onClick={() => setShowBrushPicker(!showBrushPicker)}
           className={cn(
