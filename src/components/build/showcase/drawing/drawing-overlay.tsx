@@ -21,15 +21,90 @@ import {
   Plus,
   Paintbrush,
   Layers,
+  Square,
+  Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BRUSH_PRESETS, getBrushPreset } from "./brushes";
 import type { BrushPreset } from "./engine/brush-types";
+import { lerp, clamp } from "./engine/brush-types";
 import { LayerManager, type BlendMode } from "./engine/layer-manager";
 import { Compositor } from "./engine/compositor";
 import { LayerPanel } from "./ui/layer-panel";
 import { BrushSettingsPanel } from "./ui/brush-settings-panel";
 import { ToolStrip } from "./ui/tool-strip";
+import { sampleColor } from "./tools/eyedropper-tool";
+import { floodFill } from "./tools/fill-tool";
+import {
+  beginShape,
+  updateShape,
+  renderShapePreview,
+  commitShape,
+  endShape,
+} from "./tools/shape-tool";
+import { createShapeState } from "./tools/tool-types";
+import type { ShapeType } from "./tools/tool-types";
+
+// ─── Helpers ─────────────────────────────────────────────────────
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/**
+ * Render a single circular dab onto the canvas context.
+ * Hardness controls the edge falloff (1 = hard, 0 = very soft/diffuse).
+ */
+function drawDab(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  opacity: number,
+  hardness: number,
+  color: string,
+  isEraser: boolean
+): void {
+  if (size < 0.5 || opacity <= 0) return;
+
+  const r = size / 2;
+  ctx.save();
+  ctx.globalAlpha = clamp(opacity, 0, 1);
+
+  if (isEraser) {
+    ctx.globalCompositeOperation = "destination-out";
+  }
+
+  if (hardness >= 0.85 || size < 4) {
+    // Hard brush: solid circle (also for tiny dabs where gradient is invisible)
+    ctx.fillStyle = isEraser ? "black" : color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Soft brush: radial gradient with falloff controlled by hardness
+    const innerR = r * Math.max(0, hardness);
+    const gradient = ctx.createRadialGradient(x, y, innerR, x, y, r);
+
+    if (isEraser) {
+      gradient.addColorStop(0, "rgba(0,0,0,1)");
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+    } else {
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, hexToRgba(color, 0));
+    }
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
 
 // ─── Brush icon mapping ──────────────────────────────────────────
 
@@ -65,26 +140,23 @@ interface DrawingOverlayProps {
   onCancel: () => void;
 }
 
-// ─── Simple stroke tracking ─────────────────────────────────────
-
 interface StrokeInfo {
   lastX: number;
   lastY: number;
-  /** For smooth quadratic curves */
-  midX: number;
-  midY: number;
-  pointCount: number;
+  /** Distance since last placed dab */
+  distanceRemainder: number;
+  /** Previous pressure for interpolation */
+  lastPressure: number;
 }
-
-// ─── Max layers ─────────────────────────────────────────────────
-const MAX_LAYERS = 12;
-
-// ─── Undo snapshot ──────────────────────────────────────────────
 
 interface UndoSnapshot {
   layerId: string;
   imageData: ImageData;
 }
+
+const MAX_LAYERS = 12;
+
+// ─── Component ───────────────────────────────────────────────────
 
 export function DrawingOverlay({
   canvasWidth,
@@ -92,14 +164,9 @@ export function DrawingOverlay({
   onComplete,
   onCancel,
 }: DrawingOverlayProps) {
-  // Display canvas — shows the composited result of all layers
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Core systems
   const layerManagerRef = useRef<LayerManager | null>(null);
   const compositorRef = useRef<Compositor | null>(null);
-
-  // Undo/redo stacks (simple ImageData snapshots)
   const undoStackRef = useRef<UndoSnapshot[]>([]);
   const redoStackRef = useRef<UndoSnapshot[]>([]);
 
@@ -111,7 +178,12 @@ export function DrawingOverlay({
   const [showBrushPicker, setShowBrushPicker] = useState(false);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
 
-  // Track the last non-eraser brush for switching back from eraser tool
+  // Shape tool state
+  const [shapeType, setShapeType] = useState<ShapeType>("rect");
+  const [shapeFilled, setShapeFilled] = useState(false);
+  const shapeStateRef = useRef(createShapeState());
+
+  // Track last non-eraser brush for switching back from eraser tool
   const lastBrushIdRef = useRef("pencil-hb");
 
   // Drawing state
@@ -119,11 +191,13 @@ export function DrawingOverlay({
   const strokeInfoRef = useRef<StrokeInfo | null>(null);
   const pendingUndoRef = useRef<UndoSnapshot | null>(null);
 
-  // Portal mount state — need to wait for client-side mount
+  // Portal mount
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Layer state (mirrored from LayerManager for React rendering)
+  // Layer state (mirrored for React rendering)
   const [layerState, setLayerState] = useState<{
     layers: LayerManager["layers"];
     activeLayerId: string;
@@ -132,7 +206,6 @@ export function DrawingOverlay({
   const [canUndoDraw, setCanUndoDraw] = useState(false);
   const [canRedoDraw, setCanRedoDraw] = useState(false);
 
-  /** Sync React state from refs */
   const syncState = useCallback(() => {
     const lm = layerManagerRef.current;
     if (lm) {
@@ -145,7 +218,6 @@ export function DrawingOverlay({
     setCanRedoDraw(redoStackRef.current.length > 0);
   }, []);
 
-  /** Recomposite all layers to display canvas */
   const recomposite = useCallback(() => {
     const c = compositorRef.current;
     const lm = layerManagerRef.current;
@@ -176,24 +248,25 @@ export function DrawingOverlay({
 
   // ─── Tool switching ────────────────────────────────────────────
 
-  const handleSetTool = useCallback((tool: string) => {
-    setActiveTool(tool);
+  const handleSetTool = useCallback(
+    (tool: string) => {
+      setActiveTool(tool);
 
-    if (tool === "eraser") {
-      // Save current brush and switch to eraser preset
-      const currentPreset = getBrushPreset(activeBrushId);
-      if (currentPreset && !currentPreset.isEraser) {
-        lastBrushIdRef.current = activeBrushId;
+      if (tool === "eraser") {
+        const currentPreset = getBrushPreset(activeBrushId);
+        if (currentPreset && !currentPreset.isEraser) {
+          lastBrushIdRef.current = activeBrushId;
+        }
+        setActiveBrushId("eraser-hard");
+      } else if (tool === "brush") {
+        const currentPreset = getBrushPreset(activeBrushId);
+        if (currentPreset?.isEraser) {
+          setActiveBrushId(lastBrushIdRef.current);
+        }
       }
-      setActiveBrushId("eraser-hard");
-    } else if (tool === "brush") {
-      // Restore previous non-eraser brush
-      const currentPreset = getBrushPreset(activeBrushId);
-      if (currentPreset?.isEraser) {
-        setActiveBrushId(lastBrushIdRef.current);
-      }
-    }
-  }, [activeBrushId]);
+    },
+    [activeBrushId]
+  );
 
   // ─── Canvas coordinate conversion ────────────────────────────
 
@@ -211,21 +284,71 @@ export function DrawingOverlay({
     []
   );
 
-  // ─── Simple direct Canvas2D drawing ───────────────────────────
+  // ─── Canvas event handling ─────────────────────────────────────
+  // Stamp-based brush rendering: places dabs along the stroke path
+  // at intervals controlled by the preset's spacing property.
+  // Each dab uses hardness for edge softness, sizeDynamics for
+  // pressure→size, opacityDynamics for pressure→opacity, flow for
+  // per-dab opacity, scatter for random offset, and jitter for
+  // random size/opacity variation.
 
   useEffect(() => {
     const canvas = displayCanvasRef.current;
     if (!canvas) return;
 
+    function saveUndoSnapshot(): void {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      const activeLayer = lm.getActiveLayer();
+      if (!activeLayer) return;
+      const ctx = activeLayer.canvas.getContext("2d");
+      if (!ctx) return;
+      try {
+        const data = ctx.getImageData(
+          0,
+          0,
+          activeLayer.canvas.width,
+          activeLayer.canvas.height
+        );
+        pendingUndoRef.current = {
+          layerId: activeLayer.id,
+          imageData: data,
+        };
+      } catch {
+        pendingUndoRef.current = null;
+      }
+    }
+
+    function pushUndo(): void {
+      if (pendingUndoRef.current) {
+        undoStackRef.current.push(pendingUndoRef.current);
+        if (undoStackRef.current.length > 30) undoStackRef.current.shift();
+        redoStackRef.current = [];
+        pendingUndoRef.current = null;
+      }
+    }
+
     function onPointerDown(e: PointerEvent) {
-      // Only respond to primary button / touch
       if (e.button !== 0 && e.pointerType === "mouse") return;
       e.preventDefault();
+      e.stopPropagation(); // Prevent showcase editor marquee selection
 
-      try { canvas!.setPointerCapture(e.pointerId); } catch {}
+      try {
+        canvas!.setPointerCapture(e.pointerId);
+      } catch {}
 
       const lm = layerManagerRef.current;
       if (!lm) return;
+
+      const { x, y, pressure } = getCanvasPoint(e);
+
+      // ── Eyedropper tool ──
+      if (activeTool === "eyedropper") {
+        const hex = sampleColor(canvas!, x, y);
+        setBrushColor(hex);
+        setActiveTool("brush");
+        return;
+      }
 
       const activeLayer = lm.getActiveLayer();
       if (!activeLayer || activeLayer.locked || !activeLayer.visible) return;
@@ -233,51 +356,97 @@ export function DrawingOverlay({
       const ctx = activeLayer.canvas.getContext("2d");
       if (!ctx) return;
 
-      isDrawingRef.current = true;
-
-      // Save undo snapshot BEFORE drawing
-      try {
-        const data = ctx.getImageData(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
-        pendingUndoRef.current = { layerId: activeLayer.id, imageData: data };
-      } catch {
-        pendingUndoRef.current = null;
+      // ── Fill tool ──
+      if (activeTool === "fill") {
+        saveUndoSnapshot();
+        floodFill(ctx, x, y, brushColor, 32);
+        pushUndo();
+        recomposite();
+        syncState();
+        return;
       }
 
-      const { x, y, pressure } = getCanvasPoint(e);
+      // ── Shape tool ──
+      if (activeTool === "shape") {
+        const ss = shapeStateRef.current;
+        ss.type = shapeType;
+        ss.filled = shapeFilled;
+        ss.strokeWidth = brushSize;
+        beginShape(ss, x, y);
+        isDrawingRef.current = true;
+        saveUndoSnapshot();
+        return;
+      }
+
+      // ── Brush / Eraser ──
+      isDrawingRef.current = true;
+      saveUndoSnapshot();
+
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
       const isEraser = preset.isEraser;
 
-      // Configure context for this stroke
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = brushSize * (0.5 + pressure * 0.5);
-      ctx.globalAlpha = brushOpacity;
+      // Calculate first dab
+      const sizeMult = lerp(
+        preset.sizeDynamics.pressureMin,
+        preset.sizeDynamics.pressureMax,
+        pressure
+      );
+      const dabSize = Math.max(0.5, brushSize * sizeMult);
+      const opMult = lerp(
+        preset.opacityDynamics.pressureMin,
+        preset.opacityDynamics.pressureMax,
+        pressure
+      );
+      const flowMult = lerp(
+        preset.flowDynamics.pressureMin,
+        preset.flowDynamics.pressureMax,
+        pressure
+      );
+      const dabOpacity = brushOpacity * opMult * flowMult;
 
-      if (isEraser) {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.strokeStyle = "rgba(0,0,0,1)";
-      } else {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = brushColor;
-      }
+      drawDab(
+        ctx,
+        x,
+        y,
+        dabSize,
+        dabOpacity,
+        preset.hardness,
+        brushColor,
+        isEraser
+      );
 
-      // Draw initial dot
-      ctx.beginPath();
-      ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
-      ctx.fillStyle = isEraser ? "rgba(0,0,0,1)" : brushColor;
-      ctx.fill();
-      ctx.restore();
+      strokeInfoRef.current = {
+        lastX: x,
+        lastY: y,
+        distanceRemainder: 0,
+        lastPressure: pressure,
+      };
 
-      strokeInfoRef.current = { lastX: x, lastY: y, midX: x, midY: y, pointCount: 1 };
-
-      // Show immediately
       recomposite();
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (!isDrawingRef.current || !strokeInfoRef.current) return;
+      if (!isDrawingRef.current) return;
       e.preventDefault();
+      e.stopPropagation();
+
+      const { x, y, pressure } = getCanvasPoint(e);
+
+      // ── Shape preview ──
+      if (activeTool === "shape") {
+        const ss = shapeStateRef.current;
+        updateShape(ss, x, y);
+        recomposite();
+        const displayCtx = canvas!.getContext("2d");
+        if (displayCtx) {
+          renderShapePreview(ss, displayCtx, brushColor);
+        }
+        return;
+      }
+
+      // ── Brush / Eraser ──
+      const stroke = strokeInfoRef.current;
+      if (!stroke) return;
 
       const lm = layerManagerRef.current;
       if (!lm) return;
@@ -288,65 +457,143 @@ export function DrawingOverlay({
       const ctx = activeLayer.canvas.getContext("2d");
       if (!ctx) return;
 
-      const { x, y, pressure } = getCanvasPoint(e);
-      const stroke = strokeInfoRef.current;
       const preset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
       const isEraser = preset.isEraser;
 
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = brushSize * (0.5 + pressure * 0.5);
-      ctx.globalAlpha = brushOpacity;
+      const dx = x - stroke.lastX;
+      const dy = y - stroke.lastY;
+      const segDist = Math.sqrt(dx * dx + dy * dy);
 
-      if (isEraser) {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.strokeStyle = "rgba(0,0,0,1)";
-      } else {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = brushColor;
+      if (segDist < 0.1) return;
+
+      // Calculate spacing: preset.spacing is % of brush diameter (1-500)
+      const avgPressure =
+        (stroke.lastPressure + pressure) / 2;
+      const avgSizeMult = lerp(
+        preset.sizeDynamics.pressureMin,
+        preset.sizeDynamics.pressureMax,
+        avgPressure
+      );
+      const avgSize = brushSize * avgSizeMult;
+      const spacing = Math.max(
+        2,
+        avgSize * (Math.max(preset.spacing, 1) / 100)
+      );
+
+      // Walk along segment placing dabs at spacing intervals
+      let d = spacing - stroke.distanceRemainder;
+
+      while (d <= segDist) {
+        const t = d / segDist;
+
+        // Interpolated position & pressure
+        let dabX = stroke.lastX + dx * t;
+        let dabY = stroke.lastY + dy * t;
+        const p =
+          stroke.lastPressure + (pressure - stroke.lastPressure) * t;
+
+        // Size with pressure dynamics + jitter
+        const sizeMult = lerp(
+          preset.sizeDynamics.pressureMin,
+          preset.sizeDynamics.pressureMax,
+          p
+        );
+        let dabSize = brushSize * sizeMult;
+
+        if (preset.jitterSize > 0) {
+          const jNorm =
+            preset.jitterSize > 1
+              ? preset.jitterSize / 100
+              : preset.jitterSize;
+          dabSize *= 1 + (Math.random() - 0.5) * jNorm;
+        }
+        dabSize = Math.max(0.5, dabSize);
+
+        // Opacity with pressure dynamics + flow
+        const opMult = lerp(
+          preset.opacityDynamics.pressureMin,
+          preset.opacityDynamics.pressureMax,
+          p
+        );
+        const flowMult = lerp(
+          preset.flowDynamics.pressureMin,
+          preset.flowDynamics.pressureMax,
+          p
+        );
+        let dabOpacity = brushOpacity * opMult * flowMult;
+
+        if (preset.jitterOpacity > 0) {
+          const jNorm =
+            preset.jitterOpacity > 1
+              ? preset.jitterOpacity / 100
+              : preset.jitterOpacity;
+          dabOpacity *= 1 + (Math.random() - 0.5) * jNorm;
+        }
+
+        // Scatter: random offset perpendicular to stroke
+        if (preset.scatter > 0) {
+          const scNorm =
+            preset.scatter > 1
+              ? preset.scatter / 100
+              : preset.scatter;
+          const scatterAmt = dabSize * scNorm;
+          dabX += (Math.random() - 0.5) * scatterAmt * 2;
+          dabY += (Math.random() - 0.5) * scatterAmt * 2;
+        }
+
+        drawDab(
+          ctx,
+          dabX,
+          dabY,
+          dabSize,
+          dabOpacity,
+          preset.hardness,
+          brushColor,
+          isEraser
+        );
+
+        d += spacing;
       }
 
-      ctx.beginPath();
-
-      if (stroke.pointCount < 3) {
-        ctx.moveTo(stroke.lastX, stroke.lastY);
-        ctx.lineTo(x, y);
-      } else {
-        const midX = (stroke.lastX + x) / 2;
-        const midY = (stroke.lastY + y) / 2;
-        ctx.moveTo(stroke.midX, stroke.midY);
-        ctx.quadraticCurveTo(stroke.lastX, stroke.lastY, midX, midY);
-        stroke.midX = midX;
-        stroke.midY = midY;
-      }
-
-      ctx.stroke();
-      ctx.restore();
-
+      // Update distance remainder for next segment
+      stroke.distanceRemainder = segDist - (d - spacing);
       stroke.lastX = x;
       stroke.lastY = y;
-      stroke.pointCount++;
+      stroke.lastPressure = pressure;
 
-      // Composite to display
       recomposite();
     }
 
     function onPointerUp(e: PointerEvent) {
       if (!isDrawingRef.current) return;
       e.preventDefault();
+      e.stopPropagation();
 
       isDrawingRef.current = false;
-      strokeInfoRef.current = null;
 
-      // Push undo snapshot
-      if (pendingUndoRef.current) {
-        undoStackRef.current.push(pendingUndoRef.current);
-        if (undoStackRef.current.length > 30) undoStackRef.current.shift();
-        redoStackRef.current = [];
-        pendingUndoRef.current = null;
+      // ── Shape commit ──
+      if (activeTool === "shape") {
+        const ss = shapeStateRef.current;
+        const lm = layerManagerRef.current;
+        if (lm && ss.start && ss.end) {
+          const activeLayer = lm.getActiveLayer();
+          if (activeLayer) {
+            const ctx = activeLayer.canvas.getContext("2d");
+            if (ctx) {
+              commitShape(ss, ctx, brushColor, brushSize);
+            }
+          }
+        }
+        endShape(ss);
+        pushUndo();
+        recomposite();
+        syncState();
+        return;
       }
 
+      // ── Brush / Eraser ──
+      strokeInfoRef.current = null;
+      pushUndo();
       recomposite();
       syncState();
     }
@@ -362,95 +609,135 @@ export function DrawingOverlay({
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [getCanvasPoint, activeBrushId, brushColor, brushSize, brushOpacity, syncState, recomposite]);
+  }, [
+    getCanvasPoint,
+    activeBrushId,
+    activeTool,
+    brushColor,
+    brushSize,
+    brushOpacity,
+    shapeType,
+    shapeFilled,
+    syncState,
+    recomposite,
+  ]);
 
   // ─── Layer operations ─────────────────────────────────────────
 
   const handleAddLayer = useCallback(() => {
     const lm = layerManagerRef.current;
-    if (!lm) return;
-    if (lm.layers.length >= MAX_LAYERS) return;
+    if (!lm || lm.layers.length >= MAX_LAYERS) return;
     lm.addLayer();
     recomposite();
     syncState();
   }, [recomposite, syncState]);
 
-  const handleDeleteLayer = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.deleteLayer(id);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleDeleteLayer = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.deleteLayer(id);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleDuplicateLayer = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm || lm.layers.length >= MAX_LAYERS) return;
-    lm.duplicateLayer(id);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleDuplicateLayer = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm || lm.layers.length >= MAX_LAYERS) return;
+      lm.duplicateLayer(id);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleMergeDown = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.mergeDown(id);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleMergeDown = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.mergeDown(id);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleMoveLayer = useCallback((id: string, direction: "up" | "down") => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.moveLayer(id, direction);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleMoveLayer = useCallback(
+    (id: string, direction: "up" | "down") => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.moveLayer(id, direction);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleSelectLayer = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.setActiveLayer(id);
-    syncState();
-  }, [syncState]);
+  const handleSelectLayer = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.setActiveLayer(id);
+      syncState();
+    },
+    [syncState]
+  );
 
-  const handleToggleVisibility = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.toggleVisibility(id);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleToggleVisibility = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.toggleVisibility(id);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleToggleLock = useCallback((id: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.toggleLock(id);
-    syncState();
-  }, [syncState]);
+  const handleToggleLock = useCallback(
+    (id: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.toggleLock(id);
+      syncState();
+    },
+    [syncState]
+  );
 
-  const handleSetOpacity = useCallback((id: string, opacity: number) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.setOpacity(id, opacity);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleSetOpacity = useCallback(
+    (id: string, opacity: number) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.setOpacity(id, opacity);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleSetBlendMode = useCallback((id: string, mode: BlendMode) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.setBlendMode(id, mode);
-    recomposite();
-    syncState();
-  }, [recomposite, syncState]);
+  const handleSetBlendMode = useCallback(
+    (id: string, mode: BlendMode) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.setBlendMode(id, mode);
+      recomposite();
+      syncState();
+    },
+    [recomposite, syncState]
+  );
 
-  const handleRenameLayer = useCallback((id: string, name: string) => {
-    const lm = layerManagerRef.current;
-    if (!lm) return;
-    lm.renameLayer(id, name);
-    syncState();
-  }, [syncState]);
+  const handleRenameLayer = useCallback(
+    (id: string, name: string) => {
+      const lm = layerManagerRef.current;
+      if (!lm) return;
+      lm.renameLayer(id, name);
+      syncState();
+    },
+    [syncState]
+  );
 
   // ─── Undo / Redo / Clear / Done ──────────────────────────────
 
@@ -464,8 +751,16 @@ export function DrawingOverlay({
     if (layer) {
       const ctx = layer.canvas.getContext("2d");
       if (ctx) {
-        const current = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
-        redoStackRef.current.push({ layerId: snapshot.layerId, imageData: current });
+        const current = ctx.getImageData(
+          0,
+          0,
+          layer.canvas.width,
+          layer.canvas.height
+        );
+        redoStackRef.current.push({
+          layerId: snapshot.layerId,
+          imageData: current,
+        });
         ctx.putImageData(snapshot.imageData, 0, 0);
       }
     }
@@ -484,8 +779,16 @@ export function DrawingOverlay({
     if (layer) {
       const ctx = layer.canvas.getContext("2d");
       if (ctx) {
-        const current = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
-        undoStackRef.current.push({ layerId: snapshot.layerId, imageData: current });
+        const current = ctx.getImageData(
+          0,
+          0,
+          layer.canvas.width,
+          layer.canvas.height
+        );
+        undoStackRef.current.push({
+          layerId: snapshot.layerId,
+          imageData: current,
+        });
         ctx.putImageData(snapshot.imageData, 0, 0);
       }
     }
@@ -503,8 +806,16 @@ export function DrawingOverlay({
     const ctx = activeLayer.canvas.getContext("2d");
     if (ctx) {
       try {
-        const data = ctx.getImageData(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
-        undoStackRef.current.push({ layerId: activeLayer.id, imageData: data });
+        const data = ctx.getImageData(
+          0,
+          0,
+          activeLayer.canvas.width,
+          activeLayer.canvas.height
+        );
+        undoStackRef.current.push({
+          layerId: activeLayer.id,
+          imageData: data,
+        });
         redoStackRef.current = [];
       } catch {}
     }
@@ -525,7 +836,10 @@ export function DrawingOverlay({
 
     const imageData = ctx.getImageData(0, 0, flatCanvas.width, flatCanvas.height);
     const { data, width, height } = imageData;
-    let minX = width, minY = height, maxX = 0, maxY = 0;
+    let minX = width,
+      minY = height,
+      maxX = 0,
+      maxY = 0;
     let hasContent = false;
 
     for (let y = 0; y < height; y++) {
@@ -546,7 +860,10 @@ export function DrawingOverlay({
       return;
     }
 
-    const pad = Math.max(4, Math.round(Math.max(maxX - minX, maxY - minY) * 0.02));
+    const pad = Math.max(
+      4,
+      Math.round(Math.max(maxX - minX, maxY - minY) * 0.02)
+    );
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
     maxX = Math.min(width - 1, maxX + pad);
@@ -561,7 +878,17 @@ export function DrawingOverlay({
     const croppedCtx = croppedCanvas.getContext("2d");
     if (!croppedCtx) return;
 
-    croppedCtx.drawImage(flatCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+    croppedCtx.drawImage(
+      flatCanvas,
+      minX,
+      minY,
+      cropW,
+      cropH,
+      0,
+      0,
+      cropW,
+      cropH
+    );
 
     const bounds = {
       x: (minX / width) * 100,
@@ -571,7 +898,9 @@ export function DrawingOverlay({
     };
 
     croppedCanvas.toBlob(
-      (blob) => { if (blob) onComplete(blob, bounds); },
+      (blob) => {
+        if (blob) onComplete(blob, bounds);
+      },
       "image/png",
       1
     );
@@ -581,13 +910,10 @@ export function DrawingOverlay({
   const ActiveIcon = getBrushIcon(activePreset);
 
   // ─── Render ────────────────────────────────────────────────────
-  // Canvas stays inside the parent container for proper sizing.
-  // All UI elements are portaled to document.body to escape the
-  // parent's stacking context (isolation: isolate + overflow: hidden).
 
   return (
     <>
-      {/* Canvas container — stays inside parent for correct sizing */}
+      {/* Canvas container */}
       <div className="absolute inset-0" style={{ zIndex: 200 }}>
         <canvas
           ref={displayCanvasRef}
@@ -597,210 +923,287 @@ export function DrawingOverlay({
       </div>
 
       {/* All UI portaled to document.body to escape stacking context */}
-      {mounted && createPortal(
-        <div data-drawing-ui>
-          {/* Tool strip — left sidebar (desktop) / bottom bar (mobile) */}
-          <ToolStrip
-            activeTool={activeTool}
-            onSetTool={handleSetTool}
-            canUndo={canUndoDraw}
-            canRedo={canRedoDraw}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-          />
-
-          {/* Top toolbar — pinned to top of viewport */}
-          <div
-            className="fixed top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl max-w-[calc(100vw-1rem)] overflow-x-auto"
-            style={{ zIndex: 10000, scrollbarWidth: "none" }}
-          >
-            {/* Active brush button — opens brush picker */}
-            <button
-              onClick={() => setShowBrushPicker(!showBrushPicker)}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
-                showBrushPicker
-                  ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-              )}
-              title={activePreset.name}
-            >
-              <ActiveIcon className="h-4 w-4" />
-            </button>
-
-            <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
-
-            {/* Color picker */}
-            <input
-              type="color"
-              value={brushColor}
-              onChange={(e) => setBrushColor(e.target.value)}
-              className="w-8 h-8 rounded-lg cursor-pointer border border-zinc-700 flex-shrink-0"
+      {mounted &&
+        createPortal(
+          <div data-drawing-ui>
+            {/* Tool strip — left sidebar (desktop) / bottom bar (mobile) */}
+            <ToolStrip
+              activeTool={activeTool}
+              onSetTool={handleSetTool}
+              canUndo={canUndoDraw}
+              canRedo={canRedoDraw}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
             />
 
-            {/* Size control */}
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button
-                onClick={() => setBrushSize(Math.max(1, brushSize - (brushSize > 20 ? 5 : 2)))}
-                className="w-5 h-5 rounded flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs font-bold"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
+            {/* Top toolbar */}
+            <div
+              className="fixed top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl max-w-[calc(100vw-1rem)] overflow-x-auto"
+              style={{ zIndex: 10000, scrollbarWidth: "none" }}
+            >
+              {/* ── Tool-specific controls ── */}
+
+              {/* Brush/Eraser: brush picker button */}
+              {(activeTool === "brush" || activeTool === "eraser") && (
+                <>
+                  <button
+                    onClick={() => setShowBrushPicker(!showBrushPicker)}
+                    className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
+                      showBrushPicker
+                        ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
+                        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    )}
+                    title={activePreset.name}
+                  >
+                    <ActiveIcon className="h-4 w-4" />
+                  </button>
+                  <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
+                </>
+              )}
+
+              {/* Shape: shape type + fill toggle */}
+              {activeTool === "shape" && (
+                <>
+                  {(["line", "rect", "ellipse"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setShapeType(type)}
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
+                        shapeType === type
+                          ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
+                          : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                      )}
+                      title={type.charAt(0).toUpperCase() + type.slice(1)}
+                    >
+                      {type === "line" ? (
+                        <Minus className="h-4 w-4" />
+                      ) : type === "rect" ? (
+                        <Square className="h-4 w-4" />
+                      ) : (
+                        <Circle className="h-4 w-4" />
+                      )}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShapeFilled(!shapeFilled)}
+                    className={cn(
+                      "px-2 py-1 rounded-lg text-[10px] font-medium transition-colors flex-shrink-0",
+                      shapeFilled
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    )}
+                  >
+                    {shapeFilled ? "Filled" : "Stroke"}
+                  </button>
+                  <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
+                </>
+              )}
+
+              {/* Eyedropper: info */}
+              {activeTool === "eyedropper" && (
+                <>
+                  <span className="text-[10px] text-zinc-400 flex-shrink-0 px-2">
+                    Click to pick color
+                  </span>
+                  <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
+                </>
+              )}
+
+              {/* Fill: info */}
+              {activeTool === "fill" && (
+                <>
+                  <span className="text-[10px] text-zinc-400 flex-shrink-0 px-2">
+                    Click to fill area
+                  </span>
+                  <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
+                </>
+              )}
+
+              {/* Color picker */}
               <input
-                type="range"
-                min={1}
-                max={200}
-                value={brushSize}
-                onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                className="w-16 sm:w-20 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+                type="color"
+                value={brushColor}
+                onChange={(e) => setBrushColor(e.target.value)}
+                className="w-8 h-8 rounded-lg cursor-pointer border border-zinc-700 flex-shrink-0"
               />
+
+              {/* Size control */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() =>
+                    setBrushSize(
+                      Math.max(1, brushSize - (brushSize > 20 ? 5 : 2))
+                    )
+                  }
+                  className="w-5 h-5 rounded flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs font-bold"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <input
+                  type="range"
+                  min={1}
+                  max={200}
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                  className="w-16 sm:w-20 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+                />
+                <button
+                  onClick={() =>
+                    setBrushSize(
+                      Math.min(200, brushSize + (brushSize > 20 ? 5 : 2))
+                    )
+                  }
+                  className="w-5 h-5 rounded flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs font-bold"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+                <span className="text-[10px] text-zinc-400 w-6 text-center">
+                  {brushSize}
+                </span>
+              </div>
+
+              {/* Opacity control */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <span className="text-[9px] text-zinc-500 w-5">Op</span>
+                <input
+                  type="range"
+                  min={5}
+                  max={100}
+                  value={Math.round(brushOpacity * 100)}
+                  onChange={(e) =>
+                    setBrushOpacity(parseInt(e.target.value) / 100)
+                  }
+                  className="w-12 sm:w-16 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+                />
+                <span className="text-[10px] text-zinc-400 w-7 text-center">
+                  {Math.round(brushOpacity * 100)}%
+                </span>
+              </div>
+
+              <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
+
+              {/* Layer panel toggle */}
               <button
-                onClick={() => setBrushSize(Math.min(200, brushSize + (brushSize > 20 ? 5 : 2)))}
-                className="w-5 h-5 rounded flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs font-bold"
+                onClick={() => setShowLayerPanel(!showLayerPanel)}
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
+                  showLayerPanel
+                    ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                )}
+                title="Layers"
               >
-                <Plus className="h-3 w-3" />
+                <Layers className="h-4 w-4" />
               </button>
-              <span className="text-[10px] text-zinc-400 w-6 text-center">{brushSize}</span>
+
+              {/* Clear */}
+              <button
+                onClick={handleClear}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-colors flex-shrink-0"
+                title="Clear active layer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+
+              {/* Undo */}
+              <button
+                onClick={handleUndo}
+                disabled={!canUndoDraw}
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
+                  canUndoDraw
+                    ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    : "text-zinc-600 cursor-not-allowed"
+                )}
+                title="Undo"
+              >
+                <Undo2 className="h-4 w-4" />
+              </button>
+
+              {/* Redo */}
+              <button
+                onClick={handleRedo}
+                disabled={!canRedoDraw}
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
+                  canRedoDraw
+                    ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    : "text-zinc-600 cursor-not-allowed"
+                )}
+                title="Redo"
+              >
+                <Redo2 className="h-4 w-4" />
+              </button>
+
+              {/* Cancel */}
+              <button
+                onClick={onCancel}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              {/* Done */}
+              <button
+                onClick={handleDone}
+                className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Done
+              </button>
             </div>
 
-            {/* Opacity control */}
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              <span className="text-[9px] text-zinc-500 w-5">Op</span>
-              <input
-                type="range"
-                min={5}
-                max={100}
-                value={Math.round(brushOpacity * 100)}
-                onChange={(e) => setBrushOpacity(parseInt(e.target.value) / 100)}
-                className="w-12 sm:w-16 h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+            {/* Brush settings panel */}
+            {showBrushPicker && (
+              <BrushSettingsPanel
+                activeBrushId={activeBrushId}
+                onSelectBrush={(id) => {
+                  setActiveBrushId(id);
+                  const p = getBrushPreset(id);
+                  if (p?.isEraser) {
+                    setActiveTool("eraser");
+                  } else {
+                    setActiveTool("brush");
+                    lastBrushIdRef.current = id;
+                  }
+                  if (p?.isEraser && brushOpacity < 1) {
+                    setBrushOpacity(1);
+                  }
+                }}
+                brushSize={brushSize}
+                onSetSize={setBrushSize}
+                brushOpacity={brushOpacity}
+                onSetOpacity={setBrushOpacity}
+                onClose={() => setShowBrushPicker(false)}
               />
-              <span className="text-[10px] text-zinc-400 w-7 text-center">
-                {Math.round(brushOpacity * 100)}%
-              </span>
-            </div>
+            )}
 
-            <div className="w-px h-6 bg-zinc-700 flex-shrink-0" />
-
-            {/* Layer panel toggle */}
-            <button
-              onClick={() => setShowLayerPanel(!showLayerPanel)}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
-                showLayerPanel
-                  ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/50"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-              )}
-              title="Layers"
-            >
-              <Layers className="h-4 w-4" />
-            </button>
-
-            {/* Clear */}
-            <button
-              onClick={handleClear}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-colors flex-shrink-0"
-              title="Clear active layer"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-
-            {/* Undo */}
-            <button
-              onClick={handleUndo}
-              disabled={!canUndoDraw}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
-                canUndoDraw
-                  ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                  : "text-zinc-600 cursor-not-allowed"
-              )}
-              title="Undo"
-            >
-              <Undo2 className="h-4 w-4" />
-            </button>
-
-            {/* Redo */}
-            <button
-              onClick={handleRedo}
-              disabled={!canRedoDraw}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
-                canRedoDraw
-                  ? "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                  : "text-zinc-600 cursor-not-allowed"
-              )}
-              title="Redo"
-            >
-              <Redo2 className="h-4 w-4" />
-            </button>
-
-            {/* Cancel */}
-            <button
-              onClick={onCancel}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
-              title="Cancel"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            {/* Done */}
-            <button
-              onClick={handleDone}
-              className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-xs font-medium hover:bg-blue-400 transition-colors flex items-center gap-1.5 flex-shrink-0"
-            >
-              <Check className="h-3.5 w-3.5" />
-              Done
-            </button>
-          </div>
-
-          {/* Brush settings panel */}
-          {showBrushPicker && (
-            <BrushSettingsPanel
-              activeBrushId={activeBrushId}
-              onSelectBrush={(id) => {
-                setActiveBrushId(id);
-                const p = getBrushPreset(id);
-                if (p?.isEraser) {
-                  setActiveTool("eraser");
-                } else {
-                  setActiveTool("brush");
-                  lastBrushIdRef.current = id;
-                }
-                if (p?.isEraser && brushOpacity < 1) {
-                  setBrushOpacity(1);
-                }
-              }}
-              brushSize={brushSize}
-              onSetSize={setBrushSize}
-              brushOpacity={brushOpacity}
-              onSetOpacity={setBrushOpacity}
-              onClose={() => setShowBrushPicker(false)}
-            />
-          )}
-
-          {/* Layer panel */}
-          {showLayerPanel && (
-            <LayerPanel
-              layers={layerState.layers}
-              activeLayerId={layerState.activeLayerId}
-              onSelectLayer={handleSelectLayer}
-              onAddLayer={handleAddLayer}
-              onDeleteLayer={handleDeleteLayer}
-              onDuplicateLayer={handleDuplicateLayer}
-              onMergeDown={handleMergeDown}
-              onMoveLayer={handleMoveLayer}
-              onToggleVisibility={handleToggleVisibility}
-              onToggleLock={handleToggleLock}
-              onSetOpacity={handleSetOpacity}
-              onSetBlendMode={handleSetBlendMode}
-              onRenameLayer={handleRenameLayer}
-              onClose={() => setShowLayerPanel(false)}
-              maxLayers={MAX_LAYERS}
-            />
-          )}
-        </div>,
-        document.body
-      )}
+            {/* Layer panel */}
+            {showLayerPanel && (
+              <LayerPanel
+                layers={layerState.layers}
+                activeLayerId={layerState.activeLayerId}
+                onSelectLayer={handleSelectLayer}
+                onAddLayer={handleAddLayer}
+                onDeleteLayer={handleDeleteLayer}
+                onDuplicateLayer={handleDuplicateLayer}
+                onMergeDown={handleMergeDown}
+                onMoveLayer={handleMoveLayer}
+                onToggleVisibility={handleToggleVisibility}
+                onToggleLock={handleToggleLock}
+                onSetOpacity={handleSetOpacity}
+                onSetBlendMode={handleSetBlendMode}
+                onRenameLayer={handleRenameLayer}
+                onClose={() => setShowLayerPanel(false)}
+                maxLayers={MAX_LAYERS}
+              />
+            )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
