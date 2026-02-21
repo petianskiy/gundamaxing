@@ -331,10 +331,14 @@ const authConfig: NextAuthConfig = {
   },
   events: {
     async signIn({ user, account }) {
-      await logEvent("LOGIN_SUCCESS", {
-        userId: user.id ?? undefined,
-        metadata: { provider: account?.provider ?? "unknown" },
-      });
+      try {
+        await logEvent("LOGIN_SUCCESS", {
+          userId: user.id ?? undefined,
+          metadata: { provider: account?.provider ?? "unknown" },
+        });
+      } catch (err) {
+        console.error("[auth] Failed to log sign-in event:", err);
+      }
     },
   },
 };

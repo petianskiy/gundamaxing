@@ -13,6 +13,9 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   OAuthAccountNotLinked:
     "This email is already associated with another sign-in method.",
   OAuthCallbackError: "Sign-in was cancelled or failed.",
+  OAuthSignin: "Could not start the sign-in process. Please try again.",
+  OAuthCallback: "Sign-in was interrupted. Please try again.",
+  Callback: "An error occurred during sign-in. Please try again.",
   AccessDenied: "Access denied.",
   EmailNotVerified:
     "Your email is not verified. Please check your inbox for a verification link.",
