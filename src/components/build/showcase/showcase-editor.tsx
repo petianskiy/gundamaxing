@@ -17,6 +17,8 @@ import { migrateShowcaseLayout } from "@/lib/validations/showcase";
 import { updateShowcaseLayout } from "@/lib/actions/build";
 import { useUploadThing } from "@/lib/upload/uploadthing";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import { isWebGLPreset } from "./backgrounds";
 import type {
   Build,
   BuildImage,
@@ -28,6 +30,18 @@ import type {
   ShowcaseEffectElement,
   ShowcaseVideoElement,
 } from "@/lib/types";
+
+// ─── WebGL Background Components (lazy, SSR-safe) ──────────────
+
+const FaultyTerminal = dynamic(
+  () => import("./backgrounds/faulty-terminal").then((m) => m.FaultyTerminal),
+  { ssr: false },
+);
+
+const Grainient = dynamic(
+  () => import("./backgrounds/grainient").then((m) => m.Grainient),
+  { ssr: false },
+);
 
 // ─── Preset Background Styles ───────────────────────────────────
 
@@ -793,30 +807,52 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   // ─── Background rendering helper ─────────────────────────────
 
+  const bgUrl = layout.canvas.backgroundImageUrl;
+  const bgOpacity = layout.canvas.backgroundOpacity;
+  const bgBlur = layout.canvas.backgroundBlur;
+  const bgBlurStyle = bgBlur > 0 ? `blur(${bgBlur}px)` : undefined;
+
   const renderBackground = () => (
     <>
-      {layout.canvas.backgroundColor && !layout.canvas.backgroundImageUrl && (
+      {/* Solid color */}
+      {layout.canvas.backgroundColor && !bgUrl && (
         <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
       )}
-      {layout.canvas.backgroundImageUrl?.startsWith("preset:") && (
+
+      {/* WebGL preset backgrounds */}
+      {bgUrl === "preset:faulty-terminal" && (
+        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
+          <FaultyTerminal />
+        </div>
+      )}
+      {bgUrl === "preset:grainient" && (
+        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
+          <Grainient />
+        </div>
+      )}
+
+      {/* CSS preset backgrounds */}
+      {bgUrl?.startsWith("preset:") && !isWebGLPreset(bgUrl) && (
         <div
           className="absolute inset-0 z-0"
           style={{
-            ...PRESET_STYLES[layout.canvas.backgroundImageUrl],
-            opacity: layout.canvas.backgroundOpacity,
+            ...PRESET_STYLES[bgUrl],
+            opacity: bgOpacity,
           }}
         />
       )}
-      {layout.canvas.backgroundImageUrl && !layout.canvas.backgroundImageUrl.startsWith("preset:") && (
+
+      {/* Image backgrounds */}
+      {bgUrl && !bgUrl.startsWith("preset:") && (
         <div className="absolute inset-0 z-0">
           <Image
-            src={layout.canvas.backgroundImageUrl}
+            src={bgUrl}
             alt="Background"
             fill
             className="object-cover"
             style={{
-              opacity: layout.canvas.backgroundOpacity,
-              filter: layout.canvas.backgroundBlur > 0 ? `blur(${layout.canvas.backgroundBlur}px)` : undefined,
+              opacity: bgOpacity,
+              filter: bgBlurStyle,
             }}
             unoptimized
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   motion,
   useMotionValue,
@@ -57,6 +57,11 @@ interface DockItemData {
   disabled?: boolean;
 }
 
+interface DockTooltipState {
+  label: string;
+  rect: DOMRect;
+}
+
 export function ShowcaseDock({
   onAddImage,
   onAddText,
@@ -81,6 +86,7 @@ export function ShowcaseDock({
   maxVideos,
 }: ShowcaseDockProps) {
   const mouseX = useMotionValue(Infinity);
+  const [tooltip, setTooltip] = useState<DockTooltipState | null>(null);
 
   const imagesAtLimit = imageCount >= maxImages;
   const videosAtLimit = videoCount >= maxVideos;
@@ -140,19 +146,52 @@ export function ShowcaseDock({
       {/* Dock */}
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
+        onMouseLeave={() => {
+          mouseX.set(Infinity);
+          setTooltip(null);
+        }}
         className="flex items-end gap-1 px-2 sm:px-3 py-2 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-zinc-700/50 shadow-2xl overflow-x-auto max-w-full"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((item) => (
-          <DockIcon key={item.label} mouseX={mouseX} item={item} />
+          <DockIcon
+            key={item.label}
+            mouseX={mouseX}
+            item={item}
+            onShowTooltip={setTooltip}
+            onHideTooltip={() => setTooltip(null)}
+          />
         ))}
       </motion.div>
+
+      {/* Fixed-position tooltip (escapes overflow clipping) */}
+      {tooltip && (
+        <div
+          className="fixed z-[601] px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-[10px] text-white whitespace-nowrap pointer-events-none"
+          style={{
+            left: tooltip.rect.left + tooltip.rect.width / 2,
+            top: tooltip.rect.top - 8,
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          {tooltip.label}
+        </div>
+      )}
     </div>
   );
 }
 
-function DockIcon({ mouseX, item }: { mouseX: MotionValue<number>; item: DockItemData }) {
+function DockIcon({
+  mouseX,
+  item,
+  onShowTooltip,
+  onHideTooltip,
+}: {
+  mouseX: MotionValue<number>;
+  item: DockItemData;
+  onShowTooltip: (state: DockTooltipState) => void;
+  onHideTooltip: () => void;
+}) {
   const ref = useRef<HTMLButtonElement>(null);
 
   const distance = useTransform(mouseX, (val) => {
@@ -180,7 +219,7 @@ function DockIcon({ mouseX, item }: { mouseX: MotionValue<number>; item: DockIte
       style={{ width, height: width }}
       onClick={item.onClick}
       disabled={item.disabled}
-      className={`relative flex items-center justify-center rounded-xl transition-colors group ${
+      className={`relative flex items-center justify-center rounded-xl transition-colors ${
         item.disabled
           ? "bg-zinc-800/50 text-zinc-600 cursor-not-allowed"
           : item.highlight
@@ -188,13 +227,16 @@ function DockIcon({ mouseX, item }: { mouseX: MotionValue<number>; item: DockIte
             : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white"
       }`}
       whileTap={item.disabled ? undefined : { scale: 0.9 }}
+      onMouseEnter={() => {
+        if (ref.current && !item.disabled) {
+          onShowTooltip({ label: item.label, rect: ref.current.getBoundingClientRect() });
+        }
+      }}
+      onMouseLeave={onHideTooltip}
     >
       <motion.div style={{ width: iconSize, height: iconSize }} className="flex items-center justify-center">
         <Icon className={`w-full h-full ${Icon === Loader2 ? "animate-spin" : ""}`} />
       </motion.div>
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        {item.label}
-      </div>
     </motion.button>
   );
 }

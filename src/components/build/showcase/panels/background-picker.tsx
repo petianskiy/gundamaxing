@@ -69,6 +69,16 @@ const EFFECT_PRESETS = [
     label: "Red Fade",
     gradient: "bg-gradient-to-br from-red-950 to-zinc-950",
   },
+  {
+    value: "preset:faulty-terminal",
+    label: "Terminal",
+    gradient: "bg-green-950",
+  },
+  {
+    value: "preset:grainient",
+    label: "Grainient",
+    gradient: "bg-gradient-to-br from-purple-950 to-amber-950",
+  },
 ];
 
 const HANGAR_BACKGROUNDS = Array.from({ length: 10 }, (_, i) => {
@@ -304,6 +314,14 @@ export function BackgroundPicker({
                               backgroundSize: "8px 8px",
                             }}
                           />
+                        )}
+                        {preset.value === "preset:faulty-terminal" && (
+                          <div className="absolute inset-0 overflow-hidden font-mono text-[4px] leading-[5px] text-green-500/70 p-0.5 select-none">
+                            01001 10110 01101 11010 00101 10011 01110 10001 11100 01011 10101 00110 11001 01010
+                          </div>
+                        )}
+                        {preset.value === "preset:grainient" && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/40 via-amber-600/30 to-purple-500/40" />
                         )}
                       </div>
                       <span className="absolute bottom-0 inset-x-0 text-[8px] text-zinc-300 text-center pb-0.5 bg-gradient-to-t from-black/60 to-transparent pt-2 opacity-0 group-hover:opacity-100 transition-opacity">

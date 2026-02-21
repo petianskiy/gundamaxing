@@ -1,8 +1,24 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { ShowcaseElement } from "./showcase-element";
+import { isWebGLPreset } from "./backgrounds";
 import type { Build, ShowcaseLayout } from "@/lib/types";
+
+// ─── WebGL Background Components (lazy, SSR-safe) ──────────────
+
+const FaultyTerminal = dynamic(
+  () => import("./backgrounds/faulty-terminal").then((m) => m.FaultyTerminal),
+  { ssr: false },
+);
+
+const Grainient = dynamic(
+  () => import("./backgrounds/grainient").then((m) => m.Grainient),
+  { ssr: false },
+);
+
+// ─── Preset Background Styles ───────────────────────────────────
 
 interface ShowcaseCanvasProps {
   layout: ShowcaseLayout;
@@ -30,40 +46,54 @@ const PRESET_STYLES: Record<string, React.CSSProperties> = {
 export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
   const { canvas, elements } = layout;
   const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
-  const isPreset = canvas.backgroundImageUrl?.startsWith("preset:");
+  const bgUrl = canvas.backgroundImageUrl;
+  const bgOpacity = canvas.backgroundOpacity;
+  const bgBlurStyle = canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur}px)` : undefined;
 
   return (
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5" }}>
       {/* Solid color background */}
-      {canvas.backgroundColor && !canvas.backgroundImageUrl && (
+      {canvas.backgroundColor && !bgUrl && (
         <div
           className="absolute inset-0 z-0"
           style={{ backgroundColor: canvas.backgroundColor }}
         />
       )}
 
-      {/* Preset pattern background */}
-      {isPreset && canvas.backgroundImageUrl && (
+      {/* WebGL preset backgrounds */}
+      {bgUrl === "preset:faulty-terminal" && (
+        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
+          <FaultyTerminal />
+        </div>
+      )}
+      {bgUrl === "preset:grainient" && (
+        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
+          <Grainient />
+        </div>
+      )}
+
+      {/* CSS preset backgrounds */}
+      {bgUrl?.startsWith("preset:") && !isWebGLPreset(bgUrl) && (
         <div
           className="absolute inset-0 z-0"
           style={{
-            ...PRESET_STYLES[canvas.backgroundImageUrl],
-            opacity: canvas.backgroundOpacity,
+            ...PRESET_STYLES[bgUrl],
+            opacity: bgOpacity,
           }}
         />
       )}
 
       {/* Image background */}
-      {canvas.backgroundImageUrl && !isPreset && (
+      {bgUrl && !bgUrl.startsWith("preset:") && (
         <div className="absolute inset-0 z-0">
           <Image
-            src={canvas.backgroundImageUrl}
+            src={bgUrl}
             alt="Showcase background"
             fill
             className="object-cover"
             style={{
-              opacity: canvas.backgroundOpacity,
-              filter: canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur}px)` : undefined,
+              opacity: bgOpacity,
+              filter: bgBlurStyle,
             }}
             unoptimized
           />
