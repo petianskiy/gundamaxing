@@ -49,6 +49,7 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
   const bgUrl = canvas.backgroundImageUrl;
   const bgOpacity = canvas.backgroundOpacity;
   const bgBlurStyle = canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur}px)` : undefined;
+  const bgConfig = (canvas.backgroundConfig ?? {}) as Record<string, unknown>;
 
   return (
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5" }}>
@@ -64,51 +65,51 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
       {bgUrl === "preset:faulty-terminal" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
           <FaultyTerminal
-            scale={3}
-            gridMul={[2, 1]}
-            digitSize={2.5}
-            timeScale={0.5}
+            scale={(bgConfig.scale as number) ?? 3}
+            gridMul={(bgConfig.gridMul as [number, number]) ?? [2, 1]}
+            digitSize={(bgConfig.digitSize as number) ?? 2.5}
+            timeScale={(bgConfig.timeScale as number) ?? 0.5}
             pause={false}
-            scanlineIntensity={0.5}
-            glitchAmount={1}
-            flickerAmount={1}
-            noiseAmp={0.7}
-            chromaticAberration={0}
-            dither={0}
-            curvature={0.1}
-            tint="#d357fe"
-            mouseReact
-            mouseStrength={0.5}
+            scanlineIntensity={(bgConfig.scanlineIntensity as number) ?? 0.5}
+            glitchAmount={(bgConfig.glitchAmount as number) ?? 1}
+            flickerAmount={(bgConfig.flickerAmount as number) ?? 1}
+            noiseAmp={(bgConfig.noiseAmp as number) ?? 0.7}
+            chromaticAberration={(bgConfig.chromaticAberration as number) ?? 0}
+            dither={(bgConfig.dither as number) ?? 0}
+            curvature={(bgConfig.curvature as number) ?? 0.1}
+            tint={(bgConfig.tint as string) ?? "#d357fe"}
+            mouseReact={(bgConfig.mouseReact as boolean) ?? true}
+            mouseStrength={(bgConfig.mouseStrength as number) ?? 0.5}
             pageLoadAnimation
-            brightness={0.6}
+            brightness={(bgConfig.brightness as number) ?? 0.6}
           />
         </div>
       )}
       {bgUrl === "preset:grainient" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
           <Grainient
-            color1="#FF9FFC"
-            color2="#785700"
-            color3="#B19EEF"
-            timeSpeed={0.25}
-            colorBalance={0}
-            warpStrength={1}
-            warpFrequency={5}
-            warpSpeed={2}
-            warpAmplitude={50}
-            blendAngle={0}
-            blendSoftness={0.05}
-            rotationAmount={500}
-            noiseScale={2}
-            grainAmount={0.1}
-            grainScale={2}
-            grainAnimated={false}
-            contrast={1.5}
-            gamma={1}
-            saturation={1}
-            centerX={0}
-            centerY={0}
-            zoom={0.9}
+            color1={(bgConfig.color1 as string) ?? "#FF9FFC"}
+            color2={(bgConfig.color2 as string) ?? "#785700"}
+            color3={(bgConfig.color3 as string) ?? "#B19EEF"}
+            timeSpeed={(bgConfig.timeSpeed as number) ?? 0.25}
+            colorBalance={(bgConfig.colorBalance as number) ?? 0}
+            warpStrength={(bgConfig.warpStrength as number) ?? 1}
+            warpFrequency={(bgConfig.warpFrequency as number) ?? 5}
+            warpSpeed={(bgConfig.warpSpeed as number) ?? 2}
+            warpAmplitude={(bgConfig.warpAmplitude as number) ?? 50}
+            blendAngle={(bgConfig.blendAngle as number) ?? 0}
+            blendSoftness={(bgConfig.blendSoftness as number) ?? 0.05}
+            rotationAmount={(bgConfig.rotationAmount as number) ?? 500}
+            noiseScale={(bgConfig.noiseScale as number) ?? 2}
+            grainAmount={(bgConfig.grainAmount as number) ?? 0.1}
+            grainScale={(bgConfig.grainScale as number) ?? 2}
+            grainAnimated={(bgConfig.grainAnimated as boolean) ?? false}
+            contrast={(bgConfig.contrast as number) ?? 1.5}
+            gamma={(bgConfig.gamma as number) ?? 1}
+            saturation={(bgConfig.saturation as number) ?? 1}
+            centerX={(bgConfig.centerX as number) ?? 0}
+            centerY={(bgConfig.centerY as number) ?? 0}
+            zoom={(bgConfig.zoom as number) ?? 0.9}
           />
         </div>
       )}

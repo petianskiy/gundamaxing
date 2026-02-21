@@ -10,6 +10,7 @@ import {
   Loader2,
   Sun,
   Droplets,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BuildImage } from "@/lib/types";
@@ -31,12 +32,14 @@ interface BackgroundPickerProps {
     backgroundColor: string | null;
     backgroundOpacity: number;
     backgroundBlur: number;
+    backgroundConfig?: Record<string, unknown> | null;
   };
   onUpdate: (bg: {
     backgroundImageUrl?: string | null;
     backgroundColor?: string | null;
     backgroundOpacity?: number;
     backgroundBlur?: number;
+    backgroundConfig?: Record<string, unknown> | null;
   }) => void;
   onClose: () => void;
 }
@@ -93,6 +96,172 @@ const TABS: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "upload", icon: Upload, label: "Upload" },
 ];
 
+// ─── Slider helper ──────────────────────────────────────────────
+
+function ConfigSlider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  suffix,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  suffix?: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] text-zinc-500 flex justify-between mb-0.5">
+        <span>{label}</span>
+        <span className="text-zinc-600 tabular-nums">
+          {step < 0.1 ? value.toFixed(2) : step < 1 ? value.toFixed(1) : value}
+          {suffix}
+        </span>
+      </label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full h-1 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+      />
+    </div>
+  );
+}
+
+function ConfigColor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-6 w-6 rounded border border-zinc-600 bg-transparent cursor-pointer [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-none"
+      />
+      <span className="text-[10px] text-zinc-500">{label}</span>
+      <span className="text-[10px] text-zinc-600 font-mono ml-auto">{value}</span>
+    </div>
+  );
+}
+
+function ConfigToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] text-zinc-500">{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        className={cn(
+          "w-8 h-4 rounded-full transition-colors relative",
+          value ? "bg-blue-500" : "bg-zinc-700",
+        )}
+      >
+        <div
+          className={cn(
+            "absolute top-0.5 h-3 w-3 rounded-full bg-white transition-transform",
+            value ? "left-4" : "left-0.5",
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ─── WebGL Config Panels ────────────────────────────────────────
+
+function TerminalConfig({
+  config,
+  onChange,
+}: {
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
+}) {
+  const v = (key: string, def: number) => (config[key] as number) ?? def;
+  const s = (key: string, def: string) => (config[key] as string) ?? def;
+  const b = (key: string, def: boolean) => (config[key] as boolean) ?? def;
+
+  return (
+    <div className="space-y-2">
+      <ConfigColor label="Tint" value={s("tint", "#d357fe")} onChange={(c) => onChange("tint", c)} />
+      <ConfigSlider label="Scale" value={v("scale", 3)} min={0.5} max={10} step={0.5} onChange={(n) => onChange("scale", n)} />
+      <ConfigSlider label="Digit Size" value={v("digitSize", 2.5)} min={0.5} max={5} step={0.1} onChange={(n) => onChange("digitSize", n)} />
+      <ConfigSlider label="Time Speed" value={v("timeScale", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("timeScale", n)} />
+      <ConfigSlider label="Brightness" value={v("brightness", 0.6)} min={0} max={2} step={0.05} onChange={(n) => onChange("brightness", n)} />
+      <ConfigSlider label="Scanlines" value={v("scanlineIntensity", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("scanlineIntensity", n)} />
+      <ConfigSlider label="Glitch" value={v("glitchAmount", 1)} min={0} max={5} step={0.1} onChange={(n) => onChange("glitchAmount", n)} />
+      <ConfigSlider label="Flicker" value={v("flickerAmount", 1)} min={0} max={3} step={0.1} onChange={(n) => onChange("flickerAmount", n)} />
+      <ConfigSlider label="Noise" value={v("noiseAmp", 0.7)} min={0} max={2} step={0.05} onChange={(n) => onChange("noiseAmp", n)} />
+      <ConfigSlider label="Chromatic Aberration" value={v("chromaticAberration", 0)} min={0} max={10} step={0.5} onChange={(n) => onChange("chromaticAberration", n)} />
+      <ConfigSlider label="Dither" value={v("dither", 0)} min={0} max={5} step={0.1} onChange={(n) => onChange("dither", n)} />
+      <ConfigSlider label="Curvature" value={v("curvature", 0.1)} min={0} max={1} step={0.01} onChange={(n) => onChange("curvature", n)} />
+      <ConfigToggle label="Mouse React" value={b("mouseReact", true)} onChange={(val) => onChange("mouseReact", val)} />
+      <ConfigSlider label="Mouse Strength" value={v("mouseStrength", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("mouseStrength", n)} />
+    </div>
+  );
+}
+
+function GrainientConfig({
+  config,
+  onChange,
+}: {
+  config: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
+}) {
+  const v = (key: string, def: number) => (config[key] as number) ?? def;
+  const s = (key: string, def: string) => (config[key] as string) ?? def;
+  const b = (key: string, def: boolean) => (config[key] as boolean) ?? def;
+
+  return (
+    <div className="space-y-2">
+      <ConfigColor label="Color 1" value={s("color1", "#FF9FFC")} onChange={(c) => onChange("color1", c)} />
+      <ConfigColor label="Color 2" value={s("color2", "#785700")} onChange={(c) => onChange("color2", c)} />
+      <ConfigColor label="Color 3" value={s("color3", "#B19EEF")} onChange={(c) => onChange("color3", c)} />
+      <ConfigSlider label="Time Speed" value={v("timeSpeed", 0.25)} min={0} max={2} step={0.05} onChange={(n) => onChange("timeSpeed", n)} />
+      <ConfigSlider label="Color Balance" value={v("colorBalance", 0)} min={-1} max={1} step={0.05} onChange={(n) => onChange("colorBalance", n)} />
+      <ConfigSlider label="Warp Strength" value={v("warpStrength", 1)} min={0.1} max={5} step={0.1} onChange={(n) => onChange("warpStrength", n)} />
+      <ConfigSlider label="Warp Frequency" value={v("warpFrequency", 5)} min={0} max={20} step={0.5} onChange={(n) => onChange("warpFrequency", n)} />
+      <ConfigSlider label="Warp Speed" value={v("warpSpeed", 2)} min={0} max={10} step={0.5} onChange={(n) => onChange("warpSpeed", n)} />
+      <ConfigSlider label="Warp Amplitude" value={v("warpAmplitude", 50)} min={1} max={200} step={1} onChange={(n) => onChange("warpAmplitude", n)} />
+      <ConfigSlider label="Blend Angle" value={v("blendAngle", 0)} min={-180} max={180} step={5} onChange={(n) => onChange("blendAngle", n)} suffix="°" />
+      <ConfigSlider label="Blend Softness" value={v("blendSoftness", 0.05)} min={0} max={1} step={0.01} onChange={(n) => onChange("blendSoftness", n)} />
+      <ConfigSlider label="Rotation" value={v("rotationAmount", 500)} min={0} max={1000} step={10} onChange={(n) => onChange("rotationAmount", n)} />
+      <ConfigSlider label="Noise Scale" value={v("noiseScale", 2)} min={0} max={10} step={0.5} onChange={(n) => onChange("noiseScale", n)} />
+      <ConfigSlider label="Grain Amount" value={v("grainAmount", 0.1)} min={0} max={1} step={0.01} onChange={(n) => onChange("grainAmount", n)} />
+      <ConfigSlider label="Grain Scale" value={v("grainScale", 2)} min={0.1} max={10} step={0.1} onChange={(n) => onChange("grainScale", n)} />
+      <ConfigToggle label="Grain Animated" value={b("grainAnimated", false)} onChange={(val) => onChange("grainAnimated", val)} />
+      <ConfigSlider label="Contrast" value={v("contrast", 1.5)} min={0} max={3} step={0.05} onChange={(n) => onChange("contrast", n)} />
+      <ConfigSlider label="Gamma" value={v("gamma", 1)} min={0.1} max={3} step={0.05} onChange={(n) => onChange("gamma", n)} />
+      <ConfigSlider label="Saturation" value={v("saturation", 1)} min={0} max={3} step={0.05} onChange={(n) => onChange("saturation", n)} />
+      <ConfigSlider label="Center X" value={v("centerX", 0)} min={-1} max={1} step={0.05} onChange={(n) => onChange("centerX", n)} />
+      <ConfigSlider label="Center Y" value={v("centerY", 0)} min={-1} max={1} step={0.05} onChange={(n) => onChange("centerY", n)} />
+      <ConfigSlider label="Zoom" value={v("zoom", 0.9)} min={0.1} max={3} step={0.05} onChange={(n) => onChange("zoom", n)} />
+    </div>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────
 
 export function BackgroundPicker({
@@ -105,8 +274,23 @@ export function BackgroundPicker({
   const [activeTab, setActiveTab] = useState<Tab>("colors");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
 
   const { startUpload } = useUploadThing("buildImageUpload");
+
+  const isWebGLActive =
+    currentBackground.backgroundImageUrl === "preset:faulty-terminal" ||
+    currentBackground.backgroundImageUrl === "preset:grainient";
+
+  const bgConfig = (currentBackground.backgroundConfig ?? {}) as Record<string, unknown>;
+
+  const handleConfigChange = useCallback(
+    (key: string, value: unknown) => {
+      const newConfig = { ...bgConfig, [key]: value };
+      onUpdate({ backgroundConfig: newConfig });
+    },
+    [bgConfig, onUpdate],
+  );
 
   // ── Upload handler ──────────────────────────────────────────
 
@@ -187,13 +371,46 @@ export function BackgroundPicker({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 shrink-0">
         <h3 className="text-sm font-semibold text-white">Background</h3>
-        <button
-          onClick={onClose}
-          className="text-zinc-400 hover:text-white transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {isWebGLActive && (
+            <button
+              onClick={() => setShowConfig(!showConfig)}
+              className={cn(
+                "p-1 rounded transition-colors",
+                showConfig
+                  ? "bg-blue-500/20 text-blue-400"
+                  : "text-zinc-400 hover:text-white",
+              )}
+              title="Configure effect"
+            >
+              <Settings2 className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-zinc-400 hover:text-white transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {/* WebGL Config Panel */}
+      {isWebGLActive && showConfig && (
+        <div className="border-b border-zinc-800 px-4 py-3 max-h-[50vh] overflow-y-auto">
+          <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
+            {currentBackground.backgroundImageUrl === "preset:faulty-terminal"
+              ? "Terminal Settings"
+              : "Grainient Settings"}
+          </label>
+          {currentBackground.backgroundImageUrl === "preset:faulty-terminal" && (
+            <TerminalConfig config={bgConfig} onChange={handleConfigChange} />
+          )}
+          {currentBackground.backgroundImageUrl === "preset:grainient" && (
+            <GrainientConfig config={bgConfig} onChange={handleConfigChange} />
+          )}
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-3 py-2 border-b border-zinc-800 shrink-0">
@@ -280,16 +497,23 @@ export function BackgroundPicker({
                 <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
                   Effects
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {EFFECT_PRESETS.map((preset) => (
                     <button
                       key={preset.value}
-                      onClick={() =>
+                      onClick={() => {
                         onUpdate({
                           backgroundImageUrl: preset.value,
                           backgroundColor: null,
-                        })
-                      }
+                        });
+                        // Auto-open config panel for WebGL presets
+                        if (
+                          preset.value === "preset:faulty-terminal" ||
+                          preset.value === "preset:grainient"
+                        ) {
+                          setShowConfig(true);
+                        }
+                      }}
                       className={cn(
                         "aspect-square rounded-lg border-2 transition-all relative overflow-hidden group",
                         isImageSelected(preset.value)

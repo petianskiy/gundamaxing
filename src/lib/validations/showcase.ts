@@ -107,6 +107,7 @@ export const showcaseLayoutSchema = z.object({
     backgroundOpacity: z.number().min(0).max(1),
     backgroundBlur: z.number().min(0).max(100),
     aspectRatio: z.string().optional().default("4 / 5"),
+    backgroundConfig: z.record(z.string(), z.unknown()).nullable().optional(),
   }),
   elements: z.array(showcaseElement).max(100),
 });

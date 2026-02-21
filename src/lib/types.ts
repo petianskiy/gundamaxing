@@ -235,6 +235,7 @@ export interface ShowcaseLayout {
     backgroundOpacity: number;
     backgroundBlur: number;
     aspectRatio: string;
+    backgroundConfig?: Record<string, unknown> | null;
   };
   elements: ShowcaseElement[];
 }
