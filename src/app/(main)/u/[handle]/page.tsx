@@ -44,10 +44,6 @@ export default async function ProfilePage({ params }: Props) {
     where: { username: handle },
     include: {
       badges: { include: { badge: true } },
-      customRoles: {
-        include: { customRole: { select: { displayName: true, color: true, icon: true } } },
-        orderBy: { customRole: { priority: "asc" } },
-      },
       _count: {
         select: {
           builds: true,
@@ -56,6 +52,20 @@ export default async function ProfilePage({ params }: Props) {
       },
     },
   });
+
+  // Fetch custom roles separately — table may not exist yet if migration hasn't run
+  let userCustomRoles: { customRole: { displayName: string; color: string; icon: string | null } }[] = [];
+  if (user) {
+    try {
+      userCustomRoles = await db.userCustomRole.findMany({
+        where: { userId: user.id },
+        include: { customRole: { select: { displayName: true, color: true, icon: true } } },
+        orderBy: { customRole: { priority: "asc" } },
+      });
+    } catch {
+      // Table doesn't exist yet
+    }
+  }
 
   if (!user) {
     return (
@@ -211,7 +221,7 @@ export default async function ProfilePage({ params }: Props) {
             accentColor: user.accentColor,
             verificationTier: user.verificationTier,
             role: user.role,
-            customRoles: user.customRoles.map((ucr) => ({
+            customRoles: userCustomRoles.map((ucr) => ({
               displayName: ucr.customRole.displayName,
               color: ucr.customRole.color,
               icon: ucr.customRole.icon,
