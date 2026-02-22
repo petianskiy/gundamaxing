@@ -131,21 +131,29 @@ export default async function UserDetailPage({
 }) {
   const { id } = await params;
 
-  const user = await db.user.findUnique({
-    where: { id },
-    include: {
-      badges: { include: { badge: true } },
-      _count: {
-        select: {
-          builds: true,
-          comments: true,
-          likes: true,
-          reportsFiled: true,
-          reportsReceived: true,
+  let user;
+  try {
+    user = await db.user.findUnique({
+      where: { id },
+      include: {
+        badges: { include: { badge: true } },
+        _count: {
+          select: {
+            builds: true,
+            comments: true,
+            likes: true,
+            reportsFiled: true,
+            reportsReceived: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.error("[admin/users/[id]] User query failed:", err);
+    throw new Error(
+      `Failed to load user ${id}: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 
   if (!user) notFound();
 
