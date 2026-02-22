@@ -62,11 +62,6 @@ const COLOR_PRESETS = [
 const EFFECT_PRESETS = [
   { value: "preset:grid", label: "Grid", gradient: "bg-zinc-900" },
   {
-    value: "preset:gradient",
-    label: "Gradient",
-    gradient: "bg-gradient-to-br from-zinc-900 to-indigo-950",
-  },
-  {
     value: "preset:faulty-terminal",
     label: "Terminal",
     gradient: "bg-green-950",
@@ -288,25 +283,6 @@ function WarSmokeConfig({
   );
 }
 
-function GradientConfig({
-  config,
-  onChange,
-}: {
-  config: Record<string, unknown>;
-  onChange: (key: string, value: unknown) => void;
-}) {
-  const v = (key: string, def: number) => (config[key] as number) ?? def;
-  const s = (key: string, def: string) => (config[key] as string) ?? def;
-
-  return (
-    <div className="space-y-2">
-      <ConfigColor label="Color 1" value={s("color1", "#0f0f12")} onChange={(c) => onChange("color1", c)} />
-      <ConfigColor label="Color 2" value={s("color2", "#1a1a2e")} onChange={(c) => onChange("color2", c)} />
-      <ConfigSlider label="Angle" value={v("angle", 135)} min={0} max={360} step={5} suffix="°" onChange={(n) => onChange("angle", n)} />
-    </div>
-  );
-}
-
 // ─── Component ───────────────────────────────────────────────────
 
 export function BackgroundPicker({
@@ -326,8 +302,7 @@ export function BackgroundPicker({
   const isConfigurableActive =
     currentBackground.backgroundImageUrl === "preset:faulty-terminal" ||
     currentBackground.backgroundImageUrl === "preset:grainient" ||
-    currentBackground.backgroundImageUrl === "preset:war-smoke" ||
-    currentBackground.backgroundImageUrl === "preset:gradient";
+    currentBackground.backgroundImageUrl === "preset:war-smoke";
 
   const bgConfig = (currentBackground.backgroundConfig ?? {}) as Record<string, unknown>;
 
@@ -449,7 +424,6 @@ export function BackgroundPicker({
             {currentBackground.backgroundImageUrl === "preset:faulty-terminal" && "Terminal Settings"}
             {currentBackground.backgroundImageUrl === "preset:grainient" && "Grainient Settings"}
             {currentBackground.backgroundImageUrl === "preset:war-smoke" && "War Smoke Settings"}
-            {currentBackground.backgroundImageUrl === "preset:gradient" && "Gradient Settings"}
           </label>
           {currentBackground.backgroundImageUrl === "preset:faulty-terminal" && (
             <TerminalConfig config={bgConfig} onChange={handleConfigChange} />
@@ -459,9 +433,6 @@ export function BackgroundPicker({
           )}
           {currentBackground.backgroundImageUrl === "preset:war-smoke" && (
             <WarSmokeConfig config={bgConfig} onChange={handleConfigChange} />
-          )}
-          {currentBackground.backgroundImageUrl === "preset:gradient" && (
-            <GradientConfig config={bgConfig} onChange={handleConfigChange} />
           )}
         </div>
       )}
@@ -564,8 +535,7 @@ export function BackgroundPicker({
                         if (
                           preset.value === "preset:faulty-terminal" ||
                           preset.value === "preset:grainient" ||
-                          preset.value === "preset:war-smoke" ||
-                          preset.value === "preset:gradient"
+                          preset.value === "preset:war-smoke"
                         ) {
                           setShowConfig(true);
                         }
@@ -586,9 +556,6 @@ export function BackgroundPicker({
                               backgroundSize: "8px 8px",
                             }}
                           />
-                        )}
-                        {preset.value === "preset:gradient" && (
-                          <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 via-indigo-900/60 to-zinc-900" />
                         )}
                         {preset.value === "preset:faulty-terminal" && (
                           <div className="absolute inset-0 overflow-hidden font-mono text-[4px] leading-[5px] text-green-500/70 p-0.5 select-none">

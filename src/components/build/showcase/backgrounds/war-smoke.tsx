@@ -51,12 +51,13 @@ const smokeFragmentShader = `
   vec3 tint2(vec3 base){ return mix(base, vec3(0.8, 0.9, 1.0), 0.25); }
 
   vec4 blob(vec2 p, vec2 mousePos, float intensity, float activity) {
-    vec2 q = vec2(fbm(p * iScale + iTime * 0.1), fbm(p * iScale + vec2(5.2,1.3) + iTime * 0.1));
-    vec2 r = vec2(fbm(p * iScale + q * 1.5 + iTime * 0.15), fbm(p * iScale + q * 1.5 + vec2(8.3,2.8) + iTime * 0.15));
+    vec2 relP = p - mousePos;
+    vec2 q = vec2(fbm(relP * iScale + iTime * 0.1), fbm(relP * iScale + vec2(5.2,1.3) + iTime * 0.1));
+    vec2 r = vec2(fbm(relP * iScale + q * 1.5 + iTime * 0.15), fbm(relP * iScale + q * 1.5 + vec2(8.3,2.8) + iTime * 0.15));
 
-    float smoke = fbm(p * iScale + r * 0.8);
+    float smoke = fbm(relP * iScale + r * 0.8);
     float radius = 0.5 + 0.3 * (1.0 / iScale);
-    float distFactor = 1.0 - smoothstep(0.0, radius * activity, length(p - mousePos));
+    float distFactor = 1.0 - smoothstep(0.0, radius * activity, length(relP));
     float alpha = pow(smoke, 2.5) * distFactor;
 
     vec3 c1 = tint1(iBaseColor);

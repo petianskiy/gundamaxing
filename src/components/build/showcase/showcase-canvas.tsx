@@ -3,7 +3,7 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ShowcaseElement } from "./showcase-element";
-import { isConfigurablePreset } from "./backgrounds";
+import { isWebGLPreset } from "./backgrounds";
 import type { Build, ShowcaseLayout } from "@/lib/types";
 
 // ─── WebGL Background Components (lazy, SSR-safe) ──────────────
@@ -126,19 +126,8 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
         </div>
       )}
 
-      {/* Configurable gradient */}
-      {bgUrl === "preset:gradient" && (
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            background: `linear-gradient(${(bgConfig.angle as number) ?? 135}deg, ${(bgConfig.color1 as string) ?? "#0f0f12"} 0%, ${(bgConfig.color2 as string) ?? "#1a1a2e"} 50%, ${(bgConfig.color1 as string) ?? "#0f0f12"} 100%)`,
-            opacity: bgOpacity,
-          }}
-        />
-      )}
-
       {/* CSS preset backgrounds */}
-      {bgUrl?.startsWith("preset:") && !isConfigurablePreset(bgUrl) && (
+      {bgUrl?.startsWith("preset:") && !isWebGLPreset(bgUrl) && (
         <div
           className="absolute inset-0 z-0"
           style={{
