@@ -346,6 +346,15 @@ export async function searchUsersForRole(query: string) {
       return { error: "You must be signed in." };
     }
 
+    const admin = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (admin?.role !== "ADMIN") {
+      return { error: "Only administrators can search users for role assignment." };
+    }
+
     if (!query || query.trim().length < 1) {
       return { users: [] };
     }
