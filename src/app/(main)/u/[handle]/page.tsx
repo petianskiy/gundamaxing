@@ -44,6 +44,10 @@ export default async function ProfilePage({ params }: Props) {
     where: { username: handle },
     include: {
       badges: { include: { badge: true } },
+      customRoles: {
+        include: { customRole: { select: { displayName: true, color: true, icon: true } } },
+        orderBy: { customRole: { priority: "asc" } },
+      },
       _count: {
         select: {
           builds: true,
@@ -206,6 +210,12 @@ export default async function ProfilePage({ params }: Props) {
             bio: user.bio,
             accentColor: user.accentColor,
             verificationTier: user.verificationTier,
+            role: user.role,
+            customRoles: user.customRoles.map((ucr) => ({
+              displayName: ucr.customRole.displayName,
+              color: ucr.customRole.color,
+              icon: ucr.customRole.icon,
+            })),
             level: user.level,
             reputation: user.reputation,
             socialLinks,

@@ -18,6 +18,7 @@ import {
   Ban,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/ui/verification-badge";
+import { RoleBadge } from "@/components/ui/role-badge";
 
 interface ProfileUser {
   displayName: string | null;
@@ -27,6 +28,8 @@ interface ProfileUser {
   bio: string | null;
   accentColor: string | null;
   verificationTier: string;
+  role: "USER" | "MODERATOR" | "ADMIN";
+  customRoles?: Array<{ displayName: string; color: string; icon: string | null }>;
   level: number;
   reputation: number;
   socialLinks: Record<string, string>;
@@ -121,6 +124,12 @@ export function ProfileHeader({
               </h1>
               <VerificationBadge
                 tier={user.verificationTier.toLowerCase() as any}
+                showLabel
+                size="md"
+              />
+              <RoleBadge
+                role={user.role}
+                customRoles={user.customRoles}
                 showLabel
                 size="md"
               />

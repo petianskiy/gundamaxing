@@ -438,6 +438,25 @@ async function main() {
     console.log("  - User 'petianskiy' not found (will be set to ADMIN on next login via OAuth)");
   }
 
+  // ── 9. Seed Default Settings ───────────────────────────────────
+  console.log("\nSeeding default settings...");
+  const defaultSettings = [
+    { key: "registration_enabled", value: "true", type: "boolean", label: "Registration Enabled", group: "general" },
+    { key: "maintenance_mode", value: "false", type: "boolean", label: "Maintenance Mode", group: "general" },
+    { key: "maintenance_message", value: "We are performing scheduled maintenance. Please check back soon.", type: "string", label: "Maintenance Message", group: "general" },
+    { key: "profanity_custom_words", value: "[]", type: "json", label: "Custom Profanity Words", group: "moderation" },
+    { key: "max_reports_per_day", value: "10", type: "number", label: "Max Reports Per Day", group: "moderation" },
+    { key: "auto_ban_threshold", value: "5", type: "number", label: "Auto-Ban Report Threshold", group: "moderation" },
+  ];
+  for (const s of defaultSettings) {
+    await prisma.systemSetting.upsert({
+      where: { key: s.key },
+      create: s,
+      update: {},
+    });
+    console.log(`  + Setting: ${s.key} = ${s.value}`);
+  }
+
   console.log("\nSeed complete!");
   console.log(`  Users:      ${userIdMap.size}`);
   console.log(`  Badges:     ${allBadges.size}`);

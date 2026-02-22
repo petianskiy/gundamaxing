@@ -183,6 +183,7 @@ model User {
   reactions        Reaction[]
   brushPresets     UserBrushPreset[]
   notifications    Notification[]
+  customRoles      UserCustomRole[]
 
   @@index([email])
   @@index([reputation])
@@ -568,6 +569,11 @@ enum EventType {
   PASSWORD_RESET_COMPLETE
   EMAIL_CHANGE_REQUESTED
   EMAIL_CHANGE_COMPLETE
+  ROLE_CHANGED
+  CUSTOM_ROLE_ASSIGNED
+  CUSTOM_ROLE_REMOVED
+  SETTING_CHANGED
+  CONTENT_MODERATED
 }
 
 model EventLog {
@@ -665,4 +671,49 @@ model RateLimitRecord {
   @@unique([key, windowStart])
   @@index([expiresAt])
   @@index([key])
+}
+
+// ─── CUSTOM ROLES & PERMISSIONS ──────────────────────────────────
+
+model CustomRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  color       String   @default("#71717a")
+  icon        String?
+  description String?  @db.Text
+  permissions String[] @default([])
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserCustomRole[]
+
+  @@index([priority])
+}
+
+model UserCustomRole {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customRoleId String
+  customRole   CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime   @default(now())
+  assignedBy   String?
+
+  @@unique([userId, customRoleId])
+  @@index([userId])
+  @@index([customRoleId])
+}
+
+// ─── SYSTEM SETTINGS ─────────────────────────────────────────────
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  type      String   @default("string")
+  label     String?
+  group     String?
+  updatedAt DateTime @updatedAt
+  updatedBy String?
 }

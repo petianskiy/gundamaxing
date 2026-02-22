@@ -103,6 +103,29 @@ body {
   border-radius: 6px;
 }
 
+/* Role badge animations */
+@keyframes admin-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3), 0 0 12px rgba(239, 68, 68, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.5), 0 0 24px rgba(239, 68, 68, 0.2); }
+}
+.animate-admin-glow { animation: admin-glow 2s ease-in-out infinite; }
+
+@keyframes mod-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-mod-shimmer {
+  background-image: linear-gradient(110deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.3) 45%, rgba(245,158,11,0.15) 55%, rgba(245,158,11,0.15) 100%);
+  background-size: 200% 100%;
+  animation: mod-shimmer 3s linear infinite;
+}
+
+@keyframes custom-role-glow {
+  0%, 100% { box-shadow: 0 0 4px color-mix(in srgb, var(--glow-color, #71717a) 25%, transparent); }
+  50% { box-shadow: 0 0 8px color-mix(in srgb, var(--glow-color, #71717a) 40%, transparent); }
+}
+.animate-custom-glow { animation: custom-role-glow 3s ease-in-out infinite; }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

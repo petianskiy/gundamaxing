@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getUserCustomRoles, getAllCustomRoles } from "@/lib/data/roles";
+import { assignRoleToUser, removeRoleFromUser } from "@/lib/actions/roles";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -22,6 +24,7 @@ import {
   Twitter,
   Youtube,
   Instagram,
+  Tags,
 } from "lucide-react";
 
 const roleColors: Record<string, string> = {
@@ -146,7 +149,7 @@ export default async function UserDetailPage({
 
   if (!user) notFound();
 
-  const [recentEvents, moderationHistory] = await Promise.all([
+  const [recentEvents, moderationHistory, userCustomRoles, allCustomRoles] = await Promise.all([
     db.eventLog.findMany({
       where: { userId: id },
       take: 20,
@@ -159,7 +162,12 @@ export default async function UserDetailPage({
         moderator: { select: { username: true } },
       },
     }),
+    getUserCustomRoles(id),
+    getAllCustomRoles(),
   ]);
+
+  const assignedRoleIds = new Set(userCustomRoles.map((ucr) => ucr.customRoleId));
+  const availableRoles = allCustomRoles.filter((r) => !assignedRoleIds.has(r.id));
 
   const isBanned = user.riskScore >= 100;
   const socialLinks = (user.socialLinks as Record<string, string> | null) || {};
@@ -494,6 +502,92 @@ export default async function UserDetailPage({
               Delete Account
             </button>
           </form>
+        </div>
+
+        {/* Custom Roles */}
+        <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+            <Tags className="h-4 w-4 text-gx-gold" />
+            Custom Roles
+          </h3>
+
+          {/* Assigned Roles */}
+          {userCustomRoles.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No custom roles assigned.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {userCustomRoles.map((ucr) => (
+                <div
+                  key={ucr.id}
+                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/10 border border-border/30"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="h-5 w-5 rounded-full shrink-0 flex items-center justify-center text-[10px]"
+                      style={{
+                        backgroundColor: ucr.customRole.color + "30",
+                        color: ucr.customRole.color,
+                      }}
+                    >
+                      {ucr.customRole.icon || ucr.customRole.displayName[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-xs text-foreground truncate">
+                      {ucr.customRole.displayName}
+                    </span>
+                  </div>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await removeRoleFromUser(user.id, ucr.customRoleId);
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add Role */}
+          {availableRoles.length > 0 && (
+            <form
+              action={async (formData: FormData) => {
+                "use server";
+                await assignRoleToUser(formData);
+              }}
+              className="space-y-2"
+            >
+              <input type="hidden" name="userId" value={user.id} />
+              <label className="text-xs text-muted-foreground">
+                Add Custom Role
+              </label>
+              <div className="flex gap-2">
+                <select
+                  name="customRoleId"
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gx-red/50"
+                >
+                  {availableRoles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.displayName}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors"
+                >
+                  Assign
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Moderation History */}

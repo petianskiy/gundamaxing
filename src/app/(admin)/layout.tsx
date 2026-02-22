@@ -1,13 +1,27 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Shield, Flag, Activity, Users, LayoutDashboard } from "lucide-react";
+import {
+  Shield,
+  Flag,
+  Activity,
+  Users,
+  LayoutDashboard,
+  BarChart3,
+  FileText,
+  Tags,
+  Settings2,
+} from "lucide-react";
 
 const adminNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/content", label: "Content", icon: FileText },
   { href: "/admin/reports", label: "Reports", icon: Flag },
-  { href: "/admin/events", label: "Events", icon: Activity },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/roles", label: "Roles", icon: Tags },
+  { href: "/admin/events", label: "Events", icon: Activity },
+  { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ];
 
 export default async function AdminLayout({

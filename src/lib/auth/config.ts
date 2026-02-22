@@ -56,13 +56,22 @@ function createAdapter() {
 
       console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=VERIFIED`);
 
+      // Auto-promote designated admin users on first registration
+      const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
+      let assignedRole: "USER" | "ADMIN" = "USER";
+      if (adminUsernames.includes(username)) {
+        await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+        assignedRole = "ADMIN";
+        console.log(`[auth] auto-promoted ${username} to ADMIN`);
+      }
+
       return {
         id: user.id,
         name: user.displayName,
         email: user.email,
         emailVerified: user.emailVerified,
         image: user.avatar,
-        role: "USER" as const,
+        role: assignedRole,
         username: user.username,
         verificationTier: "VERIFIED" as const,
         onboardingComplete: user.onboardingComplete,
@@ -268,6 +277,14 @@ const authConfig: NextAuthConfig = {
             },
           });
           if (dbUser) {
+            // Auto-promote designated admin users on login
+            const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
+            if (dbUser.username && adminUsernames.includes(dbUser.username) && dbUser.role !== "ADMIN") {
+              await db.user.update({ where: { id: user.id! }, data: { role: "ADMIN" } });
+              dbUser.role = "ADMIN" as any;
+              console.log(`[auth] auto-promoted ${dbUser.username} to ADMIN on login`);
+            }
+
             token.id = user.id!;
             token.role = dbUser.role;
             token.username = dbUser.username;
