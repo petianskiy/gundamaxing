@@ -227,6 +227,11 @@ export interface HangarUser {
 
 // ─── Showcase Canvas ─────────────────────────────────────────────
 
+export interface ShowcasePage {
+  id: string;
+  elements: ShowcaseElement[];
+}
+
 export interface ShowcaseLayout {
   version: 1;
   canvas: {
@@ -238,6 +243,7 @@ export interface ShowcaseLayout {
     backgroundConfig?: Record<string, unknown> | null;
   };
   elements: ShowcaseElement[];
+  pages?: ShowcasePage[];
 }
 
 export type ShowcaseElement =

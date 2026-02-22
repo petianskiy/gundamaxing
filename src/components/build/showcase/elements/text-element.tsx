@@ -35,15 +35,20 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
   useEffect(() => {
     if (isEditing && ref.current) {
       ref.current.focus();
-      // Place cursor at end
       const range = document.createRange();
       const sel = window.getSelection();
       range.selectNodeContents(ref.current);
-      range.collapse(false);
+      // If content is the default placeholder, select all so typing replaces it
+      if (element.content === "Double-click to edit...") {
+        // Leave range selecting all content
+      } else {
+        // Place cursor at end for existing content
+        range.collapse(false);
+      }
       sel?.removeAllRanges();
       sel?.addRange(range);
     }
-  }, [isEditing]);
+  }, [isEditing, element.content]);
 
   const baseClassName = cn(
     "w-full h-full px-3 py-2 leading-relaxed whitespace-pre-wrap break-words overflow-hidden",

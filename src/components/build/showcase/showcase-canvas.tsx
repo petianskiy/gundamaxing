@@ -8,18 +8,8 @@ import type { Build, ShowcaseLayout } from "@/lib/types";
 
 // ─── WebGL Background Components (lazy, SSR-safe) ──────────────
 
-const FaultyTerminal = dynamic(
-  () => import("./backgrounds/faulty-terminal").then((m) => m.FaultyTerminal),
-  { ssr: false },
-);
-
 const Grainient = dynamic(
   () => import("./backgrounds/grainient").then((m) => m.Grainient),
-  { ssr: false },
-);
-
-const WarSmoke = dynamic(
-  () => import("./backgrounds/war-smoke").then((m) => m.WarSmoke),
   { ssr: false },
 );
 
@@ -57,29 +47,6 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
       )}
 
       {/* WebGL preset backgrounds */}
-      {bgUrl === "preset:faulty-terminal" && (
-        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <FaultyTerminal
-            scale={(bgConfig.scale as number) ?? 3}
-            gridMul={(bgConfig.gridMul as [number, number]) ?? [2, 1]}
-            digitSize={(bgConfig.digitSize as number) ?? 2.5}
-            timeScale={(bgConfig.timeScale as number) ?? 0.5}
-            pause={false}
-            scanlineIntensity={(bgConfig.scanlineIntensity as number) ?? 0.5}
-            glitchAmount={(bgConfig.glitchAmount as number) ?? 1}
-            flickerAmount={(bgConfig.flickerAmount as number) ?? 1}
-            noiseAmp={(bgConfig.noiseAmp as number) ?? 0.7}
-            chromaticAberration={(bgConfig.chromaticAberration as number) ?? 0}
-            dither={(bgConfig.dither as number) ?? 0}
-            curvature={(bgConfig.curvature as number) ?? 0.1}
-            tint={(bgConfig.tint as string) ?? "#d357fe"}
-            mouseReact={(bgConfig.mouseReact as boolean) ?? true}
-            mouseStrength={(bgConfig.mouseStrength as number) ?? 0.5}
-            pageLoadAnimation
-            brightness={(bgConfig.brightness as number) ?? 0.6}
-          />
-        </div>
-      )}
       {bgUrl === "preset:grainient" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
           <Grainient
@@ -105,23 +72,6 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
             centerX={(bgConfig.centerX as number) ?? 0}
             centerY={(bgConfig.centerY as number) ?? 0}
             zoom={(bgConfig.zoom as number) ?? 0.9}
-          />
-        </div>
-      )}
-      {bgUrl === "preset:war-smoke" && (
-        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <WarSmoke
-            color={(bgConfig.color as string) ?? "#ff8647"}
-            brightness={(bgConfig.brightness as number) ?? 2}
-            edgeIntensity={(bgConfig.edgeIntensity as number) ?? 0}
-            trailLength={(bgConfig.trailLength as number) ?? 50}
-            inertia={(bgConfig.inertia as number) ?? 0.5}
-            grainIntensity={(bgConfig.grainIntensity as number) ?? 0.05}
-            bloomStrength={(bgConfig.bloomStrength as number) ?? 0.1}
-            bloomRadius={(bgConfig.bloomRadius as number) ?? 1}
-            bloomThreshold={(bgConfig.bloomThreshold as number) ?? 0.025}
-            fadeDelayMs={(bgConfig.fadeDelayMs as number) ?? 1000}
-            fadeDurationMs={(bgConfig.fadeDurationMs as number) ?? 1500}
           />
         </div>
       )}

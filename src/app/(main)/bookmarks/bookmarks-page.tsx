@@ -14,7 +14,7 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="relative min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#09090b]">
       {/* Background image */}
       <Image
         src="/bookmarks-bg.jpg"

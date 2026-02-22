@@ -99,6 +99,11 @@ const showcaseElement = z.discriminatedUnion("type", [
   showcaseVideoElement,
 ]);
 
+const showcasePageSchema = z.object({
+  id: z.string().min(1),
+  elements: z.array(showcaseElement).max(100),
+});
+
 export const showcaseLayoutSchema = z.object({
   version: z.literal(1),
   canvas: z.object({
@@ -110,6 +115,7 @@ export const showcaseLayoutSchema = z.object({
     backgroundConfig: z.record(z.string(), z.unknown()).nullable().optional(),
   }),
   elements: z.array(showcaseElement).max(100),
+  pages: z.array(showcasePageSchema).max(20).optional(),
 });
 
 // ─── Migration for backward compatibility ──────────────────────
@@ -123,49 +129,57 @@ const FONT_SIZE_MIGRATION: Record<string, number> = {
   "3xl": 30,
 };
 
+function migrateElements(elements: ShowcaseLayout["elements"]): ShowcaseLayout["elements"] {
+  return elements.map((el) => {
+    if (el.type === "text") {
+      const textEl = el as unknown as Record<string, unknown>;
+      const fontSize = typeof textEl.fontSize === "string"
+        ? (FONT_SIZE_MIGRATION[textEl.fontSize] ?? 16)
+        : (textEl.fontSize as number) ?? 16;
+      const fontWeight = textEl.fontWeight as string | undefined;
+      const bold = textEl.bold ?? (fontWeight === "bold" || fontWeight === "semibold") ?? false;
+      return {
+        ...el,
+        fontSize,
+        bold: bold as boolean,
+        italic: (textEl.italic as boolean) ?? false,
+        underline: (textEl.underline as boolean) ?? false,
+        strikethrough: (textEl.strikethrough as boolean) ?? false,
+        gradient: (textEl.gradient as boolean) ?? false,
+        gradientColors: (textEl.gradientColors as string[]) ?? ["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"],
+        gradientSpeed: (textEl.gradientSpeed as number) ?? 2,
+        fuzzy: (textEl.fuzzy as boolean) ?? false,
+        fuzzyIntensity: (textEl.fuzzyIntensity as number) ?? 0.18,
+        fuzzyHoverIntensity: (textEl.fuzzyHoverIntensity as number) ?? 0.5,
+        fuzzyFuzzRange: (textEl.fuzzyFuzzRange as number) ?? 0.08,
+        fuzzyDirection: (textEl.fuzzyDirection as string) ?? "horizontal",
+        fuzzyTransitionDuration: (textEl.fuzzyTransitionDuration as number) ?? 0.15,
+        fuzzyLetterSpacing: (textEl.fuzzyLetterSpacing as number) ?? 0,
+        fuzzyEnableHover: (textEl.fuzzyEnableHover as boolean) ?? true,
+        fuzzyClickEffect: (textEl.fuzzyClickEffect as boolean) ?? false,
+        fuzzyGlitchMode: (textEl.fuzzyGlitchMode as boolean) ?? false,
+        fuzzyGlitchInterval: (textEl.fuzzyGlitchInterval as number) ?? 5,
+        fuzzyGlitchDuration: (textEl.fuzzyGlitchDuration as number) ?? 0.3,
+      };
+    }
+    return el;
+  }) as ShowcaseLayout["elements"];
+}
+
 export function migrateShowcaseLayout(layout: unknown): ShowcaseLayout {
   const data = layout as ShowcaseLayout;
+  const migratedElements = migrateElements(data.elements);
+  const migratedPages = data.pages?.map((page) => ({
+    ...page,
+    elements: migrateElements(page.elements),
+  }));
   return {
     ...data,
     canvas: {
       ...data.canvas,
       aspectRatio: data.canvas.aspectRatio || "4 / 5",
     },
-    elements: data.elements.map((el) => {
-      if (el.type === "text") {
-        const textEl = el as unknown as Record<string, unknown>;
-        // Migrate fontSize from string enum to number
-        const fontSize = typeof textEl.fontSize === "string"
-          ? (FONT_SIZE_MIGRATION[textEl.fontSize] ?? 16)
-          : (textEl.fontSize as number) ?? 16;
-        // Migrate fontWeight to bold
-        const fontWeight = textEl.fontWeight as string | undefined;
-        const bold = textEl.bold ?? (fontWeight === "bold" || fontWeight === "semibold") ?? false;
-        return {
-          ...el,
-          fontSize,
-          bold: bold as boolean,
-          italic: (textEl.italic as boolean) ?? false,
-          underline: (textEl.underline as boolean) ?? false,
-          strikethrough: (textEl.strikethrough as boolean) ?? false,
-          gradient: (textEl.gradient as boolean) ?? false,
-          gradientColors: (textEl.gradientColors as string[]) ?? ["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"],
-          gradientSpeed: (textEl.gradientSpeed as number) ?? 2,
-          fuzzy: (textEl.fuzzy as boolean) ?? false,
-          fuzzyIntensity: (textEl.fuzzyIntensity as number) ?? 0.18,
-          fuzzyHoverIntensity: (textEl.fuzzyHoverIntensity as number) ?? 0.5,
-          fuzzyFuzzRange: (textEl.fuzzyFuzzRange as number) ?? 0.08,
-          fuzzyDirection: (textEl.fuzzyDirection as string) ?? "horizontal",
-          fuzzyTransitionDuration: (textEl.fuzzyTransitionDuration as number) ?? 0.15,
-          fuzzyLetterSpacing: (textEl.fuzzyLetterSpacing as number) ?? 0,
-          fuzzyEnableHover: (textEl.fuzzyEnableHover as boolean) ?? true,
-          fuzzyClickEffect: (textEl.fuzzyClickEffect as boolean) ?? false,
-          fuzzyGlitchMode: (textEl.fuzzyGlitchMode as boolean) ?? false,
-          fuzzyGlitchInterval: (textEl.fuzzyGlitchInterval as number) ?? 5,
-          fuzzyGlitchDuration: (textEl.fuzzyGlitchDuration as number) ?? 0.3,
-        };
-      }
-      return el;
-    }),
+    elements: migratedElements,
+    pages: migratedPages,
   } as ShowcaseLayout;
 }

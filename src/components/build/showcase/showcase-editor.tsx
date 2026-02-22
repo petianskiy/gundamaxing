@@ -23,6 +23,7 @@ import type {
   Build,
   BuildImage,
   ShowcaseLayout,
+  ShowcasePage as ShowcasePageType,
   ShowcaseElement as ShowcaseElementType,
   ShowcaseImageElement,
   ShowcaseTextElement,
@@ -31,20 +32,19 @@ import type {
   ShowcaseVideoElement,
 } from "@/lib/types";
 
-// ─── WebGL Background Components (lazy, SSR-safe) ──────────────
+function normalizePages(layout: ShowcaseLayout): ShowcasePageType[] {
+  if (layout.pages && layout.pages.length > 0) return layout.pages;
+  return [{ id: "page-1", elements: layout.elements }];
+}
 
-const FaultyTerminal = dynamic(
-  () => import("./backgrounds/faulty-terminal").then((m) => m.FaultyTerminal),
-  { ssr: false },
-);
+function generatePageId(): string {
+  return "page-" + Math.random().toString(36).substring(2, 10);
+}
+
+// ─── WebGL Background Components (lazy, SSR-safe) ──────────────
 
 const Grainient = dynamic(
   () => import("./backgrounds/grainient").then((m) => m.Grainient),
-  { ssr: false },
-);
-
-const WarSmoke = dynamic(
-  () => import("./backgrounds/war-smoke").then((m) => m.WarSmoke),
   { ssr: false },
 );
 
@@ -188,6 +188,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
+
+  // Multi-page state
+  const [pagesState, setPagesState] = useState<ShowcasePageType[]>(() => normalizePages(safeInitial));
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [pageContextMenu, setPageContextMenu] = useState<{ index: number; x: number; y: number } | null>(null);
 
   // Group state: maps elementId → groupId (local only, not persisted)
   const [groups, setGroups] = useState<Record<string, string>>({});
@@ -419,13 +424,15 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       const isContentEditable = (document.activeElement as HTMLElement)?.isContentEditable;
       const isInput = document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "SELECT";
 
-      // Undo/Redo — always active (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z)
+      // Undo/Redo — skip when drawing overlay is active (it has its own handler)
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        if (showDrawing) return;
         e.preventDefault();
         dispatch({ type: "UNDO" });
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) {
+        if (showDrawing) return;
         e.preventDefault();
         dispatch({ type: "REDO" });
         return;
@@ -487,7 +494,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIds, editingTextId, activePanel, layout.elements, dispatch]);
+  }, [selectedIds, editingTextId, activePanel, layout.elements, dispatch, showDrawing]);
 
   // ─── Add element helpers ──────────────────────────────────────
 
@@ -751,17 +758,29 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
+    // Build full layout with all pages (merge current page's live elements)
+    const allPages = pagesState.map((page, i) =>
+      i === currentPageIndex
+        ? { ...page, elements: layout.elements }
+        : page
+    );
+    const fullLayout: ShowcaseLayout = {
+      ...layout,
+      elements: allPages[0]?.elements ?? [],
+      pages: allPages,
+    };
     const formData = new FormData();
     formData.set("buildId", build.id);
-    formData.set("showcaseLayout", JSON.stringify(layout));
+    formData.set("showcaseLayout", JSON.stringify(fullLayout));
     const result = await updateShowcaseLayout(formData);
     setIsSaving(false);
     if ("error" in result) {
       toast.error(result.error);
     } else {
       toast.success("Showcase saved!");
+      onExit();
     }
-  }, [build.id, layout]);
+  }, [build.id, layout, pagesState, currentPageIndex, onExit]);
 
   // ─── Delete selected element ──────────────────────────────────
 
@@ -801,6 +820,125 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   const selectedHaveGroup = selectedIds.some((id) => groups[id]);
 
+  // ─── Multi-page operations ──────────────────────────────────
+
+  const switchToPage = useCallback((newIndex: number) => {
+    if (newIndex === currentPageIndex) return;
+    // Save current page's elements back to pagesState
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      return updated;
+    });
+    // Load new page's elements into the reducer
+    const targetPage = pagesState[newIndex];
+    if (targetPage) {
+      dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: targetPage.elements } });
+    }
+    setCurrentPageIndex(newIndex);
+    setSelectedIds([]);
+    setEditingTextId(null);
+  }, [currentPageIndex, layout, pagesState, dispatch]);
+
+  const addPage = useCallback(() => {
+    // Save current page first
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      const newPage: ShowcasePageType = { id: generatePageId(), elements: [] };
+      return [...updated, newPage];
+    });
+    // Switch to the new page
+    const newIndex = pagesState.length;
+    dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: [] } });
+    setCurrentPageIndex(newIndex);
+    setSelectedIds([]);
+    setEditingTextId(null);
+  }, [currentPageIndex, layout, pagesState.length, dispatch]);
+
+  const duplicatePage = useCallback((index: number) => {
+    const sourcePage = index === currentPageIndex
+      ? { ...pagesState[index], elements: layout.elements }
+      : pagesState[index];
+    if (!sourcePage) return;
+    // Deep clone elements with new IDs
+    const clonedElements = sourcePage.elements.map((el) => ({
+      ...el,
+      id: generateId(),
+    }));
+    const newPage: ShowcasePageType = { id: generatePageId(), elements: clonedElements };
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      const result = [...updated];
+      result.splice(index + 1, 0, newPage);
+      return result;
+    });
+    // Switch to duplicated page
+    const newIndex = index + 1;
+    dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: clonedElements } });
+    setCurrentPageIndex(newIndex);
+    setSelectedIds([]);
+    setEditingTextId(null);
+    setPageContextMenu(null);
+  }, [currentPageIndex, layout, pagesState, dispatch]);
+
+  const deletePage = useCallback((index: number) => {
+    if (pagesState.length <= 1) {
+      toast.error("Cannot delete the only page");
+      return;
+    }
+    if (!confirm("Delete this page? This cannot be undone.")) return;
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated.splice(index, 1);
+      return updated;
+    });
+    // Adjust current page index
+    let newIndex = currentPageIndex;
+    if (index <= currentPageIndex) {
+      newIndex = Math.max(0, currentPageIndex - 1);
+    }
+    const remainingPages = [...pagesState];
+    remainingPages[currentPageIndex] = { ...remainingPages[currentPageIndex], elements: layout.elements };
+    remainingPages.splice(index, 1);
+    const targetPage = remainingPages[newIndex];
+    if (targetPage) {
+      dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: targetPage.elements } });
+    }
+    setCurrentPageIndex(newIndex);
+    setSelectedIds([]);
+    setEditingTextId(null);
+    setPageContextMenu(null);
+  }, [currentPageIndex, layout, pagesState, dispatch]);
+
+  const movePageLeft = useCallback((index: number) => {
+    if (index <= 0) return;
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+      return updated;
+    });
+    if (index === currentPageIndex) setCurrentPageIndex(index - 1);
+    else if (index - 1 === currentPageIndex) setCurrentPageIndex(index);
+    setPageContextMenu(null);
+  }, [currentPageIndex, layout]);
+
+  const movePageRight = useCallback((index: number) => {
+    if (index >= pagesState.length - 1) return;
+    setPagesState((prev) => {
+      const updated = [...prev];
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+      return updated;
+    });
+    if (index === currentPageIndex) setCurrentPageIndex(index + 1);
+    else if (index + 1 === currentPageIndex) setCurrentPageIndex(index);
+    setPageContextMenu(null);
+  }, [currentPageIndex, layout, pagesState.length]);
+
   // ─── Background rendering helper ─────────────────────────────
 
   const bgUrl = layout.canvas.backgroundImageUrl;
@@ -817,29 +955,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       )}
 
       {/* WebGL preset backgrounds */}
-      {bgUrl === "preset:faulty-terminal" && (
-        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <FaultyTerminal
-            scale={(bgConfig.scale as number) ?? 3}
-            gridMul={(bgConfig.gridMul as [number, number]) ?? [2, 1]}
-            digitSize={(bgConfig.digitSize as number) ?? 2.5}
-            timeScale={(bgConfig.timeScale as number) ?? 0.5}
-            pause={false}
-            scanlineIntensity={(bgConfig.scanlineIntensity as number) ?? 0.5}
-            glitchAmount={(bgConfig.glitchAmount as number) ?? 1}
-            flickerAmount={(bgConfig.flickerAmount as number) ?? 1}
-            noiseAmp={(bgConfig.noiseAmp as number) ?? 0.7}
-            chromaticAberration={(bgConfig.chromaticAberration as number) ?? 0}
-            dither={(bgConfig.dither as number) ?? 0}
-            curvature={(bgConfig.curvature as number) ?? 0.1}
-            tint={(bgConfig.tint as string) ?? "#d357fe"}
-            mouseReact={(bgConfig.mouseReact as boolean) ?? true}
-            mouseStrength={(bgConfig.mouseStrength as number) ?? 0.5}
-            pageLoadAnimation
-            brightness={(bgConfig.brightness as number) ?? 0.6}
-          />
-        </div>
-      )}
       {bgUrl === "preset:grainient" && (
         <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
           <Grainient
@@ -865,24 +980,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
             centerX={(bgConfig.centerX as number) ?? 0}
             centerY={(bgConfig.centerY as number) ?? 0}
             zoom={(bgConfig.zoom as number) ?? 0.9}
-          />
-        </div>
-      )}
-
-      {bgUrl === "preset:war-smoke" && (
-        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
-          <WarSmoke
-            color={(bgConfig.color as string) ?? "#ff8647"}
-            brightness={(bgConfig.brightness as number) ?? 2}
-            edgeIntensity={(bgConfig.edgeIntensity as number) ?? 0}
-            trailLength={(bgConfig.trailLength as number) ?? 50}
-            inertia={(bgConfig.inertia as number) ?? 0.5}
-            grainIntensity={(bgConfig.grainIntensity as number) ?? 0.05}
-            bloomStrength={(bgConfig.bloomStrength as number) ?? 0.1}
-            bloomRadius={(bgConfig.bloomRadius as number) ?? 1}
-            bloomThreshold={(bgConfig.bloomThreshold as number) ?? 0.025}
-            fadeDelayMs={(bgConfig.fadeDelayMs as number) ?? 1000}
-            fadeDurationMs={(bgConfig.fadeDurationMs as number) ?? 1500}
           />
         </div>
       )}
@@ -958,6 +1055,74 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   return (
     <div className="relative">
+      {/* Page navigation strip */}
+      <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+        {pagesState.map((page, i) => (
+          <button
+            key={page.id}
+            onClick={() => switchToPage(i)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setPageContextMenu({ index: i, x: e.clientX, y: e.clientY });
+            }}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors",
+              i === currentPageIndex
+                ? "bg-gx-gold/15 text-gx-gold border border-gx-gold/30"
+                : "text-muted-foreground hover:bg-muted/50 border border-transparent"
+            )}
+          >
+            Page {i + 1}
+          </button>
+        ))}
+        <button
+          onClick={addPage}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-dashed border-zinc-700 shrink-0 transition-colors"
+        >
+          + Add Page
+        </button>
+      </div>
+
+      {/* Page context menu */}
+      {pageContextMenu && (
+        <>
+          <div className="fixed inset-0 z-[600]" onClick={() => setPageContextMenu(null)} />
+          <div
+            className="fixed z-[601] bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl py-1 min-w-[140px]"
+            style={{ left: pageContextMenu.x, top: pageContextMenu.y }}
+          >
+            <button
+              onClick={() => duplicatePage(pageContextMenu.index)}
+              className="w-full px-3 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-800 transition-colors"
+            >
+              Duplicate
+            </button>
+            <button
+              onClick={() => movePageLeft(pageContextMenu.index)}
+              disabled={pageContextMenu.index === 0}
+              className="w-full px-3 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Move Left
+            </button>
+            <button
+              onClick={() => movePageRight(pageContextMenu.index)}
+              disabled={pageContextMenu.index === pagesState.length - 1}
+              className="w-full px-3 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Move Right
+            </button>
+            <div className="h-px bg-zinc-800 my-1" />
+            <button
+              onClick={() => deletePage(pageContextMenu.index)}
+              disabled={pagesState.length <= 1}
+              className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Delete Page
+            </button>
+          </div>
+        </>
+      )}
+
       {/* Canvas */}
       <div
         ref={canvasRef}

@@ -62,19 +62,9 @@ const COLOR_PRESETS = [
 const EFFECT_PRESETS = [
   { value: "preset:grid", label: "Grid", gradient: "bg-zinc-900" },
   {
-    value: "preset:faulty-terminal",
-    label: "Terminal",
-    gradient: "bg-green-950",
-  },
-  {
     value: "preset:grainient",
     label: "Grainient",
     gradient: "bg-gradient-to-br from-purple-950 to-amber-950",
-  },
-  {
-    value: "preset:war-smoke",
-    label: "War Smoke",
-    gradient: "bg-gradient-to-br from-orange-950 to-zinc-950",
   },
 ];
 
@@ -186,37 +176,6 @@ function ConfigToggle({
 
 // ─── WebGL Config Panels ────────────────────────────────────────
 
-function TerminalConfig({
-  config,
-  onChange,
-}: {
-  config: Record<string, unknown>;
-  onChange: (key: string, value: unknown) => void;
-}) {
-  const v = (key: string, def: number) => (config[key] as number) ?? def;
-  const s = (key: string, def: string) => (config[key] as string) ?? def;
-  const b = (key: string, def: boolean) => (config[key] as boolean) ?? def;
-
-  return (
-    <div className="space-y-2">
-      <ConfigColor label="Tint" value={s("tint", "#d357fe")} onChange={(c) => onChange("tint", c)} />
-      <ConfigSlider label="Scale" value={v("scale", 3)} min={0.5} max={10} step={0.5} onChange={(n) => onChange("scale", n)} />
-      <ConfigSlider label="Digit Size" value={v("digitSize", 2.5)} min={0.5} max={5} step={0.1} onChange={(n) => onChange("digitSize", n)} />
-      <ConfigSlider label="Time Speed" value={v("timeScale", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("timeScale", n)} />
-      <ConfigSlider label="Brightness" value={v("brightness", 0.6)} min={0} max={2} step={0.05} onChange={(n) => onChange("brightness", n)} />
-      <ConfigSlider label="Scanlines" value={v("scanlineIntensity", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("scanlineIntensity", n)} />
-      <ConfigSlider label="Glitch" value={v("glitchAmount", 1)} min={0} max={5} step={0.1} onChange={(n) => onChange("glitchAmount", n)} />
-      <ConfigSlider label="Flicker" value={v("flickerAmount", 1)} min={0} max={3} step={0.1} onChange={(n) => onChange("flickerAmount", n)} />
-      <ConfigSlider label="Noise" value={v("noiseAmp", 0.7)} min={0} max={2} step={0.05} onChange={(n) => onChange("noiseAmp", n)} />
-      <ConfigSlider label="Chromatic Aberration" value={v("chromaticAberration", 0)} min={0} max={10} step={0.5} onChange={(n) => onChange("chromaticAberration", n)} />
-      <ConfigSlider label="Dither" value={v("dither", 0)} min={0} max={5} step={0.1} onChange={(n) => onChange("dither", n)} />
-      <ConfigSlider label="Curvature" value={v("curvature", 0.1)} min={0} max={1} step={0.01} onChange={(n) => onChange("curvature", n)} />
-      <ConfigToggle label="Mouse React" value={b("mouseReact", true)} onChange={(val) => onChange("mouseReact", val)} />
-      <ConfigSlider label="Mouse Strength" value={v("mouseStrength", 0.5)} min={0} max={2} step={0.05} onChange={(n) => onChange("mouseStrength", n)} />
-    </div>
-  );
-}
-
 function GrainientConfig({
   config,
   onChange,
@@ -256,33 +215,6 @@ function GrainientConfig({
   );
 }
 
-function WarSmokeConfig({
-  config,
-  onChange,
-}: {
-  config: Record<string, unknown>;
-  onChange: (key: string, value: unknown) => void;
-}) {
-  const v = (key: string, def: number) => (config[key] as number) ?? def;
-  const s = (key: string, def: string) => (config[key] as string) ?? def;
-
-  return (
-    <div className="space-y-2">
-      <ConfigColor label="Color" value={s("color", "#ff8647")} onChange={(c) => onChange("color", c)} />
-      <ConfigSlider label="Brightness" value={v("brightness", 2)} min={0.1} max={5} step={0.1} onChange={(n) => onChange("brightness", n)} />
-      <ConfigSlider label="Edge Intensity" value={v("edgeIntensity", 0)} min={0} max={1} step={0.05} onChange={(n) => onChange("edgeIntensity", n)} />
-      <ConfigSlider label="Trail Length" value={v("trailLength", 50)} min={5} max={100} step={5} onChange={(n) => onChange("trailLength", n)} />
-      <ConfigSlider label="Inertia" value={v("inertia", 0.5)} min={0} max={0.99} step={0.01} onChange={(n) => onChange("inertia", n)} />
-      <ConfigSlider label="Grain" value={v("grainIntensity", 0.05)} min={0} max={0.5} step={0.01} onChange={(n) => onChange("grainIntensity", n)} />
-      <ConfigSlider label="Bloom Strength" value={v("bloomStrength", 0.1)} min={0} max={2} step={0.05} onChange={(n) => onChange("bloomStrength", n)} />
-      <ConfigSlider label="Bloom Radius" value={v("bloomRadius", 1)} min={0} max={3} step={0.1} onChange={(n) => onChange("bloomRadius", n)} />
-      <ConfigSlider label="Bloom Threshold" value={v("bloomThreshold", 0.025)} min={0} max={1} step={0.025} onChange={(n) => onChange("bloomThreshold", n)} />
-      <ConfigSlider label="Fade Delay" value={v("fadeDelayMs", 1000)} min={100} max={5000} step={100} suffix="ms" onChange={(n) => onChange("fadeDelayMs", n)} />
-      <ConfigSlider label="Fade Duration" value={v("fadeDurationMs", 1500)} min={200} max={5000} step={100} suffix="ms" onChange={(n) => onChange("fadeDurationMs", n)} />
-    </div>
-  );
-}
-
 // ─── Component ───────────────────────────────────────────────────
 
 export function BackgroundPicker({
@@ -300,9 +232,7 @@ export function BackgroundPicker({
   const { startUpload } = useUploadThing("buildImageUpload");
 
   const isConfigurableActive =
-    currentBackground.backgroundImageUrl === "preset:faulty-terminal" ||
-    currentBackground.backgroundImageUrl === "preset:grainient" ||
-    currentBackground.backgroundImageUrl === "preset:war-smoke";
+    currentBackground.backgroundImageUrl === "preset:grainient";
 
   const bgConfig = (currentBackground.backgroundConfig ?? {}) as Record<string, unknown>;
 
@@ -421,19 +351,9 @@ export function BackgroundPicker({
       {isConfigurableActive && showConfig && (
         <div className="border-b border-zinc-800 px-4 py-3 max-h-[50vh] overflow-y-auto">
           <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
-            {currentBackground.backgroundImageUrl === "preset:faulty-terminal" && "Terminal Settings"}
-            {currentBackground.backgroundImageUrl === "preset:grainient" && "Grainient Settings"}
-            {currentBackground.backgroundImageUrl === "preset:war-smoke" && "War Smoke Settings"}
+            Grainient Settings
           </label>
-          {currentBackground.backgroundImageUrl === "preset:faulty-terminal" && (
-            <TerminalConfig config={bgConfig} onChange={handleConfigChange} />
-          )}
-          {currentBackground.backgroundImageUrl === "preset:grainient" && (
-            <GrainientConfig config={bgConfig} onChange={handleConfigChange} />
-          )}
-          {currentBackground.backgroundImageUrl === "preset:war-smoke" && (
-            <WarSmokeConfig config={bgConfig} onChange={handleConfigChange} />
-          )}
+          <GrainientConfig config={bgConfig} onChange={handleConfigChange} />
         </div>
       )}
 
@@ -533,9 +453,7 @@ export function BackgroundPicker({
                         });
                         // Auto-open config panel for configurable presets
                         if (
-                          preset.value === "preset:faulty-terminal" ||
-                          preset.value === "preset:grainient" ||
-                          preset.value === "preset:war-smoke"
+                          preset.value === "preset:grainient"
                         ) {
                           setShowConfig(true);
                         }
@@ -557,18 +475,8 @@ export function BackgroundPicker({
                             }}
                           />
                         )}
-                        {preset.value === "preset:faulty-terminal" && (
-                          <div className="absolute inset-0 overflow-hidden font-mono text-[4px] leading-[5px] text-green-500/70 p-0.5 select-none">
-                            01001 10110 01101 11010 00101 10011 01110 10001 11100 01011 10101 00110 11001 01010
-                          </div>
-                        )}
                         {preset.value === "preset:grainient" && (
                           <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/40 via-amber-600/30 to-purple-500/40" />
-                        )}
-                        {preset.value === "preset:war-smoke" && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-orange-500/40 blur-[6px]" />
-                          </div>
                         )}
                       </div>
                       <span className="absolute bottom-0 inset-x-0 text-[8px] text-zinc-300 text-center pb-0.5 bg-gradient-to-t from-black/60 to-transparent pt-2 opacity-0 group-hover:opacity-100 transition-opacity">

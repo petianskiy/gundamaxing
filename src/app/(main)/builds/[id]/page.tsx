@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getBuildById, getBuilds } from "@/lib/data/builds";
+import { getBuildById, getBuilds, getOtherBuildsByUser } from "@/lib/data/builds";
 import { getCommentsByBuildId } from "@/lib/data/comments";
 import { getUserLikeForBuild, getUserBookmarkForBuild, getUserCommentLikes } from "@/lib/data/likes";
 import { BuildPassport } from "./build-passport";
@@ -19,10 +19,11 @@ export default async function BuildPage({ params, searchParams }: Props) {
 
   const buildId = build.id;
 
-  const [comments, allBuilds, session] = await Promise.all([
+  const [comments, allBuilds, session, authorBuilds] = await Promise.all([
     getCommentsByBuildId(buildId),
     getBuilds(),
     auth(),
+    getOtherBuildsByUser(build.userId, buildId),
   ]);
 
   const currentUserId = session?.user?.id;
@@ -56,6 +57,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
         build={build}
         comments={comments}
         allBuilds={allBuilds}
+        authorBuilds={authorBuilds}
         currentUserId={currentUserId}
         isLiked={isLiked}
         isBookmarked={isBookmarked}

@@ -1,11 +1,7 @@
-export { FaultyTerminal } from "./faulty-terminal";
 export { Grainient } from "./grainient";
-export { WarSmoke } from "./war-smoke";
 
 export const WEBGL_PRESETS = [
-  "preset:faulty-terminal",
   "preset:grainient",
-  "preset:war-smoke",
 ] as const;
 
 export type WebGLPresetKey = (typeof WEBGL_PRESETS)[number];
