@@ -10,6 +10,7 @@ import { validateTiming } from "@/lib/security/timing";
 import { checkSpamContent } from "@/lib/security/spam-heuristics";
 import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
+import { containsProfanity } from "@/lib/security/profanity";
 
 const commentSchema = z.object({
   content: z.string().min(1).max(10000),
@@ -100,6 +101,10 @@ export async function createComment(formData: FormData) {
     }
 
     const { content, buildId, threadId, parentId } = parsed.data;
+
+    if (containsProfanity(content)) {
+      return { error: "Your comment contains inappropriate language." };
+    }
 
     // Reputation gating: block links for new low-rep users
     const accountAge = Date.now() - user.createdAt.getTime();

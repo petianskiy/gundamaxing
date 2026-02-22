@@ -17,6 +17,7 @@ import { forkBuild, deleteBuild } from "@/lib/actions/build";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
+import { ReportButton } from "@/components/ui/report-button";
 
 interface ActionsBarProps {
   buildId: string;
@@ -28,6 +29,7 @@ interface ActionsBarProps {
   isBookmarked: boolean;
   isOwner: boolean;
   currentUserId?: string;
+  ownerUserId?: string;
   onCreateShowcase?: () => void;
   isCreatingShowcase?: boolean;
 }
@@ -46,6 +48,7 @@ export function ActionsBar({
   isBookmarked,
   isOwner,
   currentUserId,
+  ownerUserId,
   onCreateShowcase,
   isCreatingShowcase,
 }: ActionsBarProps) {
@@ -180,17 +183,14 @@ export function ActionsBar({
         <span className="text-xs">{formatCount(bookmarks)}</span>
       </button>
 
-      {/* Fork */}
+      {/* Fork - Coming Soon */}
       <button
-        onClick={handleFork}
-        disabled={isForking || isOwner}
-        className={cn(
-          "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors",
-          "disabled:opacity-50 disabled:cursor-not-allowed"
-        )}
+        disabled
+        title="Coming soon!"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground opacity-50 cursor-not-allowed"
       >
-        <GitFork className={cn("h-4 w-4", isForking && "animate-spin")} />
-        <span className="hidden sm:inline">{isForking ? "Forking..." : t("builds.fork")}</span>
+        <GitFork className="h-4 w-4" />
+        <span className="hidden sm:inline">Coming Soon</span>
         <span className="text-xs">{formatCount(forkCount)}</span>
       </button>
 
@@ -202,6 +202,16 @@ export function ActionsBar({
         <Share2 className="h-4 w-4" />
         <span className="hidden sm:inline">{t("builds.share")}</span>
       </button>
+
+      {/* Report */}
+      {!isOwner && currentUserId && (
+        <ReportButton
+          targetType="build"
+          targetId={buildId}
+          ownerId={ownerUserId}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        />
+      )}
 
       {/* Owner actions */}
       {isOwner && (

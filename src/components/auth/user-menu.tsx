@@ -34,7 +34,8 @@ export function UserMenu() {
 
   if (!session?.user) return null;
 
-  const isAdmin = session.user.role === "ADMIN" || session.user.role === "MODERATOR";
+  const isAdmin = session.user.role === "ADMIN";
+  const isModerator = session.user.role === "MODERATOR";
 
   return (
     <div ref={menuRef} className="relative">
@@ -120,7 +121,17 @@ export function UserMenu() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gx-gold hover:bg-muted/50 transition-colors"
                 >
                   <Shield className="h-4 w-4" />
-                  {t("auth.adminPanel")}
+                  Admin Panel
+                </Link>
+              )}
+              {(isAdmin || isModerator) && (
+                <Link
+                  href="/mod"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-blue-400 hover:bg-muted/50 transition-colors"
+                >
+                  <Shield className="h-4 w-4" />
+                  Mod Panel
                 </Link>
               )}
             </div>

@@ -10,6 +10,7 @@ import { validateTiming } from "@/lib/security/timing";
 import { checkSpamContent } from "@/lib/security/spam-heuristics";
 import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
+import { containsProfanity } from "@/lib/security/profanity";
 
 const threadSchema = z.object({
   title: z.string().min(1).max(200),
@@ -104,6 +105,13 @@ export async function createThread(formData: FormData) {
     }
 
     const { title, content, categoryId } = parsed.data;
+
+    if (containsProfanity(title)) {
+      return { error: "Thread title contains inappropriate language." };
+    }
+    if (containsProfanity(content)) {
+      return { error: "Thread content contains inappropriate language." };
+    }
 
     // Reputation gating: block links for new low-rep users
     const accountAge = Date.now() - user.createdAt.getTime();

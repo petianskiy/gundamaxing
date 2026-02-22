@@ -41,6 +41,13 @@ export function containsProfanity(input: string): boolean {
   return BLOCKED_TERMS.some((term) => normalized.includes(term));
 }
 
+export function validateCleanContent(input: string, fieldName: string): string | null {
+  if (containsProfanity(input)) {
+    return `${fieldName} contains inappropriate language and is not allowed.`;
+  }
+  return null;
+}
+
 export function validateCleanUsername(input: string): string | null {
   if (containsProfanity(input)) {
     return "This username contains inappropriate language and is not allowed.";

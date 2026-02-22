@@ -1,16 +1,14 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Shield, Flag, Activity, Users, LayoutDashboard } from "lucide-react";
+import { Shield, Flag, LayoutDashboard } from "lucide-react";
 
-const adminNav = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/reports", label: "Reports", icon: Flag },
-  { href: "/admin/events", label: "Events", icon: Activity },
-  { href: "/admin/users", label: "Users", icon: Users },
+const modNav = [
+  { href: "/mod", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/mod/reports", label: "Reports", icon: Flag },
 ];
 
-export default async function AdminLayout({
+export default async function ModLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -21,22 +19,21 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  if (session.user.role !== "ADMIN") {
+  if (session.user.role !== "ADMIN" && session.user.role !== "MODERATOR") {
     redirect("/");
   }
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-border/50 bg-gx-surface p-4 flex flex-col gap-1 shrink-0">
         <div className="flex items-center gap-2 px-3 py-2 mb-4">
-          <Shield className="h-5 w-5 text-gx-gold" />
+          <Shield className="h-5 w-5 text-blue-500" />
           <span className="text-sm font-bold tracking-wider text-foreground">
-            ADMIN PANEL
+            MOD PANEL
           </span>
         </div>
 
-        {adminNav.map((item) => (
+        {modNav.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -57,7 +54,6 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 p-8 overflow-auto">{children}</main>
     </div>
   );

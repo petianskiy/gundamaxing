@@ -15,6 +15,7 @@ import {
   Youtube,
   Instagram,
   ExternalLink,
+  Ban,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 
@@ -32,6 +33,7 @@ interface ProfileUser {
   buildCount: number;
   likeCount: number;
   joinedAt: string;
+  isBanned?: boolean;
 }
 
 const tierRingColor: Record<string, string> = {
@@ -122,6 +124,12 @@ export function ProfileHeader({
                 showLabel
                 size="md"
               />
+              {user.isBanned && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-xs font-bold text-red-400 uppercase tracking-wider">
+                  <Ban className="h-3 w-3" />
+                  Suspended
+                </span>
+              )}
               {isOwner && (
                 <Link
                   href="/settings/profile"

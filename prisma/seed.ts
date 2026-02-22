@@ -423,6 +423,21 @@ async function main() {
     }
   }
 
+  // ── 8. Set @petianskiy as ADMIN (if exists) ─────────────────────
+  console.log("\nSetting up admin user...");
+  const adminUser = await prisma.user.findFirst({
+    where: { username: "petianskiy" },
+  });
+  if (adminUser) {
+    await prisma.user.update({
+      where: { id: adminUser.id },
+      data: { role: "ADMIN" },
+    });
+    console.log(`  + Set ${adminUser.username} as ADMIN`);
+  } else {
+    console.log("  - User 'petianskiy' not found (will be set to ADMIN on next login via OAuth)");
+  }
+
   console.log("\nSeed complete!");
   console.log(`  Users:      ${userIdMap.size}`);
   console.log(`  Badges:     ${allBadges.size}`);

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import type { BuildStatus } from "@prisma/client";
 import { showcaseLayoutSchema } from "@/lib/validations/showcase";
+import { validateCleanContent } from "@/lib/security/profanity";
 
 const buildSchema = z.object({
   title: z.string().min(1).max(200),
@@ -114,6 +115,17 @@ export async function createBuild(formData: FormData) {
     }
 
     const data = parsed.data;
+
+    // Profanity check
+    const titleCheck = validateCleanContent(data.title, "Title");
+    if (titleCheck) return { error: titleCheck };
+    const kitNameCheck = validateCleanContent(data.kitName, "Kit name");
+    if (kitNameCheck) return { error: kitNameCheck };
+    if (data.intentStatement) {
+      const intentCheck = validateCleanContent(data.intentStatement, "Intent statement");
+      if (intentCheck) return { error: intentCheck };
+    }
+
     const primaryIdx = data.primaryIndex ?? 0;
     const slug = await uniqueSlug(generateSlug(data.title));
 
@@ -229,6 +241,20 @@ export async function updateBuild(formData: FormData) {
     if (toolsRaw) updateData.tools = JSON.parse(toolsRaw);
     const intentStatement = formData.get("intentStatement") as string;
     if (intentStatement !== null) updateData.intentStatement = intentStatement || null;
+
+    // Profanity check
+    if (title) {
+      const titleCheck = validateCleanContent(title, "Title");
+      if (titleCheck) return { error: titleCheck };
+    }
+    if (kitName) {
+      const kitNameCheck = validateCleanContent(kitName, "Kit name");
+      if (kitNameCheck) return { error: kitNameCheck };
+    }
+    if (intentStatement) {
+      const intentCheck = validateCleanContent(intentStatement, "Intent statement");
+      if (intentCheck) return { error: intentCheck };
+    }
 
     const imageUrls: string[] | null = imageUrlsRaw ? JSON.parse(imageUrlsRaw) : null;
     const primaryIdx = primaryIndexRaw ? parseInt(primaryIndexRaw, 10) : 0;

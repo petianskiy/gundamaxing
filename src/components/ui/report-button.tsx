@@ -11,6 +11,7 @@ import { submitReport } from "@/lib/actions/report";
 interface ReportButtonProps {
   targetType: "build" | "comment" | "thread" | "user";
   targetId: string;
+  ownerId?: string;
   className?: string;
 }
 
@@ -22,32 +23,51 @@ const REASONS = [
   { value: "OTHER", label: "Other" },
 ] as const;
 
-export function ReportButton({ targetType, targetId, className }: ReportButtonProps) {
+export function ReportButton({ targetType, targetId, ownerId, className }: ReportButtonProps) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!session?.user) return null;
+  if (!session?.user) {
+    return (
+      <button
+        onClick={() => window.location.href = "/login"}
+        className={className || "flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors"}
+      >
+        <Flag className="h-3 w-3" />
+        Report
+      </button>
+    );
+  }
+
+  if (ownerId && session.user.id === ownerId) return null;
 
   async function handleSubmit() {
     if (!reason) return;
     setLoading(true);
+    setError(null);
     const formData = new FormData();
     formData.set("reason", reason);
     formData.set("description", description);
     formData.set("targetType", targetType);
     formData.set("targetId", targetId);
-    await submitReport(formData);
+    const result = await submitReport(formData);
     setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
     setSubmitted(true);
     setTimeout(() => {
       setOpen(false);
       setSubmitted(false);
       setReason("");
       setDescription("");
+      setError(null);
     }, 1500);
   }
 
@@ -68,6 +88,9 @@ export function ReportButton({ targetType, targetId, className }: ReportButtonPr
           </div>
         ) : (
           <div className="space-y-4">
+            {error && (
+              <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>
+            )}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Reason

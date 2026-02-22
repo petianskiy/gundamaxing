@@ -352,6 +352,7 @@ export function BuildPassport({
             isBookmarked={isBookmarked}
             isOwner={isOwner}
             currentUserId={currentUserId}
+            ownerUserId={build.userId}
             onCreateShowcase={() => {
               startShowcaseTransition(async () => {
                 try {

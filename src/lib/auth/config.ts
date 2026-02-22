@@ -217,12 +217,13 @@ const authConfig: NextAuthConfig = {
       if (user.id) {
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { riskScore: true, emailVerified: true },
+          select: { riskScore: true, emailVerified: true, banReason: true },
         });
 
-        // Block banned users (riskScore >= 100)
+        // Block banned users (riskScore >= 100) — redirect with reason
         if (dbUser && dbUser.riskScore >= 100) {
-          return false;
+          const reason = encodeURIComponent(dbUser.banReason || "Your account has been suspended.");
+          return `/login?error=AccountBanned&reason=${reason}`;
         }
 
         // Block unverified credential logins (OAuth users are not affected)

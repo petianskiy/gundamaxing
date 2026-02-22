@@ -212,6 +212,7 @@ export default async function ProfilePage({ params }: Props) {
             buildCount: user._count.builds,
             likeCount: user._count.likes,
             joinedAt: user.createdAt.toLocaleDateString(),
+            isBanned: user.riskScore >= 100,
           }}
           isOwner={isOwner}
         />

@@ -151,6 +151,11 @@ model User {
   level            Int              @default(1)
   riskScore        Int              @default(0)
 
+  // Ban info
+  banReason        String?          @db.Text
+  bannedAt         DateTime?
+  bannedBy         String?
+
   // Registration tracking
   registrationIp   String?
   onboardingStep   Int              @default(0)
@@ -177,6 +182,7 @@ model User {
   eras             BuildEra[]
   reactions        Reaction[]
   brushPresets     UserBrushPreset[]
+  notifications    Notification[]
 
   @@index([email])
   @@index([reputation])
@@ -511,6 +517,31 @@ model ModerationAction {
 
   @@index([targetUserId])
   @@index([moderatorId])
+  @@index([createdAt])
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────
+
+enum NotificationType {
+  WARNING
+  BAN
+  UNBAN
+  CONTENT_DELETED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  actionUrl String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
   @@index([createdAt])
 }
 

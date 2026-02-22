@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Ban } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   OAuthCallback: "Sign-in was interrupted. Please try again.",
   Callback: "An error occurred during sign-in. Please try again.",
   AccessDenied: "Access denied.",
+  AccountBanned: "Your account has been suspended.",
   EmailNotVerified:
     "Your email is not verified. Please check your inbox for a verification link.",
 };
@@ -45,6 +46,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(
     () => getOAuthError(searchParams.get("error"))
   );
+  const banReason = searchParams.get("reason");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +61,14 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid credentials. Check your email/username and password.");
+        // Check if the URL indicates a ban
+        if (result.url?.includes("error=AccountBanned")) {
+          const url = new URL(result.url);
+          const reason = url.searchParams.get("reason");
+          setError(reason ? decodeURIComponent(reason) : "Your account has been suspended.");
+        } else {
+          setError("Invalid credentials. Check your email/username and password.");
+        }
       } else {
         // Refresh session to get username for redirect
         const session = await updateSession();
@@ -95,16 +104,31 @@ function LoginForm() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+            className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3"
           >
-            {error}
-            {searchParams.get("error") === "EmailNotVerified" && (
-              <Link
-                href="/verify-email"
-                className="mt-2 block text-xs text-red-300 underline hover:text-red-200"
-              >
-                Resend verification email
-              </Link>
+            {(searchParams.get("error") === "AccountBanned" || error.includes("suspended")) ? (
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-semibold mb-1">
+                  <Ban className="h-4 w-4" />
+                  Account Suspended
+                </div>
+                <p className="text-sm text-red-300">{banReason ? decodeURIComponent(banReason) : error}</p>
+                <p className="text-xs text-red-400/60 mt-2">
+                  If you believe this is a mistake, contact support.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-red-400">{error}</p>
+                {searchParams.get("error") === "EmailNotVerified" && (
+                  <Link
+                    href="/verify-email"
+                    className="mt-2 block text-xs text-red-300 underline hover:text-red-200"
+                  >
+                    Resend verification email
+                  </Link>
+                )}
+              </>
             )}
           </motion.div>
         )}

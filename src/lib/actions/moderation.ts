@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logEvent } from "@/lib/data/events";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * Helper to determine what kind of content a report targets
@@ -93,10 +94,50 @@ export async function resolveReport(
             targetId: target?.id,
           } as Record<string, unknown>,
         });
+
+        // Create notification for warned user
+        if (target) {
+          let targetUserId: string | null = null;
+          if (target.type === "user") {
+            targetUserId = target.id;
+          } else if (target.type === "build") {
+            const build = await db.build.findUnique({ where: { id: target.id }, select: { userId: true } });
+            targetUserId = build?.userId ?? null;
+          } else if (target.type === "comment") {
+            const comment = await db.comment.findUnique({ where: { id: target.id }, select: { userId: true } });
+            targetUserId = comment?.userId ?? null;
+          } else if (target.type === "thread") {
+            const thread = await db.thread.findUnique({ where: { id: target.id }, select: { userId: true } });
+            targetUserId = thread?.userId ?? null;
+          }
+          if (targetUserId) {
+            await createNotification({
+              userId: targetUserId,
+              type: "WARNING",
+              title: "You received a warning",
+              message: `A moderator issued a warning regarding your ${target.type}: ${report.reason.toLowerCase().replace("_", " ")}.`,
+            });
+          }
+        }
         break;
       }
 
       case "delete": {
+        // Look up content owner before deletion
+        let contentOwnerId: string | null = null;
+        if (target) {
+          if (target.type === "build") {
+            const build = await db.build.findUnique({ where: { id: target.id }, select: { userId: true } });
+            contentOwnerId = build?.userId ?? null;
+          } else if (target.type === "comment") {
+            const comment = await db.comment.findUnique({ where: { id: target.id }, select: { userId: true } });
+            contentOwnerId = comment?.userId ?? null;
+          } else if (target.type === "thread") {
+            const thread = await db.thread.findUnique({ where: { id: target.id }, select: { userId: true } });
+            contentOwnerId = thread?.userId ?? null;
+          }
+        }
+
         // Delete the target content based on type
         if (target) {
           switch (target.type) {
@@ -130,6 +171,15 @@ export async function resolveReport(
             targetId: target?.id,
           } as Record<string, unknown>,
         });
+
+        if (contentOwnerId) {
+          await createNotification({
+            userId: contentOwnerId,
+            type: "CONTENT_DELETED",
+            title: "Your content was removed",
+            message: `A moderator removed your ${target?.type || "content"} for violating community guidelines: ${report.reason.toLowerCase().replace("_", " ")}.`,
+          });
+        }
         break;
       }
 
@@ -169,7 +219,19 @@ export async function resolveReport(
         // (Role enum doesn't include BANNED — use riskScore + session deletion)
         await db.user.update({
           where: { id: targetUserId },
-          data: { riskScore: 100 },
+          data: {
+            riskScore: 100,
+            banReason: `Violation: ${report.reason.toLowerCase().replace("_", " ")}. ${report.description || ""}`.trim(),
+            bannedAt: new Date(),
+            bannedBy: moderator.id,
+          },
+        });
+
+        await createNotification({
+          userId: targetUserId,
+          type: "BAN",
+          title: "Account suspended",
+          message: `Your account has been suspended: ${report.reason.toLowerCase().replace("_", " ")}. ${report.description || ""}`.trim(),
         });
 
         // Delete all their sessions to force logout

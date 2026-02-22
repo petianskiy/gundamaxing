@@ -39,6 +39,45 @@ export async function submitReport(formData: FormData) {
 
     const { reason, description, targetType, targetId } = parsed.data;
 
+    // Self-report prevention
+    let ownerId: string | null = null;
+    switch (targetType) {
+      case "build": {
+        const build = await db.build.findUnique({ where: { id: targetId }, select: { userId: true } });
+        ownerId = build?.userId ?? null;
+        break;
+      }
+      case "comment": {
+        const comment = await db.comment.findUnique({ where: { id: targetId }, select: { userId: true } });
+        ownerId = comment?.userId ?? null;
+        break;
+      }
+      case "thread": {
+        const thread = await db.thread.findUnique({ where: { id: targetId }, select: { userId: true } });
+        ownerId = thread?.userId ?? null;
+        break;
+      }
+      case "user":
+        ownerId = targetId;
+        break;
+    }
+    if (ownerId === session.user.id) {
+      return { error: "You cannot report your own content." };
+    }
+
+    // Duplicate report prevention
+    const targetField = targetType === "user" ? "reportedUserId" : `${targetType}Id`;
+    const existing = await db.report.findFirst({
+      where: {
+        reporterId: session.user.id,
+        [targetField]: targetId,
+        status: { in: ["PENDING", "REVIEWING"] },
+      },
+    });
+    if (existing) {
+      return { error: "You have already reported this content." };
+    }
+
     // Map targetType + targetId to the correct Report fields
     const reportData: {
       reason: typeof reason;

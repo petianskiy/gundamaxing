@@ -70,10 +70,27 @@ async function toggleBan(formData: FormData) {
   if (!session?.user || session.user.role !== "ADMIN") redirect("/");
   const userId = formData.get("userId") as string;
   const action = formData.get("action") as "BAN" | "UNBAN";
-  await db.user.update({
-    where: { id: userId },
-    data: { riskScore: action === "BAN" ? 100 : 0 },
-  });
+  if (action === "BAN") {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        riskScore: 100,
+        banReason: (formData.get("reason") as string) || "Banned by administrator",
+        bannedAt: new Date(),
+        bannedBy: session.user.id,
+      },
+    });
+  } else {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        riskScore: 0,
+        banReason: null,
+        bannedAt: null,
+        bannedBy: null,
+      },
+    });
+  }
   await db.moderationAction.create({
     data: {
       type: action,
@@ -403,13 +420,21 @@ export default async function UserDetailPage({
           </form>
 
           {/* Ban / Unban */}
-          <form action={toggleBan}>
+          <form action={toggleBan} className="space-y-2">
             <input type="hidden" name="userId" value={user.id} />
             <input
               type="hidden"
               name="action"
               value={isBanned ? "UNBAN" : "BAN"}
             />
+            {!isBanned && (
+              <textarea
+                name="reason"
+                placeholder="Reason for ban (visible to user)"
+                className="w-full px-3 py-2 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground resize-none"
+                rows={2}
+              />
+            )}
             <button
               type="submit"
               className={`w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${

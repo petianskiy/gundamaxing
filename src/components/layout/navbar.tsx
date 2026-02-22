@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/i18n/context";
 import { LanguageToggle } from "@/components/ui/language-toggle";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { UserMenu } from "@/components/auth/user-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 const baseNavLinks = [
   { href: "/builds", labelKey: "nav.builds", icon: Grid3X3, authOnly: false },
@@ -84,6 +85,7 @@ export function Navbar() {
           {/* Right side: Language toggle + Auth + Mobile toggle */}
           <div className="flex items-center gap-2">
             <LanguageToggle />
+            {status !== "loading" && session && <NotificationBell />}
             {status !== "loading" && (
               session ? <UserMenu /> : <SignInButton />
             )}
