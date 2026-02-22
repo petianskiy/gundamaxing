@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/context";
 import { updateProfile } from "@/lib/actions/profile";
+import { changeUsername } from "@/lib/actions/settings";
 import { useUploadThing } from "@/lib/upload/uploadthing";
-import { Camera, Upload, X, Loader2 } from "lucide-react";
+import { Camera, Upload, X, Loader2, AlertTriangle } from "lucide-react";
 
 interface ProfileFormData {
   displayName: string;
@@ -29,11 +30,36 @@ interface ProfileFormData {
   };
 }
 
-export function ProfileSettingsForm({ initialData }: { initialData: ProfileFormData }) {
+const USERNAME_COOLDOWN_DAYS = 90;
+
+export function ProfileSettingsForm({
+  initialData,
+  lastUsernameChange,
+}: {
+  initialData: ProfileFormData;
+  lastUsernameChange: string | null;
+}) {
   const { t } = useTranslation();
   const { update: updateSession } = useSession();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(initialData);
+
+  // Username change state
+  const [newUsername, setNewUsername] = useState(initialData.username);
+  const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+
+  const canChangeUsername = (() => {
+    if (!lastUsernameChange) return true;
+    const daysSince = Math.floor(
+      (Date.now() - new Date(lastUsernameChange).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysSince >= USERNAME_COOLDOWN_DAYS;
+  })();
+
+  const nextChangeDate = lastUsernameChange
+    ? new Date(new Date(lastUsernameChange).getTime() + USERNAME_COOLDOWN_DAYS * 24 * 60 * 60 * 1000)
+    : null;
 
   // Upload state
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -248,13 +274,56 @@ export function ProfileSettingsForm({ initialData }: { initialData: ProfileFormD
           </div>
         </div>
 
-        {/* Read-only fields */}
-        <Input
-          label={t("settings.profile.username")}
-          value={form.username}
-          disabled
-          hint={t("settings.profile.usernameReadonly")}
-        />
+        {/* Username */}
+        <div className="space-y-2">
+          <Input
+            label={t("settings.profile.username")}
+            value={newUsername}
+            onChange={(e) => {
+              setNewUsername(e.target.value);
+              setUsernameError("");
+            }}
+            disabled={!canChangeUsername || usernameLoading}
+            maxLength={24}
+            hint={
+              canChangeUsername
+                ? "You can change your username once every 3 months. Choose carefully."
+                : `You can change your username again on ${nextChangeDate?.toLocaleDateString()}.`
+            }
+          />
+          {usernameError && (
+            <p className="text-xs text-red-400">{usernameError}</p>
+          )}
+          {canChangeUsername && newUsername !== form.username && (
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-1.5 text-amber-400 text-xs shrink-0 mt-0.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>This will change your profile URL.</span>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={usernameLoading}
+                onClick={async () => {
+                  setUsernameLoading(true);
+                  setUsernameError("");
+                  const result = await changeUsername({ username: newUsername });
+                  setUsernameLoading(false);
+                  if (result.error) {
+                    setUsernameError(result.error);
+                  } else {
+                    setForm((prev) => ({ ...prev, username: newUsername }));
+                    toast.success("Username changed successfully.");
+                    await updateSession();
+                  }
+                }}
+              >
+                {usernameLoading ? "Saving..." : "Change Username"}
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Editable fields */}
         <Input

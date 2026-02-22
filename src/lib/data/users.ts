@@ -66,6 +66,7 @@ export const getUserSettingsData = cache(async (userId: string) => {
       passwordHash: true, // to check if user has password set
       role: true,
       verificationTier: true,
+      lastUsernameChange: true,
       createdAt: true,
     },
   });

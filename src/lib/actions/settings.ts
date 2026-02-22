@@ -3,7 +3,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/security/password";
-import { builderIdentitySchema, privacySettingsSchema, changePasswordSchema, setInitialPasswordSchema, deleteAccountSchema } from "@/lib/validations/settings";
+import { builderIdentitySchema, privacySettingsSchema, changePasswordSchema, setInitialPasswordSchema, deleteAccountSchema, changeUsernameSchema } from "@/lib/validations/settings";
+import { containsProfanity } from "@/lib/security/profanity";
+import { revalidatePath } from "next/cache";
 
 
 export async function updateBuilderIdentity(data: unknown) {
@@ -258,6 +260,86 @@ export async function deleteBuild(buildId: string) {
     return { success: true };
   } catch (error) {
     console.error("deleteBuild error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+const USERNAME_COOLDOWN_DAYS = 90;
+
+export async function changeUsername(data: unknown) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const parsed = changeUsernameSchema.safeParse(data);
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message ?? "Invalid data.";
+      return { error: firstError };
+    }
+
+    const newUsername = parsed.data.username;
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { username: true, lastUsernameChange: true },
+    });
+
+    if (!user) {
+      return { error: "User not found." };
+    }
+
+    // Same username — no change needed
+    if (user.username === newUsername) {
+      return { success: true };
+    }
+
+    // Check cooldown
+    if (user.lastUsernameChange) {
+      const daysSince = Math.floor(
+        (Date.now() - user.lastUsernameChange.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysSince < USERNAME_COOLDOWN_DAYS) {
+        const daysLeft = USERNAME_COOLDOWN_DAYS - daysSince;
+        return {
+          error: `You can change your username again in ${daysLeft} day${daysLeft === 1 ? "" : "s"}.`,
+        };
+      }
+    }
+
+    // Profanity check
+    if (containsProfanity(newUsername)) {
+      return { error: "That username is not allowed." };
+    }
+
+    // Uniqueness check
+    const existing = await db.user.findUnique({
+      where: { username: newUsername },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return { error: "That username is already taken." };
+    }
+
+    const oldUsername = user.username;
+
+    await db.user.update({
+      where: { id: session.user.id },
+      data: {
+        username: newUsername,
+        lastUsernameChange: new Date(),
+      },
+    });
+
+    revalidatePath(`/u/${oldUsername}`);
+    revalidatePath(`/u/${newUsername}`);
+    revalidatePath("/settings/profile");
+
+    return { success: true };
+  } catch (error) {
+    console.error("changeUsername error:", error);
     return { error: "An unexpected error occurred." };
   }
 }

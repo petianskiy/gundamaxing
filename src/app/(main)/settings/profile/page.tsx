@@ -30,6 +30,7 @@ export default async function ProfileSettingsPage() {
           tiktok: socialLinks.tiktok ?? "",
         },
       }}
+      lastUsernameChange={user.lastUsernameChange?.toISOString() ?? null}
     />
   );
 }

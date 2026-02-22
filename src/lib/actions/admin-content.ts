@@ -31,6 +31,16 @@ export async function adminDeleteBuild(buildId: string) {
       return { error: "Build not found." };
     }
 
+    await db.moderationAction.create({
+      data: {
+        type: "DELETE_CONTENT",
+        reason: `Deleted build: "${build.title}"`,
+        targetUserId: build.userId,
+        targetBuildId: buildId,
+        moderatorId: session.user.id!,
+      },
+    });
+
     await db.build.delete({ where: { id: buildId } });
 
     await logEvent("CONTENT_MODERATED", {
@@ -83,6 +93,16 @@ export async function adminDeleteComment(commentId: string) {
     if (!comment) {
       return { error: "Comment not found." };
     }
+
+    await db.moderationAction.create({
+      data: {
+        type: "DELETE_CONTENT",
+        reason: `Deleted comment: "${comment.content.slice(0, 100)}"`,
+        targetUserId: comment.userId,
+        targetCommentId: commentId,
+        moderatorId: session.user.id!,
+      },
+    });
 
     await db.comment.delete({ where: { id: commentId } });
 
@@ -137,6 +157,16 @@ export async function adminDeleteThread(threadId: string) {
     if (!thread) {
       return { error: "Thread not found." };
     }
+
+    await db.moderationAction.create({
+      data: {
+        type: "DELETE_CONTENT",
+        reason: `Deleted thread: "${thread.title}"`,
+        targetUserId: thread.userId,
+        targetThreadId: threadId,
+        moderatorId: session.user.id!,
+      },
+    });
 
     await db.thread.delete({ where: { id: threadId } });
 

@@ -119,6 +119,7 @@ model User {
   banner           String?
   bio              String?          @db.Text
   accentColor      String?          @default("#dc2626")
+  lastUsernameChange DateTime?
   role             Role             @default(USER)
   verificationTier VerificationTier @default(UNVERIFIED)
 

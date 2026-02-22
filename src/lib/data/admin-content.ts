@@ -158,3 +158,19 @@ export const getTotalThreadCount = cache(
     return db.thread.count({ where });
   }
 );
+
+export const getDeletionHistory = cache(
+  async ({ page = 1, pageSize = 20 }: { page: number; pageSize: number }) => {
+    return db.moderationAction.findMany({
+      where: { type: "DELETE_CONTENT" },
+      include: { moderator: { select: { username: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+  }
+);
+
+export const getDeletionHistoryCount = cache(async () => {
+  return db.moderationAction.count({ where: { type: "DELETE_CONTENT" } });
+});

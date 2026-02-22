@@ -47,8 +47,21 @@ export const deleteAccountSchema = z.object({
   confirmation: z.literal("DELETE", { message: 'Type "DELETE" to confirm' }),
 });
 
+export const changeUsernameSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(24, "Username must be at most 24 characters")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Only letters, numbers, hyphens, and underscores allowed"
+    )
+    .transform((v) => v.toLowerCase()),
+});
+
 export type BuilderIdentityInput = z.infer<typeof builderIdentitySchema>;
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type SetInitialPasswordInput = z.infer<typeof setInitialPasswordSchema>;
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+export type ChangeUsernameInput = z.infer<typeof changeUsernameSchema>;

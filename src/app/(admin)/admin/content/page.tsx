@@ -5,13 +5,16 @@ import {
   getTotalBuildCount,
   getTotalCommentCount,
   getTotalThreadCount,
+  getDeletionHistory,
+  getDeletionHistoryCount,
 } from "@/lib/data/admin-content";
 import {
   adminDeleteBuild,
   adminDeleteComment,
   adminDeleteThread,
 } from "@/lib/actions/admin-content";
-import { FileText, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { DeleteConfirmButton } from "./components/delete-confirm-button";
+import { FileText, Search, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import Link from "next/link";
 
 const statusBadge: Record<string, string> = {
@@ -49,7 +52,7 @@ export default async function AdminContentPage({
 
       {/* Tabs */}
       <div className="flex items-center gap-2">
-        {(["builds", "comments", "threads"] as const).map((t) => (
+        {(["builds", "comments", "threads", "history"] as const).map((t) => (
           <Link
             key={t}
             href={`/admin/content?tab=${t}`}
@@ -106,6 +109,9 @@ export default async function AdminContentPage({
       )}
       {tab === "threads" && (
         <ThreadsTable search={search} page={page} pageSize={pageSize} />
+      )}
+      {tab === "history" && (
+        <DeletionHistoryTable page={page} pageSize={pageSize} />
       )}
     </div>
   );
@@ -187,15 +193,10 @@ async function BuildsTable({
                     {build.createdAt.toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <form action={async () => { "use server"; await adminDeleteBuild(build.id); }}>
-                      <button
-                        type="submit"
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
-                        title="Delete build"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </form>
+                    <DeleteConfirmButton
+                      action={async () => { "use server"; await adminDeleteBuild(build.id); }}
+                      itemType="build"
+                    />
                   </td>
                 </tr>
               ))}
@@ -279,15 +280,10 @@ async function CommentsTable({
                     {comment.createdAt.toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <form action={async () => { "use server"; await adminDeleteComment(comment.id); }}>
-                      <button
-                        type="submit"
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
-                        title="Delete comment"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </form>
+                    <DeleteConfirmButton
+                      action={async () => { "use server"; await adminDeleteComment(comment.id); }}
+                      itemType="comment"
+                    />
                   </td>
                 </tr>
               ))}
@@ -376,15 +372,10 @@ async function ThreadsTable({
                     {thread.createdAt.toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <form action={async () => { "use server"; await adminDeleteThread(thread.id); }}>
-                      <button
-                        type="submit"
-                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
-                        title="Delete thread"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </form>
+                    <DeleteConfirmButton
+                      action={async () => { "use server"; await adminDeleteThread(thread.id); }}
+                      itemType="thread"
+                    />
                   </td>
                 </tr>
               ))}
@@ -401,6 +392,85 @@ async function ThreadsTable({
       </div>
 
       <Pagination tab="threads" search={search} page={page} totalPages={totalPages} />
+    </>
+  );
+}
+
+async function DeletionHistoryTable({
+  page,
+  pageSize,
+}: {
+  page: number;
+  pageSize: number;
+}) {
+  const [history, total] = await Promise.all([
+    getDeletionHistory({ page, pageSize }),
+    getDeletionHistoryCount(),
+  ]);
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  function getContentType(entry: (typeof history)[0]) {
+    if (entry.targetBuildId) return "Build";
+    if (entry.targetCommentId) return "Comment";
+    if (entry.targetThreadId) return "Thread";
+    return "Unknown";
+  }
+
+  return (
+    <>
+      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/50 bg-muted/30">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Content
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Deleted By
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Deleted At
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/30">
+              {history.map((entry) => (
+                <tr key={entry.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1 text-xs">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      {getContentType(entry)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-foreground max-w-[400px] truncate">
+                    {entry.reason ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {entry.moderator.username}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {entry.createdAt.toLocaleDateString()} {entry.createdAt.toLocaleTimeString()}
+                  </td>
+                </tr>
+              ))}
+              {history.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                    No deletion history.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Pagination tab="history" search="" page={page} totalPages={totalPages} />
     </>
   );
 }
