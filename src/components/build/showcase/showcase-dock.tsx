@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   motion,
   useMotionValue,
@@ -87,6 +88,8 @@ export function ShowcaseDock({
 }: ShowcaseDockProps) {
   const mouseX = useMotionValue(Infinity);
   const [tooltip, setTooltip] = useState<DockTooltipState | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const imagesAtLimit = imageCount >= maxImages;
   const videosAtLimit = videoCount >= maxVideos;
@@ -164,8 +167,8 @@ export function ShowcaseDock({
         ))}
       </motion.div>
 
-      {/* Fixed-position tooltip (escapes overflow clipping) */}
-      {tooltip && (
+      {/* Tooltip rendered via portal to escape transform-based containing block */}
+      {mounted && tooltip && createPortal(
         <div
           className="fixed z-[601] px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-[10px] text-white whitespace-nowrap pointer-events-none"
           style={{
@@ -175,7 +178,8 @@ export function ShowcaseDock({
           }}
         >
           {tooltip.label}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

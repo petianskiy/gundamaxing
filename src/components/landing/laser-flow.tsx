@@ -9,7 +9,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-// @ts-expect-error -- three@0.167 has no bundled types; install @types/three to resolve
 import * as THREE from 'three';
 
 // ---------------------------------------------------------------------------

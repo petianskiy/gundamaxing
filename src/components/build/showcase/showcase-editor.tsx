@@ -18,7 +18,7 @@ import { updateShowcaseLayout } from "@/lib/actions/build";
 import { useUploadThing } from "@/lib/upload/uploadthing";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
-import { isWebGLPreset } from "./backgrounds";
+import { isConfigurablePreset } from "./backgrounds";
 import type {
   Build,
   BuildImage,
@@ -43,23 +43,18 @@ const Grainient = dynamic(
   { ssr: false },
 );
 
+const WarSmoke = dynamic(
+  () => import("./backgrounds/war-smoke").then((m) => m.WarSmoke),
+  { ssr: false },
+);
+
 // ─── Preset Background Styles ───────────────────────────────────
 
 const PRESET_STYLES: Record<string, React.CSSProperties> = {
-  "preset:noise": {
-    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E")`,
-    backgroundSize: "200px 200px",
-  },
   "preset:grid": {
     backgroundImage:
       "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
     backgroundSize: "40px 40px",
-  },
-  "preset:gradient-dark": {
-    background: "linear-gradient(135deg, #0f0f12 0%, #1a1a2e 50%, #0f0f12 100%)",
-  },
-  "preset:gradient-red": {
-    background: "linear-gradient(135deg, #0f0f12 0%, #3b0d0d 50%, #0f0f12 100%)",
   },
 };
 
@@ -874,8 +869,37 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         </div>
       )}
 
+      {bgUrl === "preset:war-smoke" && (
+        <div className="absolute inset-0 z-0" style={{ opacity: bgOpacity, filter: bgBlurStyle }}>
+          <WarSmoke
+            color={(bgConfig.color as string) ?? "#ff8647"}
+            brightness={(bgConfig.brightness as number) ?? 2}
+            edgeIntensity={(bgConfig.edgeIntensity as number) ?? 0}
+            trailLength={(bgConfig.trailLength as number) ?? 50}
+            inertia={(bgConfig.inertia as number) ?? 0.5}
+            grainIntensity={(bgConfig.grainIntensity as number) ?? 0.05}
+            bloomStrength={(bgConfig.bloomStrength as number) ?? 0.1}
+            bloomRadius={(bgConfig.bloomRadius as number) ?? 1}
+            bloomThreshold={(bgConfig.bloomThreshold as number) ?? 0.025}
+            fadeDelayMs={(bgConfig.fadeDelayMs as number) ?? 1000}
+            fadeDurationMs={(bgConfig.fadeDurationMs as number) ?? 1500}
+          />
+        </div>
+      )}
+
+      {/* Configurable gradient */}
+      {bgUrl === "preset:gradient" && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            background: `linear-gradient(${(bgConfig.angle as number) ?? 135}deg, ${(bgConfig.color1 as string) ?? "#0f0f12"} 0%, ${(bgConfig.color2 as string) ?? "#1a1a2e"} 50%, ${(bgConfig.color1 as string) ?? "#0f0f12"} 100%)`,
+            opacity: bgOpacity,
+          }}
+        />
+      )}
+
       {/* CSS preset backgrounds */}
-      {bgUrl?.startsWith("preset:") && !isWebGLPreset(bgUrl) && (
+      {bgUrl?.startsWith("preset:") && !isConfigurablePreset(bgUrl) && (
         <div
           className="absolute inset-0 z-0"
           style={{

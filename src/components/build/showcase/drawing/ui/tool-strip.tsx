@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Pen,
   Eraser,
@@ -89,6 +90,8 @@ export function ToolStrip({
   onRedo,
 }: ToolStripProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const showTooltip = useCallback(
     (e: React.MouseEvent, toolId: string, label: string, shortcut: string) => {
@@ -172,8 +175,11 @@ export function ToolStrip({
           <Redo className="w-5 h-5" />
         </button>
 
-        {/* Desktop tooltip */}
-        {tooltip && <ToolTooltip tooltip={tooltip} position="right" />}
+        {/* Desktop tooltip via portal to escape transform containing block */}
+        {mounted && tooltip && createPortal(
+          <ToolTooltip tooltip={tooltip} position="right" />,
+          document.body,
+        )}
       </div>
 
       {/* Mobile: Horizontal row */}
@@ -235,8 +241,11 @@ export function ToolStrip({
           </button>
         </div>
 
-        {/* Mobile tooltip */}
-        {tooltip && <ToolTooltip tooltip={tooltip} position="top" />}
+        {/* Mobile tooltip via portal to escape transform containing block */}
+        {mounted && tooltip && createPortal(
+          <ToolTooltip tooltip={tooltip} position="top" />,
+          document.body,
+        )}
       </div>
     </>
   );
