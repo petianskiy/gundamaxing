@@ -154,14 +154,14 @@ export default async function UserDetailPage({
       where: { userId: id },
       take: 20,
       orderBy: { createdAt: "desc" },
-    }),
+    }).catch(() => [] as Awaited<ReturnType<typeof db.eventLog.findMany>>),
     db.moderationAction.findMany({
       where: { targetUserId: id },
       orderBy: { createdAt: "desc" },
       include: {
         moderator: { select: { username: true } },
       },
-    }),
+    }).catch(() => [] as any[]),
     getUserCustomRoles(id),
     getAllCustomRoles(),
   ]);
