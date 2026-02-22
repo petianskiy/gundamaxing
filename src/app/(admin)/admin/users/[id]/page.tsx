@@ -131,29 +131,21 @@ export default async function UserDetailPage({
 }) {
   const { id } = await params;
 
-  let user;
-  try {
-    user = await db.user.findUnique({
-      where: { id },
-      include: {
-        badges: { include: { badge: true } },
-        _count: {
-          select: {
-            builds: true,
-            comments: true,
-            likes: true,
-            reportsFiled: true,
-            reportsReceived: true,
-          },
+  const user = await db.user.findUnique({
+    where: { id },
+    include: {
+      badges: { include: { badge: true } },
+      _count: {
+        select: {
+          builds: true,
+          comments: true,
+          likes: true,
+          reportsFiled: true,
+          reportsReceived: true,
         },
       },
-    });
-  } catch (err) {
-    console.error("[admin/users/[id]] User query failed:", err);
-    throw new Error(
-      `Failed to load user ${id}: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
+    },
+  });
 
   if (!user) notFound();
 
@@ -501,10 +493,6 @@ export default async function UserDetailPage({
             <button
               type="submit"
               className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20 transition-colors"
-              onClick={(e) => {
-                // Note: onClick won't work in server components
-                // You'd need a client component wrapper for confirmation
-              }}
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete Account
