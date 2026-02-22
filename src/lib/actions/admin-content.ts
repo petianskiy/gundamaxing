@@ -24,7 +24,7 @@ export async function adminDeleteBuild(buildId: string) {
 
     const build = await db.build.findUnique({
       where: { id: buildId },
-      select: { id: true, title: true, userId: true },
+      select: { id: true, title: true, slug: true, userId: true },
     });
 
     if (!build) {
@@ -50,6 +50,8 @@ export async function adminDeleteBuild(buildId: string) {
     });
 
     revalidatePath("/admin/content");
+    revalidatePath("/builds");
+    revalidatePath(`/builds/${build.slug || buildId}`);
     return { success: true };
   } catch (error) {
     console.error("[adminDeleteBuild]", error);
@@ -75,7 +77,7 @@ export async function adminDeleteComment(commentId: string) {
 
     const comment = await db.comment.findUnique({
       where: { id: commentId },
-      select: { id: true, content: true, userId: true },
+      select: { id: true, content: true, userId: true, build: { select: { slug: true, id: true } } },
     });
 
     if (!comment) {
@@ -101,6 +103,9 @@ export async function adminDeleteComment(commentId: string) {
     });
 
     revalidatePath("/admin/content");
+    if (comment.build) {
+      revalidatePath(`/builds/${comment.build.slug || comment.build.id}`);
+    }
     return { success: true };
   } catch (error) {
     console.error("[adminDeleteComment]", error);
@@ -152,6 +157,8 @@ export async function adminDeleteThread(threadId: string) {
     });
 
     revalidatePath("/admin/content");
+    revalidatePath("/forum");
+    revalidatePath(`/thread/${threadId}`);
     return { success: true };
   } catch (error) {
     console.error("[adminDeleteThread]", error);

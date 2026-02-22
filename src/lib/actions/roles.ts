@@ -278,9 +278,18 @@ export async function assignRoleToUser(formData: FormData) {
       } as Record<string, unknown>,
     });
 
+    // Revalidate the user's public profile so the new role badge shows
+    const targetUser = await db.user.findUnique({
+      where: { id: parsed.data.userId },
+      select: { username: true },
+    });
+
     revalidatePath("/admin/roles");
     revalidatePath(`/admin/roles/${parsed.data.customRoleId}`);
     revalidatePath(`/admin/users/${parsed.data.userId}`);
+    if (targetUser?.username) {
+      revalidatePath(`/u/${targetUser.username}`);
+    }
     return { success: true };
   } catch (error) {
     console.error("assignRoleToUser error:", error);
@@ -329,9 +338,18 @@ export async function removeRoleFromUser(
       } as Record<string, unknown>,
     });
 
+    // Revalidate the user's public profile so the role badge is removed
+    const targetUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+
     revalidatePath("/admin/roles");
     revalidatePath(`/admin/roles/${customRoleId}`);
     revalidatePath(`/admin/users/${userId}`);
+    if (targetUser?.username) {
+      revalidatePath(`/u/${targetUser.username}`);
+    }
     return { success: true };
   } catch (error) {
     console.error("removeRoleFromUser error:", error);
