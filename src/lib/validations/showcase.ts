@@ -113,6 +113,7 @@ export const showcaseLayoutSchema = z.object({
     backgroundBlur: z.number().min(0).max(100),
     aspectRatio: z.string().optional().default("4 / 5"),
     backgroundConfig: z.record(z.string(), z.unknown()).nullable().optional(),
+    overlayOpacity: z.number().min(0).max(1).optional().default(0.2),
   }),
   elements: z.array(showcaseElement).max(100),
   pages: z.array(showcasePageSchema).max(20).optional(),
@@ -178,6 +179,7 @@ export function migrateShowcaseLayout(layout: unknown): ShowcaseLayout {
     canvas: {
       ...data.canvas,
       aspectRatio: data.canvas.aspectRatio || "4 / 5",
+      overlayOpacity: data.canvas.overlayOpacity ?? 0.2,
     },
     elements: migratedElements,
     pages: migratedPages,

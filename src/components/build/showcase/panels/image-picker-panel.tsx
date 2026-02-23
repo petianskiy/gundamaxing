@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { X, Upload, Plus, Trash2, Loader2 } from "lucide-react";
+import { X, Upload, Plus, Trash2, Loader2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useRemoveBackground } from "../hooks/use-remove-background";
 import { addBuildImage, deleteBuildImage } from "@/lib/actions/build";
 import type { BuildImage } from "@/lib/types";
 
@@ -27,9 +28,11 @@ export function ImagePickerPanel({
   onClose,
 }: ImagePickerPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [removingBgId, setRemovingBgId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("buildImageUpload");
+  const { removeBg, isRemoving, progress } = useRemoveBackground();
 
   const handleUpload = useCallback(
     async (files: File[]) => {
@@ -65,6 +68,34 @@ export function ImagePickerPanel({
       onImageDeleted(imageId);
     },
     [buildId, onImageDeleted],
+  );
+
+  const handleRemoveBg = useCallback(
+    async (e: React.MouseEvent, img: BuildImage) => {
+      e.stopPropagation();
+      const imgId = img.id || img.url;
+      setRemovingBgId(imgId);
+      try {
+        const blob = await removeBg(img.url);
+        const file = new File([blob], "no-bg.png", { type: "image/png" });
+        const result = await startUpload([file]);
+        if (result?.[0]) {
+          const fd = new FormData();
+          fd.append("buildId", buildId);
+          fd.append("url", result[0].ufsUrl);
+          const res = await addBuildImage(fd);
+          if (res && "image" in res && res.image) {
+            onImageUploaded(res.image as { id: string; url: string });
+            toast.success("Background removed");
+          }
+        }
+      } catch {
+        toast.error("Background removal failed");
+      } finally {
+        setRemovingBgId(null);
+      }
+    },
+    [buildId, removeBg, startUpload, onImageUploaded],
   );
 
   const handleFileChange = useCallback(
@@ -181,15 +212,34 @@ export function ImagePickerPanel({
                   className="object-cover group-hover:scale-105 transition-transform"
                   unoptimized
                 />
-                {/* Delete overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
-                {img.id && (
-                  <button
-                    onClick={(e) => handleDelete(e, img.id!)}
-                    className="absolute top-1 right-1 p-1 rounded bg-red-600/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                {/* Overlay */}
+                <div className={cn(
+                  "absolute inset-0 transition-colors",
+                  removingBgId === (img.id || img.url) ? "bg-black/60" : "bg-black/0 group-hover:bg-black/40"
+                )} />
+                {removingBgId === (img.id || img.url) && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                    <span className="text-[9px] text-white mt-0.5">{Math.round(progress * 100)}%</span>
+                  </div>
+                )}
+                {img.id && removingBgId !== (img.id || img.url) && (
+                  <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <button
+                      onClick={(e) => handleDelete(e, img.id!)}
+                      className="p-1 rounded bg-red-600/80 text-white hover:bg-red-500 transition-all"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => handleRemoveBg(e, img)}
+                      disabled={isRemoving}
+                      className="p-1 rounded bg-purple-600/80 text-white hover:bg-purple-500 transition-all disabled:opacity-50"
+                      title="Remove background"
+                    >
+                      <Eraser className="h-3 w-3" />
+                    </button>
+                  </div>
                 )}
               </button>
             ))}

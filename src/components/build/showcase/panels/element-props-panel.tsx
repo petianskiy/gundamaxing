@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Minus, Plus } from "lucide-react";
+import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Minus, Plus, Crop, Eraser, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
+import { CropModal } from "./crop-modal";
+import { useRemoveBackground } from "../hooks/use-remove-background";
+import { useUploadThing } from "@/lib/upload/uploadthing";
+import { toast } from "sonner";
 import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
 
 const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
@@ -18,6 +22,9 @@ interface ElementPropsPanelProps {
 
 export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: ElementPropsPanelProps) {
   const [rotationInput, setRotationInput] = useState(String(element.rotation));
+  const [showCrop, setShowCrop] = useState(false);
+  const { removeBg, isRemoving, progress } = useRemoveBackground();
+  const { startUpload } = useUploadThing("buildImageUpload");
 
   const handleRotationSlider = useCallback((rawVal: number) => {
     // Snap to key angles when within threshold
@@ -171,6 +178,56 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 className="w-full px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
               />
             </div>
+            {/* Crop & Remove BG */}
+            <div className="pt-2 border-t border-zinc-700/50 space-y-2">
+              <button
+                onClick={() => setShowCrop(true)}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors"
+              >
+                <Crop className="h-3.5 w-3.5" />
+                Crop Image
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const blob = await removeBg(element.imageUrl);
+                    const file = new File([blob], "no-bg.png", { type: "image/png" });
+                    const result = await startUpload([file]);
+                    if (result?.[0]) {
+                      onUpdate({ imageUrl: result[0].ufsUrl });
+                      toast.success("Background removed");
+                    }
+                  } catch {
+                    toast.error("Background removal failed");
+                  }
+                }}
+                disabled={isRemoving}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {isRemoving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Removing BG... {Math.round(progress * 100)}%
+                  </>
+                ) : (
+                  <>
+                    <Eraser className="h-3.5 w-3.5" />
+                    Remove Background
+                  </>
+                )}
+              </button>
+            </div>
+            {showCrop && (
+              <CropModal
+                imageUrl={element.imageUrl}
+                onComplete={(croppedUrl) => {
+                  onUpdate({ imageUrl: croppedUrl });
+                  setShowCrop(false);
+                  toast.success("Image cropped");
+                }}
+                onClose={() => setShowCrop(false)}
+              />
+            )}
           </>
         )}
 

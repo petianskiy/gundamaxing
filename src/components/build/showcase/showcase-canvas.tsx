@@ -105,7 +105,10 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
       )}
 
       {/* Dark overlay for readability */}
-      <div className="absolute inset-0 z-[1] bg-black/20" />
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{ backgroundColor: `rgba(0,0,0,${canvas.overlayOpacity ?? 0.2})` }}
+      />
 
       {/* Elements */}
       {sortedElements.map((element) => (

@@ -242,6 +242,7 @@ export interface ShowcaseLayout {
     backgroundBlur: number;
     aspectRatio: string;
     backgroundConfig?: Record<string, unknown> | null;
+    overlayOpacity?: number;
   };
   elements: ShowcaseElement[];
   pages?: ShowcasePage[];

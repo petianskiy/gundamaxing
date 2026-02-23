@@ -71,7 +71,7 @@ type Action =
   | { type: "RESIZE_ELEMENT"; id: string; width: number; height: number }
   | { type: "UPDATE_ELEMENT"; id: string; updates: Partial<ShowcaseElementType> }
   | { type: "DELETE_ELEMENT"; id: string }
-  | { type: "SET_BACKGROUND"; backgroundImageUrl?: string | null; backgroundColor?: string | null; backgroundOpacity?: number; backgroundBlur?: number; backgroundConfig?: Record<string, unknown> | null }
+  | { type: "SET_BACKGROUND"; backgroundImageUrl?: string | null; backgroundColor?: string | null; backgroundOpacity?: number; backgroundBlur?: number; backgroundConfig?: Record<string, unknown> | null; overlayOpacity?: number }
   | { type: "SET_ASPECT_RATIO"; aspectRatio: string }
   | { type: "REORDER_Z"; id: string; direction: "up" | "down" | "top" | "bottom" }
   | { type: "SET_LAYOUT"; layout: ShowcaseLayout }
@@ -120,6 +120,7 @@ function layoutReducer(state: ShowcaseLayout, action: Action): ShowcaseLayout {
           backgroundOpacity: action.backgroundOpacity ?? state.canvas.backgroundOpacity,
           backgroundBlur: action.backgroundBlur ?? state.canvas.backgroundBlur,
           backgroundConfig: action.backgroundConfig !== undefined ? action.backgroundConfig : state.canvas.backgroundConfig,
+          overlayOpacity: action.overlayOpacity ?? state.canvas.overlayOpacity,
         },
       };
 
@@ -1011,7 +1012,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
           />
         </div>
       )}
-      <div className="absolute inset-0 z-[1] bg-black/20" />
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{ backgroundColor: `rgba(0,0,0,${layout.canvas.overlayOpacity ?? 0.2})` }}
+      />
     </>
   );
 

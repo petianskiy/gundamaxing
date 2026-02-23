@@ -10,6 +10,7 @@ import {
   Loader2,
   Sun,
   Droplets,
+  Layers,
   Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ interface BackgroundPickerProps {
     backgroundOpacity: number;
     backgroundBlur: number;
     backgroundConfig?: Record<string, unknown> | null;
+    overlayOpacity?: number;
   };
   onUpdate: (bg: {
     backgroundImageUrl?: string | null;
@@ -40,6 +42,7 @@ interface BackgroundPickerProps {
     backgroundOpacity?: number;
     backgroundBlur?: number;
     backgroundConfig?: Record<string, unknown> | null;
+    overlayOpacity?: number;
   }) => void;
   onClose: () => void;
 }
@@ -674,6 +677,27 @@ export function BackgroundPicker({
               leftIcon={<Droplets className="h-3 w-3" />}
               rightIcon={<Droplets className="h-5 w-5" />}
               onChange={(val) => onUpdate({ backgroundBlur: val })}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+              <span>Overlay</span>
+              <span className="text-zinc-500 tabular-nums">
+                {Math.round((currentBackground.overlayOpacity ?? 0.2) * 100)}%
+              </span>
+            </label>
+            <ElasticSlider
+              startingValue={0}
+              maxValue={100}
+              defaultValue={Math.round(
+                (currentBackground.overlayOpacity ?? 0.2) * 100,
+              )}
+              isStepped
+              stepSize={1}
+              leftIcon={<Layers className="h-3 w-3" />}
+              rightIcon={<Layers className="h-5 w-5" />}
+              onChange={(val) => onUpdate({ overlayOpacity: val / 100 })}
             />
           </div>
         </div>
