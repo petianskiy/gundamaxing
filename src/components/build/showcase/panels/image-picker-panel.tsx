@@ -6,7 +6,7 @@ import { X, Upload, Plus, Trash2, Loader2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/upload/uploadthing";
-import { useRemoveBackground } from "../hooks/use-remove-background";
+import { useRemoveBackground, stageLabel } from "../hooks/use-remove-background";
 import { addBuildImage, deleteBuildImage } from "@/lib/actions/build";
 import type { BuildImage } from "@/lib/types";
 
@@ -32,7 +32,7 @@ export function ImagePickerPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading } = useUploadThing("buildImageUpload");
-  const { removeBg, isRemoving, progress } = useRemoveBackground();
+  const { removeBg, isRemoving, progress, stage } = useRemoveBackground();
 
   const handleUpload = useCallback(
     async (files: File[]) => {
@@ -215,12 +215,19 @@ export function ImagePickerPanel({
                 {/* Overlay */}
                 <div className={cn(
                   "absolute inset-0 transition-colors",
-                  removingBgId === (img.id || img.url) ? "bg-black/60" : "bg-black/0 group-hover:bg-black/40"
+                  removingBgId === (img.id || img.url) ? "bg-black/70 backdrop-blur-[1px]" : "bg-black/0 group-hover:bg-black/40"
                 )} />
                 {removingBgId === (img.id || img.url) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                    <span className="text-[9px] text-white mt-0.5">{Math.round(progress * 100)}%</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                    {/* Progress ring */}
+                    <div className="relative w-8 h-8">
+                      <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                        <circle cx="16" cy="16" r="13" fill="none" stroke="#a855f7" strokeWidth="3" strokeDasharray={`${progress * 81.7} 81.7`} strokeLinecap="round" className="transition-all duration-300" />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white">{Math.round(progress * 100)}</span>
+                    </div>
+                    <span className="text-[8px] text-purple-300 font-medium text-center px-1 leading-tight">{stageLabel(stage)}</span>
                   </div>
                 )}
                 {img.id && removingBgId !== (img.id || img.url) && (

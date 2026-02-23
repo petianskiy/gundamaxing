@@ -114,7 +114,7 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
       {sortedElements.map((element) => (
         <div
           key={element.id}
-          className="absolute"
+          className="absolute bg-transparent"
           style={{
             left: `${element.x}%`,
             top: `${element.y}%`,

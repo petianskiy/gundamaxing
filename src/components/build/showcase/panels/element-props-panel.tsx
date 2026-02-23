@@ -5,7 +5,8 @@ import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Mi
 import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import { CropModal } from "./crop-modal";
-import { useRemoveBackground } from "../hooks/use-remove-background";
+import { useRemoveBackground, stageLabel } from "../hooks/use-remove-background";
+import { BgRefineModal } from "./bg-refine-modal";
 import { useUploadThing } from "@/lib/upload/uploadthing";
 import { toast } from "sonner";
 import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
@@ -23,7 +24,8 @@ interface ElementPropsPanelProps {
 export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: ElementPropsPanelProps) {
   const [rotationInput, setRotationInput] = useState(String(element.rotation));
   const [showCrop, setShowCrop] = useState(false);
-  const { removeBg, isRemoving, progress } = useRemoveBackground();
+  const [refineData, setRefineData] = useState<{ resultUrl: string; originalUrl: string } | null>(null);
+  const { removeBg, isRemoving, progress, stage } = useRemoveBackground();
   const { startUpload } = useUploadThing("buildImageUpload");
 
   const handleRotationSlider = useCallback((rawVal: number) => {
@@ -190,25 +192,37 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
               <button
                 onClick={async () => {
                   try {
-                    const blob = await removeBg(element.imageUrl);
+                    const originalUrl = element.imageUrl;
+                    const blob = await removeBg(originalUrl);
                     const file = new File([blob], "no-bg.png", { type: "image/png" });
                     const result = await startUpload([file]);
                     if (result?.[0]) {
-                      onUpdate({ imageUrl: result[0].ufsUrl });
-                      toast.success("Background removed");
+                      onUpdate({ imageUrl: result[0].ufsUrl, objectFit: "contain" });
+                      setRefineData({ resultUrl: result[0].ufsUrl, originalUrl });
+                      toast.success("Background removed — click Refine to touch up");
                     }
                   } catch {
                     toast.error("Background removal failed");
                   }
                 }}
                 disabled={isRemoving}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors disabled:opacity-50"
+                className={cn(
+                  "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all disabled:cursor-not-allowed",
+                  isRemoving
+                    ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
+                    : "border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
+                )}
               >
                 {isRemoving ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Removing BG... {Math.round(progress * 100)}%
-                  </>
+                  <span className="flex items-center gap-2">
+                    <span className="relative w-4 h-4">
+                      <svg className="w-4 h-4 -rotate-90" viewBox="0 0 16 16">
+                        <circle cx="8" cy="8" r="6" fill="none" stroke="rgba(168,85,247,0.3)" strokeWidth="2" />
+                        <circle cx="8" cy="8" r="6" fill="none" stroke="#a855f7" strokeWidth="2" strokeDasharray={`${progress * 37.7} 37.7`} strokeLinecap="round" className="transition-all duration-300" />
+                      </svg>
+                    </span>
+                    <span className="truncate">{stageLabel(stage)}</span>
+                  </span>
                 ) : (
                   <>
                     <Eraser className="h-3.5 w-3.5" />
@@ -226,6 +240,22 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                   toast.success("Image cropped");
                 }}
                 onClose={() => setShowCrop(false)}
+              />
+            )}
+            {refineData && (
+              <BgRefineModal
+                resultUrl={refineData.resultUrl}
+                originalUrl={refineData.originalUrl}
+                onComplete={async (blob) => {
+                  const file = new File([blob], "refined.png", { type: "image/png" });
+                  const result = await startUpload([file]);
+                  if (result?.[0]) {
+                    onUpdate({ imageUrl: result[0].ufsUrl });
+                    toast.success("Refinement applied");
+                  }
+                  setRefineData(null);
+                }}
+                onClose={() => setRefineData(null)}
               />
             )}
           </>
