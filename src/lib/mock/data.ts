@@ -353,12 +353,11 @@ export const mockBuilds: Build[] = [
 ];
 
 export const mockCategories: ForumCategory[] = [
-  { id: "cat-1", name: "Build Showcase", description: "Share your completed and WIP builds", icon: "\u{1F3D7}\uFE0F", threadCount: 1247, postCount: 15680, lastActivity: "2 min ago", color: "#3b82f6" },
-  { id: "cat-2", name: "Techniques & Tutorials", description: "Learn and teach building techniques", icon: "\u{1F393}", threadCount: 834, postCount: 9240, lastActivity: "5 min ago", color: "#8b5cf6" },
-  { id: "cat-3", name: "Kit Reviews", description: "In-depth reviews of Gunpla kits", icon: "\u{1F4E6}", threadCount: 562, postCount: 4310, lastActivity: "12 min ago", color: "#10b981" },
-  { id: "cat-4", name: "Tools & Supplies", description: "Discuss tools, paints, and supplies", icon: "\u{1F527}", threadCount: 423, postCount: 5670, lastActivity: "8 min ago", color: "#f59e0b" },
-  { id: "cat-5", name: "Trading Post", description: "Buy, sell, and trade kits and supplies", icon: "\u{1F4B1}", threadCount: 891, postCount: 7230, lastActivity: "1 min ago", color: "#ef4444" },
-  { id: "cat-6", name: "Off-Topic Hangar", description: "General anime, manga, and Gundam discussion", icon: "\u2615", threadCount: 1560, postCount: 23100, lastActivity: "30 sec ago", color: "#6366f1" },
+  { id: "cat-2", name: "Techniques & Tutorials", description: "Learn and teach building techniques", icon: "\u{1F393}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#8b5cf6" },
+  { id: "cat-3", name: "Kit Reviews", description: "In-depth reviews of Gunpla kits", icon: "\u{1F4E6}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#10b981" },
+  { id: "cat-4", name: "Tools & Supplies", description: "Discuss tools, paints, and supplies", icon: "\u{1F527}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#f59e0b" },
+  { id: "cat-5", name: "Trading Post", description: "Buy, sell, and trade kits and supplies", icon: "\u{1F4B1}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#ef4444" },
+  { id: "cat-6", name: "Off-Topic Hangar", description: "General anime, manga, and Gundam discussion", icon: "\u2615", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#6366f1" },
 ];
 
 export const mockThreads: Thread[] = [
@@ -366,8 +365,8 @@ export const mockThreads: Thread[] = [
     id: "t1",
     title: "Finally finished my MG Sazabi Ver.Ka \u2014 120 hours well spent",
     content: "After months of work, my Sazabi is complete. Full repaint, custom scribing, and weathering. Check out the Build Passport for all the details. I'm especially proud of the color-shifting crimson I achieved with pearl coat over the base red.\n\nThis was my most ambitious build yet. The Ver.Ka is a beast of a kit \u2014 over 600 parts \u2014 and I wanted every single one to tell a story.",
-    categoryId: "cat-1",
-    categoryName: "Build Showcase",
+    categoryId: "cat-2",
+    categoryName: "Techniques & Tutorials",
     userId: "u1",
     username: "real_gundamgooner",
     userHandle: "real_gundamgooner",

@@ -11,8 +11,7 @@ function formatDate(date: Date): string {
 // ─── Transform ───────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toUICategory(cat: any): ForumCategory {
-  // Derive lastActivity from the most recent thread in this category
+function toUICategory(cat: any, postCount: number): ForumCategory {
   const lastThread = cat.threads?.[0];
   const lastActivity = lastThread ? formatDate(lastThread.createdAt) : "\u2014";
 
@@ -22,8 +21,8 @@ function toUICategory(cat: any): ForumCategory {
     description: cat.description,
     icon: cat.icon,
     color: cat.color,
-    threadCount: cat.threadCount,
-    postCount: cat.postCount,
+    threadCount: cat._count?.threads ?? 0,
+    postCount,
     lastActivity,
   };
 }
@@ -34,6 +33,7 @@ export const getCategories = cache(async (): Promise<ForumCategory[]> => {
   const categories = await db.forumCategory.findMany({
     orderBy: { order: "asc" },
     include: {
+      _count: { select: { threads: true } },
       threads: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -42,13 +42,21 @@ export const getCategories = cache(async (): Promise<ForumCategory[]> => {
     },
   });
 
-  return categories.map(toUICategory);
+  // Compute real comment counts per category
+  const postCounts = await Promise.all(
+    categories.map((cat) =>
+      db.comment.count({ where: { thread: { categoryId: cat.id } } })
+    )
+  );
+
+  return categories.map((cat, i) => toUICategory(cat, postCounts[i]));
 });
 
 export const getCategoryById = cache(async (id: string): Promise<ForumCategory | null> => {
   const cat = await db.forumCategory.findUnique({
     where: { id },
     include: {
+      _count: { select: { threads: true } },
       threads: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -58,5 +66,10 @@ export const getCategoryById = cache(async (id: string): Promise<ForumCategory |
   });
 
   if (!cat) return null;
-  return toUICategory(cat);
+
+  const postCount = await db.comment.count({
+    where: { thread: { categoryId: id } },
+  });
+
+  return toUICategory(cat, postCount);
 });
