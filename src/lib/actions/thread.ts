@@ -169,3 +169,124 @@ export async function createThread(formData: FormData) {
     return { error: "An unexpected error occurred." };
   }
 }
+
+export async function togglePinThread(threadId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!user || (user.role !== "ADMIN" && user.role !== "MODERATOR")) {
+      return { error: "You do not have permission to pin threads." };
+    }
+
+    const thread = await db.thread.findUnique({
+      where: { id: threadId },
+      select: { isPinned: true },
+    });
+
+    if (!thread) {
+      return { error: "Thread not found." };
+    }
+
+    await db.thread.update({
+      where: { id: threadId },
+      data: { isPinned: !thread.isPinned },
+    });
+
+    return { success: true, isPinned: !thread.isPinned };
+  } catch (error) {
+    console.error("togglePinThread error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function toggleLockThread(threadId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!user || (user.role !== "ADMIN" && user.role !== "MODERATOR")) {
+      return { error: "You do not have permission to lock threads." };
+    }
+
+    const thread = await db.thread.findUnique({
+      where: { id: threadId },
+      select: { isLocked: true },
+    });
+
+    if (!thread) {
+      return { error: "Thread not found." };
+    }
+
+    await db.thread.update({
+      where: { id: threadId },
+      data: { isLocked: !thread.isLocked },
+    });
+
+    return { success: true, isLocked: !thread.isLocked };
+  } catch (error) {
+    console.error("toggleLockThread error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function deleteThread(threadId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be signed in." };
+    }
+
+    const thread = await db.thread.findUnique({
+      where: { id: threadId },
+      select: { userId: true, categoryId: true },
+    });
+
+    if (!thread) {
+      return { error: "Thread not found." };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      return { error: "User not found." };
+    }
+
+    const isOwner = thread.userId === user.id;
+    const isModerator = user.role === "ADMIN" || user.role === "MODERATOR";
+
+    if (!isOwner && !isModerator) {
+      return { error: "You do not have permission to delete this thread." };
+    }
+
+    await db.thread.delete({ where: { id: threadId } });
+
+    // Decrement category thread count
+    await db.forumCategory.update({
+      where: { id: thread.categoryId },
+      data: { threadCount: { decrement: 1 } },
+    }).catch(() => {});
+
+    return { success: true };
+  } catch (error) {
+    console.error("deleteThread error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}

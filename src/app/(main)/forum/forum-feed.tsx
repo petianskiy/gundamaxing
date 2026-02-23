@@ -1,28 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { Pin, MessageSquare, Eye } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useTranslation } from "@/lib/i18n/context";
+import { ForumSearch } from "@/components/forum/forum-search";
+import { SortSelect } from "@/components/forum/sort-select";
+import { ThreadList } from "@/components/forum/thread-list";
+import { ForumPagination } from "@/components/forum/forum-pagination";
 import type { ForumCategory, Thread } from "@/lib/types";
 
 export function ForumFeed({
   categories,
   threads,
+  currentPage,
+  totalPages,
+  sort,
 }: {
   categories: ForumCategory[];
   threads: Thread[];
+  currentPage: number;
+  totalPages: number;
+  sort: string;
 }) {
   const { t } = useTranslation();
+  const { data: session } = useSession();
+
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("forum.title")}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {t("forum.subtitle")}
-          </p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("forum.title")}</h1>
+            <p className="mt-1 text-muted-foreground">
+              {t("forum.subtitle")}
+            </p>
+          </div>
+          {session?.user && (
+            <Link
+              href="/forum/new"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gx-red text-white text-xs font-medium hover:bg-red-600 transition-colors flex-shrink-0"
+            >
+              <Plus className="h-3 w-3" />
+              {t("forum.newThread")}
+            </Link>
+          )}
+        </div>
+
+        {/* Search */}
+        <div className="mb-8 max-w-md">
+          <ForumSearch />
         </div>
 
         {/* Categories */}
@@ -34,7 +62,7 @@ export function ForumFeed({
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href="#"
+                href={`/forum/category/${cat.id}`}
                 className="group flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card hover:border-border transition-colors"
                 style={{ borderLeftColor: cat.color, borderLeftWidth: "3px" }}
               >
@@ -67,54 +95,21 @@ export function ForumFeed({
 
         {/* Recent Threads */}
         <section>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            {t("forum.recentThreads")}
-          </h2>
-          <div className="space-y-2">
-            {threads.map((thread) => (
-              <Link
-                key={thread.id}
-                href={`/thread/${thread.id}`}
-                className="group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-card hover:border-border transition-colors"
-              >
-                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
-                  <Image
-                    src={thread.userAvatar}
-                    alt={thread.username}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {thread.isPinned && <Pin className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-foreground line-clamp-1">
-                      {thread.title}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-medium">
-                      {thread.categoryName}
-                    </span>
-                    <span>{t("shared.by")} {thread.username}</span>
-                    <span>&middot;</span>
-                    <span>{thread.createdAt}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground flex-shrink-0">
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" />
-                    {thread.replies}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" />
-                    {thread.views.toLocaleString()}
-                  </span>
-                </div>
-              </Link>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("forum.recentThreads")}
+            </h2>
+            <SortSelect current={sort} />
           </div>
+
+          <ThreadList threads={threads} />
+
+          <ForumPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            basePath="/forum"
+            searchParams={{ sort }}
+          />
         </section>
       </div>
     </div>

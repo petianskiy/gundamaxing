@@ -150,6 +150,7 @@ export interface Thread {
   replies: number;
   views: number;
   isPinned: boolean;
+  isLocked: boolean;
   createdAt: string;
   lastReplyAt: string;
 }

@@ -44,3 +44,19 @@ export const getCategories = cache(async (): Promise<ForumCategory[]> => {
 
   return categories.map(toUICategory);
 });
+
+export const getCategoryById = cache(async (id: string): Promise<ForumCategory | null> => {
+  const cat = await db.forumCategory.findUnique({
+    where: { id },
+    include: {
+      threads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { createdAt: true },
+      },
+    },
+  });
+
+  if (!cat) return null;
+  return toUICategory(cat);
+});
