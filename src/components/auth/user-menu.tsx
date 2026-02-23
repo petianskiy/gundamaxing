@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Shield, LogOut, ChevronDown, Warehouse, Bookmark } from "lucide-react";
+import { User, Settings, Shield, LogOut, ChevronDown, Warehouse, Bookmark, GitFork } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -105,6 +105,14 @@ export function UserMenu() {
               >
                 <Bookmark className="h-4 w-4" />
                 {t("nav.bookmarks")}
+              </Link>
+              <Link
+                href="/lineages/mine"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <GitFork className="h-4 w-4" />
+                {t("nav.lineages")}
               </Link>
               <Link
                 href="/settings"

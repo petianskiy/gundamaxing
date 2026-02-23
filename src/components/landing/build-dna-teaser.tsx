@@ -28,7 +28,7 @@ export function BuildDnaTeaser() {
               {t("dna.description")}
             </p>
             <Link
-              href="/builds"
+              href="/lineages"
               className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-gx-red hover:text-red-400 transition-colors"
             >
               {t("dna.explore")}

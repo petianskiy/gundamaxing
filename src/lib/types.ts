@@ -328,6 +328,39 @@ export interface ShowcaseVideoElement extends ShowcaseElementBase {
   borderRadius: number;
 }
 
+// ─── Lineages (Build DNA) ────────────────────────────────────────
+
+export interface LineageNodeUI {
+  id: string;
+  buildId: string;
+  build: Pick<Build, "id" | "slug" | "title" | "kitName" | "grade" | "scale" | "images" | "status">;
+  parentId: string | null;
+  annotation: string | null;
+  order: number;
+  children: LineageNodeUI[];
+}
+
+export interface LineageSummary {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  coverImage: string | null;
+  userId: string;
+  username: string;
+  userHandle: string;
+  userAvatar: string;
+  isPublic: boolean;
+  nodeCount: number;
+  previewBuilds: Pick<Build, "id" | "title" | "images">[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LineageDetail extends Omit<LineageSummary, "previewBuilds" | "nodeCount"> {
+  nodes: LineageNodeUI[];
+}
+
 // ─── Hangar ─────────────────────────────────────────────────────
 
 export interface HangarData {

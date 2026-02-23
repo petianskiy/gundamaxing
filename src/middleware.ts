@@ -8,6 +8,7 @@ const publicRoutes = [
   "/",
   "/builds",
   "/forum",
+  "/lineages",
   "/faq",
   "/guidelines",
   "/privacy",
@@ -26,6 +27,7 @@ const publicRoutePatterns = [
   /^\/thread\/[^/]+$/,
   /^\/u\/[^/]+$/,
   /^\/hangar\/[^/]+$/,
+  /^\/lineages\/[^/]+$/,
   /^\/api\//,
 ];
 

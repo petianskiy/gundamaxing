@@ -185,6 +185,7 @@ model User {
   brushPresets     UserBrushPreset[]
   notifications    Notification[]
   customRoles      UserCustomRole[]
+  lineages         Lineage[]
 
   @@index([email])
   @@index([reputation])
@@ -247,6 +248,7 @@ model Build {
   // Hangar
   eraAssignments  BuildEraAssignment[]
   reactions       Reaction[]
+  lineageNodes    LineageNode[]
 
   commentsEnabled Boolean          @default(true)
   isFeaturedBuild Boolean          @default(false)
@@ -705,6 +707,40 @@ model UserCustomRole {
   @@unique([userId, customRoleId])
   @@index([userId])
   @@index([customRoleId])
+}
+
+// ─── LINEAGES (Build DNA) ────────────────────────────────────────
+
+model Lineage {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String?       @db.Text
+  coverImage  String?
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPublic    Boolean       @default(false)
+  nodes       LineageNode[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([isPublic, createdAt])
+}
+
+model LineageNode {
+  id         String   @id @default(cuid())
+  lineageId  String
+  lineage    Lineage  @relation(fields: [lineageId], references: [id], onDelete: Cascade)
+  buildId    String
+  build      Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  parentId   String?
+  annotation String?  @db.Text
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([lineageId])
+  @@index([buildId])
 }
 
 // ─── SYSTEM SETTINGS ─────────────────────────────────────────────
