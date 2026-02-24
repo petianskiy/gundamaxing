@@ -78,19 +78,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  // Dynamic: Gunpla kit pages
-  const gunplaKits = await db.gunplaKit.findMany({
-    select: { slug: true, updatedAt: true },
-    orderBy: { updatedAt: "desc" },
-    take: 5000,
-  });
-
-  const kitPages: MetadataRoute.Sitemap = gunplaKits.map((kit) => ({
-    url: `${baseUrl}/collector/${kit.slug}`,
-    lastModified: kit.updatedAt,
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
+  // Dynamic: Gunpla kit pages (table may not exist during first deploy)
+  let kitPages: MetadataRoute.Sitemap = [];
+  try {
+    const gunplaKits = await db.gunplaKit.findMany({
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 5000,
+    });
+    kitPages = gunplaKits.map((kit) => ({
+      url: `${baseUrl}/collector/${kit.slug}`,
+      lastModified: kit.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+  } catch {}
 
   return [...staticPages, ...buildPages, ...userPages, ...threadPages, ...lineagePages, ...kitPages];
 }
