@@ -21,6 +21,8 @@ const showcaseImageElement = z.object({
   borderRadius: z.number().min(0).max(100),
   shadow: z.boolean(),
   caption: z.string().max(500).nullable(),
+  flipH: z.boolean().optional(),
+  flipV: z.boolean().optional(),
 });
 
 const showcaseTextElement = z.object({
@@ -99,9 +101,19 @@ const showcaseElement = z.discriminatedUnion("type", [
   showcaseVideoElement,
 ]);
 
+const showcasePageBackgroundSchema = z.object({
+  imageUrl: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+  opacity: z.number().min(0).max(1).optional(),
+  blur: z.number().min(0).max(100).optional(),
+  overlayOpacity: z.number().min(0).max(1).optional(),
+  config: z.record(z.string(), z.unknown()).nullable().optional(),
+}).optional();
+
 const showcasePageSchema = z.object({
   id: z.string().min(1),
   elements: z.array(showcaseElement).max(100),
+  background: showcasePageBackgroundSchema,
 });
 
 export const showcaseLayoutSchema = z.object({

@@ -228,9 +228,19 @@ export interface HangarUser {
 
 // ─── Showcase Canvas ─────────────────────────────────────────────
 
+export interface ShowcasePageBackground {
+  imageUrl?: string | null;
+  color?: string | null;
+  opacity?: number;
+  blur?: number;
+  overlayOpacity?: number;
+  config?: Record<string, unknown> | null;
+}
+
 export interface ShowcasePage {
   id: string;
   elements: ShowcaseElement[];
+  background?: ShowcasePageBackground;
 }
 
 export interface ShowcaseLayout {
@@ -274,6 +284,8 @@ export interface ShowcaseImageElement extends ShowcaseElementBase {
   borderRadius: number;
   shadow: boolean;
   caption: string | null;
+  flipH?: boolean;
+  flipV?: boolean;
 }
 
 export type ShowcaseFontFamily = "geist" | "orbitron" | "rajdhani" | "exo2" | "shareTechMono" | "audiowide" | "chakraPetch";

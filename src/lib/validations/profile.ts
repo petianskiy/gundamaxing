@@ -1,12 +1,39 @@
 import { z } from "zod";
 
+/** Only allow http:// and https:// URLs (or empty strings). Rejects javascript:, data:, vbscript:, file:, etc. */
+export function isSafeUrl(url: string): boolean {
+  if (!url || url.trim() === "") return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const safeUrl = (field: string) =>
+  z
+    .string()
+    .url("Invalid URL")
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => !val || isSafeUrl(val), {
+      message: `${field} must use http:// or https://`,
+    });
+
 export const socialLinksSchema = z.object({
-  twitter: z.string().url("Invalid URL").optional().or(z.literal("")),
-  instagram: z.string().url("Invalid URL").optional().or(z.literal("")),
-  youtube: z.string().url("Invalid URL").optional().or(z.literal("")),
-  github: z.string().url("Invalid URL").optional().or(z.literal("")),
-  discord: z.string().optional().or(z.literal("")),
-  tiktok: z.string().url("Invalid URL").optional().or(z.literal("")),
+  twitter: safeUrl("Twitter"),
+  instagram: safeUrl("Instagram"),
+  youtube: safeUrl("YouTube"),
+  github: safeUrl("GitHub"),
+  discord: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => !val || isSafeUrl(val), {
+      message: "Discord must use http:// or https://",
+    }),
+  tiktok: safeUrl("TikTok"),
 });
 
 export const profileSchema = z.object({

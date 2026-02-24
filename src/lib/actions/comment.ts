@@ -11,6 +11,7 @@ import { checkSpamContent } from "@/lib/security/spam-heuristics";
 import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
+import { createNotification } from "@/lib/notifications";
 
 const commentSchema = z.object({
   content: z.string().min(1).max(10000),
@@ -167,6 +168,85 @@ export async function createComment(formData: FormData) {
         spamScore: spamResult.score,
       } as Record<string, unknown>,
     });
+
+    // Send notifications (fire-and-forget)
+    const notifiedUserIds = new Set<string>();
+    const commenterName = session.user.username ?? "Someone";
+    let mentionActionUrl: string | undefined;
+
+    try {
+      // Notify build owner for build comments
+      if (buildId) {
+        const build = await db.build.findUnique({
+          where: { id: buildId },
+          select: { userId: true, title: true, slug: true },
+        });
+
+        if (build) {
+          mentionActionUrl = `/builds/${build.slug}`;
+
+          if (build.userId !== user.id) {
+            notifiedUserIds.add(build.userId);
+            createNotification({
+              userId: build.userId,
+              type: "COMMENT",
+              title: "New comment",
+              message: `${commenterName} commented on your build "${build.title}"`,
+              actionUrl: `/builds/${build.slug}`,
+            }).catch(() => {});
+          }
+        }
+      }
+
+      // Notify thread author for forum replies
+      if (threadId) {
+        const thread = await db.thread.findUnique({
+          where: { id: threadId },
+          select: { userId: true, title: true },
+        });
+
+        if (thread) {
+          mentionActionUrl = `/thread/${threadId}`;
+
+          if (thread.userId !== user.id) {
+            notifiedUserIds.add(thread.userId);
+            createNotification({
+              userId: thread.userId,
+              type: "FORUM_REPLY",
+              title: "New reply",
+              message: `${commenterName} replied to your thread "${thread.title}"`,
+              actionUrl: `/thread/${threadId}`,
+            }).catch(() => {});
+          }
+        }
+      }
+
+      // Detect @mentions and notify mentioned users
+      const mentionPattern = /@(\w+)/g;
+      const mentions = [...content.matchAll(mentionPattern)];
+      if (mentions.length > 0) {
+        const mentionedUsernames = [...new Set(mentions.map((m) => m[1]))];
+        const mentionedUsers = await db.user.findMany({
+          where: {
+            username: { in: mentionedUsernames },
+            id: { notIn: [user.id, ...Array.from(notifiedUserIds)] },
+          },
+          select: { id: true },
+        });
+
+        for (const mentionedUser of mentionedUsers) {
+          createNotification({
+            userId: mentionedUser.id,
+            type: "MENTION",
+            title: "You were mentioned",
+            message: `${commenterName} mentioned you in a comment`,
+            actionUrl: mentionActionUrl,
+          }).catch(() => {});
+        }
+      }
+    } catch {
+      // Don't let notification failures break the comment action
+    }
 
     return { success: true, commentId: comment.id };
   } catch (error) {

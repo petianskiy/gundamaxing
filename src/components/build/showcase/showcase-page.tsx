@@ -146,7 +146,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {pages.map((page, i) => (
           <div key={page.id} className={cn("relative", i > 0 && "mt-4")}>
-            <ShowcaseCanvas layout={{ ...layout, elements: page.elements }} build={build} />
+            <ShowcaseCanvas layout={{ ...layout, elements: page.elements }} build={build} pageBackground={page.background} />
 
             {/* Edit button for owner — only on first page */}
             {i === 0 && isOwner && (
@@ -178,6 +178,17 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
             currentUserId={currentUserId}
           />
         </div>
+
+        {/* Comments */}
+        <CommentSection
+          buildId={build.id}
+          comments={comments}
+          commentCount={build.comments}
+          currentUserId={currentUserId}
+          buildOwnerId={build.userId}
+          commentsEnabled={build.commentsEnabled}
+          likedCommentIds={likedCommentIds}
+        />
 
         {/* More builds by this author */}
         {authorBuilds.length > 0 && (
@@ -220,17 +231,6 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
             </div>
           </section>
         )}
-
-        {/* Comments */}
-        <CommentSection
-          buildId={build.id}
-          comments={comments}
-          commentCount={build.comments}
-          currentUserId={currentUserId}
-          buildOwnerId={build.userId}
-          commentsEnabled={build.commentsEnabled}
-          likedCommentIds={likedCommentIds}
-        />
       </div>
     </div>
   );

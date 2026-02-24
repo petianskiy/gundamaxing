@@ -11,6 +11,9 @@ interface ImageElementProps {
 export function ImageElement({ element }: ImageElementProps) {
   // Scale border-radius with canvas width using cqi (reference: 1000px = 100cqi)
   const radius = `${element.borderRadius / 10}cqi`;
+  const flipTransform = (element.flipH || element.flipV)
+    ? `scaleX(${element.flipH ? -1 : 1}) scaleY(${element.flipV ? -1 : 1})`
+    : undefined;
   return (
     <div
       className="relative w-full h-full overflow-hidden"
@@ -23,7 +26,7 @@ export function ImageElement({ element }: ImageElementProps) {
         className={cn(
           element.objectFit === "contain" ? "object-contain" : "object-cover"
         )}
-        style={{ borderRadius: radius }}
+        style={{ borderRadius: radius, transform: flipTransform }}
         unoptimized
       />
       {element.shadow && (

@@ -279,6 +279,7 @@ const authConfig: NextAuthConfig = {
                 username: true,
                 verificationTier: true,
                 onboardingComplete: true,
+                avatar: true,
               },
             });
             if (dbUser) {
@@ -295,7 +296,7 @@ const authConfig: NextAuthConfig = {
               token.username = dbUser.username;
               token.verificationTier = dbUser.verificationTier;
               token.onboardingComplete = dbUser.onboardingComplete;
-              token.picture = user.image ?? "";
+              token.picture = dbUser.avatar ?? user.image ?? "";
               token.name = user.name ?? "";
             } else {
               token.id = user.id!;

@@ -102,9 +102,10 @@ const inputClass =
 const selectClass =
   "w-full px-3 py-2.5 rounded-lg border border-border/50 bg-gx-surface text-foreground text-sm focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 transition-colors appearance-none";
 
-const statusDisplayMap: Record<string, "WIP" | "Completed"> = {
+const statusDisplayMap: Record<string, "WIP" | "Completed" | "Abandoned"> = {
   WIP: "WIP",
   COMPLETED: "Completed",
+  ABANDONED: "Abandoned",
 };
 
 interface ImageItem {
@@ -153,7 +154,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
   const [grade, setGrade] = useState(build.grade);
   const [scale, setScale] = useState(build.scale);
   const [timeline, setTimeline] = useState(build.timeline);
-  const [status, setStatus] = useState<"WIP" | "Completed">(statusDisplayMap[build.status] ?? "WIP");
+  const [status, setStatus] = useState<"WIP" | "Completed" | "Abandoned">(statusDisplayMap[build.status] ?? "WIP");
   const [selectedTechniques, setSelectedTechniques] = useState<string[]>(build.techniques);
   const [paintSystem, setPaintSystem] = useState(build.paintSystem ?? "");
   const [topcoat, setTopcoat] = useState(build.topcoat ?? "");
@@ -376,7 +377,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
 
               <FormField label={t("upload.status")}>
                 <div className="flex gap-3">
-                  {(["WIP", "Completed"] as const).map((s) => (
+                  {(["WIP", "Completed", "Abandoned"] as const).map((s) => (
                     <button
                       key={s}
                       onClick={() => setStatus(s)}

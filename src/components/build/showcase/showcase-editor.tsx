@@ -12,6 +12,7 @@ import { ElementPropsPanel } from "./panels/element-props-panel";
 import { LayersPanel } from "./panels/layers-panel";
 import { EffectsPanel } from "./panels/effects-panel";
 import { DrawingOverlay } from "./drawing/drawing-overlay";
+import type { DrawingOverlayHandle } from "./drawing/drawing-overlay";
 import { useUndoableReducer } from "./hooks/use-undoable-reducer";
 import { migrateShowcaseLayout } from "@/lib/validations/showcase";
 import { updateShowcaseLayout } from "@/lib/actions/build";
@@ -24,6 +25,7 @@ import type {
   BuildImage,
   ShowcaseLayout,
   ShowcasePage as ShowcasePageType,
+  ShowcasePageBackground,
   ShowcaseElement as ShowcaseElementType,
   ShowcaseImageElement,
   ShowcaseTextElement,
@@ -193,12 +195,17 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   // Multi-page state
   const [pagesState, setPagesState] = useState<ShowcasePageType[]>(() => normalizePages(safeInitial));
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [currentPageBg, setCurrentPageBg] = useState<ShowcasePageBackground | undefined>(
+    () => normalizePages(safeInitial)[0]?.background
+  );
   const [pageContextMenu, setPageContextMenu] = useState<{ index: number; x: number; y: number } | null>(null);
 
   // Group state: maps elementId → groupId (local only, not persisted)
   const [groups, setGroups] = useState<Record<string, string>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const clipboardRef = useRef<ShowcaseElementType[]>([]);
+  const drawingRef = useRef<DrawingOverlayHandle>(null);
 
   // Marquee (rubber-band) selection state
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
@@ -474,6 +481,33 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       if ((e.metaKey || e.ctrlKey) && e.key === "a") {
         e.preventDefault();
         setSelectedIds(layout.elements.map((el) => el.id));
+      }
+
+      // Ctrl/Cmd+C to copy selected elements
+      if ((e.metaKey || e.ctrlKey) && e.key === "c" && selectedIds.length > 0) {
+        e.preventDefault();
+        const copied = layout.elements.filter((el) => selectedIds.includes(el.id));
+        clipboardRef.current = copied;
+      }
+
+      // Ctrl/Cmd+V to paste copied elements
+      if ((e.metaKey || e.ctrlKey) && e.key === "v" && clipboardRef.current.length > 0) {
+        e.preventDefault();
+        const newIds: string[] = [];
+        const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((el) => el.zIndex)) : 0;
+        clipboardRef.current.forEach((el, i) => {
+          const newId = crypto.randomUUID();
+          newIds.push(newId);
+          const pasted: ShowcaseElementType = {
+            ...el,
+            id: newId,
+            x: el.x + 2,
+            y: el.y + 2,
+            zIndex: maxZ + 1 + i,
+          };
+          dispatch({ type: "ADD_ELEMENT", element: pasted });
+        });
+        setSelectedIds(newIds);
       }
 
       // Arrow keys to move all selected elements (only when not editing text)
@@ -758,11 +792,18 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   // ─── Save ─────────────────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
+    // If drawing overlay is open, flush it first (triggers drawing save via onComplete)
+    if (showDrawing && drawingRef.current) {
+      drawingRef.current.flush();
+      // Small delay to let the drawing completion handler finish uploading
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
     setIsSaving(true);
-    // Build full layout with all pages (merge current page's live elements)
+    // Build full layout with all pages (merge current page's live elements + background)
     const allPages = pagesState.map((page, i) =>
       i === currentPageIndex
-        ? { ...page, elements: layout.elements }
+        ? { ...page, elements: layout.elements, background: currentPageBg }
         : page
     );
     const fullLayout: ShowcaseLayout = {
@@ -781,7 +822,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       toast.success("Showcase saved!");
       onExit();
     }
-  }, [build.id, layout, pagesState, currentPageIndex, onExit]);
+  }, [build.id, layout, pagesState, currentPageIndex, onExit, showDrawing, currentPageBg]);
 
   // ─── Delete selected element ──────────────────────────────────
 
@@ -825,10 +866,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
   const switchToPage = useCallback((newIndex: number) => {
     if (newIndex === currentPageIndex) return;
-    // Save current page's elements back to pagesState
+    // Save current page's elements and background back to pagesState
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       return updated;
     });
     // Load new page's elements into the reducer
@@ -836,30 +877,33 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     if (targetPage) {
       dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: targetPage.elements } });
     }
+    // Load new page's background
+    setCurrentPageBg(pagesState[newIndex]?.background);
     setCurrentPageIndex(newIndex);
     setSelectedIds([]);
     setEditingTextId(null);
-  }, [currentPageIndex, layout, pagesState, dispatch]);
+  }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
   const addPage = useCallback(() => {
     // Save current page first
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       const newPage: ShowcasePageType = { id: generatePageId(), elements: [] };
       return [...updated, newPage];
     });
     // Switch to the new page
     const newIndex = pagesState.length;
     dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: [] } });
+    setCurrentPageBg(undefined);
     setCurrentPageIndex(newIndex);
     setSelectedIds([]);
     setEditingTextId(null);
-  }, [currentPageIndex, layout, pagesState.length, dispatch]);
+  }, [currentPageIndex, layout, pagesState.length, dispatch, currentPageBg]);
 
   const duplicatePage = useCallback((index: number) => {
     const sourcePage = index === currentPageIndex
-      ? { ...pagesState[index], elements: layout.elements }
+      ? { ...pagesState[index], elements: layout.elements, background: currentPageBg }
       : pagesState[index];
     if (!sourcePage) return;
     // Deep clone elements with new IDs
@@ -867,10 +911,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       ...el,
       id: generateId(),
     }));
-    const newPage: ShowcasePageType = { id: generatePageId(), elements: clonedElements };
+    const newPage: ShowcasePageType = { id: generatePageId(), elements: clonedElements, background: sourcePage.background ? { ...sourcePage.background } : undefined };
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       const result = [...updated];
       result.splice(index + 1, 0, newPage);
       return result;
@@ -878,11 +922,12 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     // Switch to duplicated page
     const newIndex = index + 1;
     dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: clonedElements } });
+    setCurrentPageBg(newPage.background);
     setCurrentPageIndex(newIndex);
     setSelectedIds([]);
     setEditingTextId(null);
     setPageContextMenu(null);
-  }, [currentPageIndex, layout, pagesState, dispatch]);
+  }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
   const deletePage = useCallback((index: number) => {
     if (pagesState.length <= 1) {
@@ -892,7 +937,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     if (!confirm("Delete this page? This cannot be undone.")) return;
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       updated.splice(index, 1);
       return updated;
     });
@@ -902,12 +947,13 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       newIndex = Math.max(0, currentPageIndex - 1);
     }
     const remainingPages = [...pagesState];
-    remainingPages[currentPageIndex] = { ...remainingPages[currentPageIndex], elements: layout.elements };
+    remainingPages[currentPageIndex] = { ...remainingPages[currentPageIndex], elements: layout.elements, background: currentPageBg };
     remainingPages.splice(index, 1);
     const targetPage = remainingPages[newIndex];
     if (targetPage) {
       dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements: targetPage.elements } });
     }
+    setCurrentPageBg(targetPage?.background);
     setCurrentPageIndex(newIndex);
     setSelectedIds([]);
     setEditingTextId(null);
@@ -918,41 +964,49 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     if (index <= 0) return;
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
       return updated;
     });
     if (index === currentPageIndex) setCurrentPageIndex(index - 1);
     else if (index - 1 === currentPageIndex) setCurrentPageIndex(index);
     setPageContextMenu(null);
-  }, [currentPageIndex, layout]);
+  }, [currentPageIndex, layout, currentPageBg]);
 
   const movePageRight = useCallback((index: number) => {
     if (index >= pagesState.length - 1) return;
     setPagesState((prev) => {
       const updated = [...prev];
-      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements };
+      updated[currentPageIndex] = { ...updated[currentPageIndex], elements: layout.elements, background: currentPageBg };
       [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
       return updated;
     });
     if (index === currentPageIndex) setCurrentPageIndex(index + 1);
     else if (index + 1 === currentPageIndex) setCurrentPageIndex(index);
     setPageContextMenu(null);
-  }, [currentPageIndex, layout, pagesState.length]);
+  }, [currentPageIndex, layout, pagesState.length, currentPageBg]);
 
   // ─── Background rendering helper ─────────────────────────────
 
-  const bgUrl = layout.canvas.backgroundImageUrl;
-  const bgOpacity = layout.canvas.backgroundOpacity;
-  const bgBlur = layout.canvas.backgroundBlur;
+  // Per-page background overrides global canvas background
+  const effectiveBgUrl = currentPageBg?.imageUrl !== undefined ? currentPageBg.imageUrl : layout.canvas.backgroundImageUrl;
+  const effectiveBgColor = currentPageBg?.color !== undefined ? currentPageBg.color : layout.canvas.backgroundColor;
+  const effectiveBgOpacity = currentPageBg?.opacity ?? layout.canvas.backgroundOpacity;
+  const effectiveBgBlur = currentPageBg?.blur ?? layout.canvas.backgroundBlur;
+  const effectiveOverlayOpacity = currentPageBg?.overlayOpacity ?? layout.canvas.overlayOpacity ?? 0.2;
+  const effectiveBgConfig = (currentPageBg?.config ?? layout.canvas.backgroundConfig ?? {}) as Record<string, unknown>;
+
+  const bgUrl = effectiveBgUrl;
+  const bgOpacity = effectiveBgOpacity;
+  const bgBlur = effectiveBgBlur;
   const bgBlurStyle = bgBlur > 0 ? `blur(${bgBlur / 10}cqi)` : undefined;
-  const bgConfig = (layout.canvas.backgroundConfig ?? {}) as Record<string, unknown>;
+  const bgConfig = effectiveBgConfig;
 
   const renderBackground = () => (
     <>
       {/* Solid color */}
-      {layout.canvas.backgroundColor && !bgUrl && (
-        <div className="absolute inset-0 z-0" style={{ backgroundColor: layout.canvas.backgroundColor }} />
+      {effectiveBgColor && !bgUrl && (
+        <div className="absolute inset-0 z-0" style={{ backgroundColor: effectiveBgColor }} />
       )}
 
       {/* WebGL preset backgrounds */}
@@ -1014,7 +1068,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       )}
       <div
         className="absolute inset-0 z-[1]"
-        style={{ backgroundColor: `rgba(0,0,0,${layout.canvas.overlayOpacity ?? 0.2})` }}
+        style={{ backgroundColor: `rgba(0,0,0,${effectiveOverlayOpacity})` }}
       />
     </>
   );
@@ -1132,6 +1186,61 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         ref={canvasRef}
         className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl select-none"
         style={{ aspectRatio: layout.canvas.aspectRatio, isolation: "isolate", containerType: "inline-size" }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDrop={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+          if (files.length === 0) return;
+          const rect = canvasRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const dropXPct = ((e.clientX - rect.left) / rect.width) * 100;
+          const dropYPct = ((e.clientY - rect.top) / rect.height) * 100;
+          for (const file of files) {
+            toast.info("Uploading dropped image...");
+            try {
+              const res = await uploadImage(file);
+              if (!res) { toast.error("Upload failed"); continue; }
+              // Register the image with the build
+              const fd = new FormData();
+              fd.append("buildId", build.id);
+              fd.append("url", res.url);
+              const { addBuildImage } = await import("@/lib/actions/build");
+              const addResult = await addBuildImage(fd);
+              const dbImageId = (addResult && "image" in addResult && addResult.image)
+                ? (addResult.image as { id: string }).id
+                : generateId();
+              if (addResult && "image" in addResult && addResult.image) {
+                setBuildImages((prev) => [...prev, { id: dbImageId, url: res.url, alt: "Dropped image", isPrimary: false, order: prev.length }]);
+              }
+              const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((el) => el.zIndex)) : 0;
+              const element: ShowcaseImageElement = {
+                id: generateId(),
+                type: "image",
+                x: Math.max(0, dropXPct - 20),
+                y: Math.max(0, dropYPct - 15),
+                width: 40,
+                height: 30,
+                zIndex: maxZ + 1,
+                rotation: 0,
+                imageId: dbImageId,
+                imageUrl: res.url,
+                objectFit: "cover",
+                borderRadius: 8,
+                shadow: true,
+                caption: null,
+              };
+              dispatch({ type: "ADD_ELEMENT", element });
+              setSelectedIds([element.id]);
+              toast.success("Image added!");
+            } catch {
+              toast.error("Failed to upload dropped image");
+            }
+          }
+        }}
         onPointerDown={(e) => {
           // Start marquee selection when clicking on the canvas background
           const target = e.target as HTMLElement;
@@ -1297,6 +1406,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         {/* Drawing overlay */}
         {showDrawing && canvasRef.current && (
           <DrawingOverlay
+            ref={drawingRef}
             canvasWidth={canvasRef.current.clientWidth * 2}
             canvasHeight={canvasRef.current.clientHeight * 2}
             onComplete={handleDrawingComplete}
@@ -1372,8 +1482,28 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         <BackgroundPicker
           images={buildImages}
           buildId={build.id}
-          currentBackground={layout.canvas}
-          onUpdate={(bg) => dispatch({ type: "SET_BACKGROUND", ...bg })}
+          currentBackground={{
+            backgroundImageUrl: effectiveBgUrl ?? null,
+            backgroundColor: effectiveBgColor ?? null,
+            backgroundOpacity: effectiveBgOpacity,
+            backgroundBlur: effectiveBgBlur,
+            backgroundConfig: effectiveBgConfig,
+            overlayOpacity: effectiveOverlayOpacity,
+          }}
+          onUpdate={(bg) => {
+            // Update per-page background
+            setCurrentPageBg((prev) => ({
+              ...prev,
+              imageUrl: bg.backgroundImageUrl !== undefined ? bg.backgroundImageUrl : prev?.imageUrl,
+              color: bg.backgroundColor !== undefined ? bg.backgroundColor : prev?.color,
+              opacity: bg.backgroundOpacity ?? prev?.opacity,
+              blur: bg.backgroundBlur ?? prev?.blur,
+              overlayOpacity: bg.overlayOpacity ?? prev?.overlayOpacity,
+              config: bg.backgroundConfig !== undefined ? bg.backgroundConfig : prev?.config,
+            }));
+            // Also update the canvas state so renderBackground picks it up
+            dispatch({ type: "SET_BACKGROUND", ...bg });
+          }}
           onClose={() => setActivePanel(null)}
         />
       )}

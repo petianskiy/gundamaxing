@@ -14,6 +14,9 @@ import {
   Twitter,
   Youtube,
   Instagram,
+  Github,
+  MessageCircle,
+  Music,
   ExternalLink,
   Ban,
 } from "lucide-react";
@@ -50,6 +53,9 @@ const socialIcons: Record<string, React.ElementType> = {
   twitter: Twitter,
   youtube: Youtube,
   instagram: Instagram,
+  github: Github,
+  discord: MessageCircle,
+  tiktok: Music,
   website: Globe,
 };
 
@@ -160,23 +166,25 @@ export function ProfileHeader({
             )}
 
             {/* Social Links */}
-            {Object.keys(user.socialLinks).length > 0 && (
+            {Object.entries(user.socialLinks).filter(([_, url]) => url && url.trim() !== "").length > 0 && (
               <div className="flex gap-2 mt-3">
-                {Object.entries(user.socialLinks).map(([platform, url]) => {
-                  const Icon = socialIcons[platform] || ExternalLink;
-                  return (
-                    <a
-                      key={platform}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      title={platform}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </a>
-                  );
-                })}
+                {Object.entries(user.socialLinks)
+                  .filter(([_, url]) => url && url.trim() !== "")
+                  .map(([platform, url]) => {
+                    const Icon = socialIcons[platform] || ExternalLink;
+                    return (
+                      <a
+                        key={platform}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        title={platform}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    );
+                  })}
               </div>
             )}
 

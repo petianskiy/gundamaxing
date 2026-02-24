@@ -123,7 +123,7 @@ export function UploadForm() {
   const [grade, setGrade] = useState("");
   const [scale, setScale] = useState("");
   const [timeline, setTimeline] = useState("");
-  const [status, setStatus] = useState<"WIP" | "Completed">("WIP");
+  const [status, setStatus] = useState<"WIP" | "Completed" | "Abandoned">("WIP");
   const [selectedTechniques, setSelectedTechniques] = useState<string[]>([]);
   const [paintSystem, setPaintSystem] = useState("");
   const [topcoat, setTopcoat] = useState("");
@@ -352,7 +352,7 @@ export function UploadForm() {
 
               <FormField label={t("upload.status")}>
                 <div className="flex gap-3">
-                  {(["WIP", "Completed"] as const).map((s) => (
+                  {(["WIP", "Completed", "Abandoned"] as const).map((s) => (
                     <button
                       key={s}
                       onClick={() => setStatus(s)}

@@ -1,7 +1,9 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { createNotification } from "@/lib/notifications";
 
 export async function toggleLike(buildId?: string, commentId?: string) {
   try {
@@ -47,6 +49,11 @@ export async function toggleLike(buildId?: string, commentId?: string) {
         }
       });
 
+      if (buildId) {
+        revalidatePath("/builds");
+        revalidatePath(`/builds/${buildId}`);
+      }
+
       return { liked: false };
     } else {
       // Like: create the like and increment counter atomically
@@ -73,6 +80,33 @@ export async function toggleLike(buildId?: string, commentId?: string) {
           });
         }
       });
+
+      // Send notification for build likes (fire-and-forget)
+      if (buildId) {
+        try {
+          const build = await db.build.findUnique({
+            where: { id: buildId },
+            select: { userId: true, title: true, slug: true },
+          });
+
+          if (build && build.userId !== userId) {
+            createNotification({
+              userId: build.userId,
+              type: "LIKE",
+              title: "New like",
+              message: `${session.user.username ?? "Someone"} liked your build "${build.title}"`,
+              actionUrl: `/builds/${build.slug}`,
+            }).catch(() => {});
+          }
+        } catch {
+          // Don't let notification failures break the like action
+        }
+      }
+
+      if (buildId) {
+        revalidatePath("/builds");
+        revalidatePath(`/builds/${buildId}`);
+      }
 
       return { liked: true };
     }

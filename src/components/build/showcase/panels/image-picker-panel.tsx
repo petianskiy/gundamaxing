@@ -6,7 +6,7 @@ import { X, Upload, Plus, Trash2, Loader2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
-import { useRemoveBackground, stageLabel } from "../hooks/use-remove-background";
+import { useRemoveBackground } from "../hooks/use-remove-background";
 import { addBuildImage, deleteBuildImage } from "@/lib/actions/build";
 import type { BuildImage } from "@/lib/types";
 
@@ -32,7 +32,7 @@ export function ImagePickerPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { upload, uploadMultiple, isUploading } = useR2Upload({ type: "image" });
-  const { removeBg, isRemoving, progress, stage } = useRemoveBackground();
+  const { removeBg, isRemoving, progress, stage, queueSize, queuePosition } = useRemoveBackground();
 
   const handleUpload = useCallback(
     async (files: File[]) => {
@@ -135,6 +135,29 @@ export function ImagePickerPanel({
   );
 
   return (
+    <>
+    {isRemoving && (
+      <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-zinc-900 border border-zinc-700/50 max-w-sm w-full mx-4 shadow-2xl">
+          <img src="/gundam-emoji.png" alt="" className="w-16 h-16 object-contain" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-white">
+              {stage === "queued" ? `Queued (${queuePosition} of ${queueSize})` :
+               stage === "loading-model" ? "Loading AI model..." :
+               stage === "processing" ? "Removing background..." :
+               "Finalizing..."}
+            </p>
+          </div>
+          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gx-red rounded-full transition-all duration-300"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-zinc-400">{Math.round(progress * 100)}%</p>
+        </div>
+      </div>
+    )}
     <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:right-4 z-[500] w-full sm:w-72 max-h-[50vh] sm:max-h-[70vh] bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 shrink-0">
@@ -215,19 +238,11 @@ export function ImagePickerPanel({
                 {/* Overlay */}
                 <div className={cn(
                   "absolute inset-0 transition-colors",
-                  removingBgId === (img.id || img.url) ? "bg-black/70 backdrop-blur-[1px]" : "bg-black/0 group-hover:bg-black/40"
+                  removingBgId === (img.id || img.url) ? "bg-black/70" : "bg-black/0 group-hover:bg-black/40"
                 )} />
                 {removingBgId === (img.id || img.url) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    {/* Progress ring */}
-                    <div className="relative w-8 h-8">
-                      <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
-                        <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
-                        <circle cx="16" cy="16" r="13" fill="none" stroke="#a855f7" strokeWidth="3" strokeDasharray={`${progress * 81.7} 81.7`} strokeLinecap="round" className="transition-all duration-300" />
-                      </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-white">{Math.round(progress * 100)}</span>
-                    </div>
-                    <span className="text-[8px] text-purple-300 font-medium text-center px-1 leading-tight">{stageLabel(stage)}</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
                   </div>
                 )}
                 {img.id && removingBgId !== (img.id || img.url) && (
@@ -260,5 +275,6 @@ export function ImagePickerPanel({
         )}
       </div>
     </div>
+    </>
   );
 }

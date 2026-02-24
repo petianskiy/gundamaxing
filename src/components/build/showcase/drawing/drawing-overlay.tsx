@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import {
   Pen,
@@ -132,14 +132,18 @@ interface UndoSnapshot {
 
 const MAX_LAYERS = 12;
 
+export interface DrawingOverlayHandle {
+  flush: () => void;
+}
+
 // ─── Component ───────────────────────────────────────────────────
 
-export function DrawingOverlay({
+export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayProps>(function DrawingOverlay({
   canvasWidth,
   canvasHeight,
   onComplete,
   onCancel,
-}: DrawingOverlayProps) {
+}, ref) {
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
   const layerManagerRef = useRef<LayerManager | null>(null);
   const compositorRef = useRef<Compositor | null>(null);
@@ -1132,6 +1136,11 @@ export function DrawingOverlay({
     );
   }, [onComplete, onCancel]);
 
+  // Expose flush() so the parent can trigger drawing completion (e.g. on Save)
+  useImperativeHandle(ref, () => ({
+    flush: handleDone,
+  }), [handleDone]);
+
   const activePreset = getBrushPreset(activeBrushId) ?? BRUSH_PRESETS[0];
   const ActiveIcon = getBrushIcon(activePreset);
 
@@ -1517,4 +1526,4 @@ export function DrawingOverlay({
         )}
     </>
   );
-}
+});

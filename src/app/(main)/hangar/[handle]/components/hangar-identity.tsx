@@ -9,6 +9,9 @@ import {
   Twitter,
   Youtube,
   Instagram,
+  Github,
+  MessageCircle,
+  Music,
   ExternalLink,
   Package,
   Award,
@@ -28,6 +31,9 @@ const socialIcons: Record<string, React.ElementType> = {
   twitter: Twitter,
   youtube: Youtube,
   instagram: Instagram,
+  github: Github,
+  discord: MessageCircle,
+  tiktok: Music,
   website: Globe,
 };
 
@@ -113,6 +119,7 @@ export function HangarIdentity({ user, isOwner }: HangarIdentityProps) {
         {/* Social links */}
         <div className="hidden md:flex items-center gap-1">
           {Object.entries(user.socialLinks)
+            .filter(([_, url]) => url && url.trim() !== "")
             .slice(0, 4)
             .map(([platform, url]) => {
               const Icon = socialIcons[platform] || ExternalLink;
@@ -121,7 +128,7 @@ export function HangarIdentity({ user, isOwner }: HangarIdentityProps) {
                   key={platform}
                   href={url}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="flex h-8 w-8 items-center justify-center rounded-full text-white/25 hover:text-white/70 hover:bg-white/5 transition-colors"
                   title={platform}
                 >

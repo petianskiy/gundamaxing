@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Minus, Plus, Crop, Eraser } from "lucide-react";
+import { X, RotateCw, Square, Trash2, Bold, Italic, Underline, Strikethrough, Minus, Plus, Crop, Eraser, FlipHorizontal, FlipVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import { CropModal } from "./crop-modal";
@@ -136,6 +136,37 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                     {fit}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Flip</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onUpdate({ flipH: !element.flipH })}
+                  className={cn(
+                    "flex-1 h-8 rounded-md flex items-center justify-center gap-1.5 border text-xs font-medium transition-colors",
+                    element.flipH
+                      ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                      : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                  )}
+                  title="Flip Horizontal"
+                >
+                  <FlipHorizontal className="h-3.5 w-3.5" />
+                  H
+                </button>
+                <button
+                  onClick={() => onUpdate({ flipV: !element.flipV })}
+                  className={cn(
+                    "flex-1 h-8 rounded-md flex items-center justify-center gap-1.5 border text-xs font-medium transition-colors",
+                    element.flipV
+                      ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                      : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                  )}
+                  title="Flip Vertical"
+                >
+                  <FlipVertical className="h-3.5 w-3.5" />
+                  V
+                </button>
               </div>
             </div>
             <div>

@@ -110,83 +110,86 @@ enum HangarLayout {
 }
 
 model User {
-  id               String           @id @default(cuid())
-  email            String           @unique
-  emailVerified    DateTime?
-  passwordHash     String?
-  username         String           @unique
-  displayName      String?
-  avatar           String?
-  banner           String?
-  bio              String?          @db.Text
-  accentColor      String?          @default("#dc2626")
+  id                 String           @id @default(cuid())
+  email              String           @unique
+  emailVerified      DateTime?
+  passwordHash       String?
+  username           String           @unique
+  displayName        String?
+  avatar             String?
+  banner             String?
+  bio                String?          @db.Text
+  accentColor        String?          @default("#dc2626")
   lastUsernameChange DateTime?
-  role             Role             @default(USER)
-  verificationTier VerificationTier @default(UNVERIFIED)
+  role               Role             @default(USER)
+  verificationTier   VerificationTier @default(UNVERIFIED)
 
   // Builder identity (Step B)
-  country          String?
-  skillLevel       SkillLevel?
-  preferredGrades  String[]         @default([])
-  favoriteTimelines String[]        @default([])
-  favoriteSeries   String[]         @default([])
+  country           String?
+  skillLevel        SkillLevel?
+  preferredGrades   String[]    @default([])
+  favoriteTimelines String[]    @default([])
+  favoriteSeries    String[]    @default([])
 
   // Workshop setup (Step C)
-  tools            String[]         @default([])
-  techniques       String[]         @default([])
+  tools      String[] @default([])
+  techniques String[] @default([])
 
   // Profile personalization (Step D)
   socialLinks      Json?
-  profileLayout    String?          @default("default")
-  sectionOrder     String[]         @default(["featured", "gallery", "wip", "workshop", "achievements"])
-  pinnedBuildIds   String[]         @default([])
-  hiddenSections   String[]         @default([])
-  isProfilePrivate Boolean          @default(false)
+  profileLayout    String?  @default("default")
+  sectionOrder     String[] @default(["featured", "gallery", "wip", "workshop", "achievements"])
+  pinnedBuildIds   String[] @default([])
+  hiddenSections   String[] @default([])
+  isProfilePrivate Boolean  @default(false)
 
   // Hangar customization
-  hangarTheme    HangarTheme        @default(CYBER_BAY)
-  hangarLayout   HangarLayout       @default(GALLERY)
-  manifesto      String?            @db.Text
+  hangarTheme  HangarTheme  @default(CYBER_BAY)
+  hangarLayout HangarLayout @default(GALLERY)
+  manifesto    String?      @db.Text
 
   // Reputation & anti-spam
-  reputation       Int              @default(0)
-  level            Int              @default(1)
-  riskScore        Int              @default(0)
+  reputation Int @default(0)
+  xp         Int @default(0)
+  level      Int @default(1)
+  riskScore  Int @default(0)
 
   // Ban info
-  banReason        String?          @db.Text
-  bannedAt         DateTime?
-  bannedBy         String?
+  banReason String?   @db.Text
+  bannedAt  DateTime?
+  bannedBy  String?
 
   // Registration tracking
-  registrationIp   String?
-  onboardingStep   Int              @default(0)
-  onboardingComplete Boolean        @default(false)
-  editorGuideSeen  Boolean          @default(false)
+  registrationIp     String?
+  onboardingStep     Int     @default(0)
+  onboardingComplete Boolean @default(false)
+  editorGuideSeen    Boolean @default(false)
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  accounts         Account[]
-  sessions         Session[]
-  builds           Build[]
-  buildLogs        BuildLogEntry[]
-  comments         Comment[]
-  threads          Thread[]
-  likes            Like[]
-  bookmarks        Bookmark[]
-  badges           UserBadge[]
-  reportsFiled     Report[]         @relation("reporter")
-  reportsReceived  Report[]         @relation("reported")
+  accounts          Account[]
+  sessions          Session[]
+  builds            Build[]
+  buildLogs         BuildLogEntry[]
+  comments          Comment[]
+  threads           Thread[]
+  likes             Like[]
+  bookmarks         Bookmark[]
+  badges            UserBadge[]
+  reportsFiled      Report[]           @relation("reporter")
+  reportsReceived   Report[]           @relation("reported")
   moderationActions ModerationAction[] @relation("moderator")
-  eventLogs        EventLog[]
-  eras             BuildEra[]
-  reactions        Reaction[]
-  brushPresets     UserBrushPreset[]
-  notifications    Notification[]
-  customRoles      UserCustomRole[]
-  lineages         Lineage[]
+  eventLogs         EventLog[]
+  eras              BuildEra[]
+  reactions         Reaction[]
+  brushPresets      UserBrushPreset[]
+  notifications     Notification[]
+  customRoles       UserCustomRole[]
+  lineages          Lineage[]
+  achievements      UserAchievement[]
+  kits              UserKit[]
 
   @@index([email])
   @@index([reputation])
@@ -219,42 +222,42 @@ model Build {
   baseKit         String?
   verification    VerificationTier @default(UNVERIFIED)
 
-  userId          String
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  images          BuildImage[]
-  calloutPins     CalloutPin[]
-  buildLog        BuildLogEntry[]
-  comments        Comment[]
-  likes           Like[]
-  bookmarks       Bookmark[]
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images      BuildImage[]
+  calloutPins CalloutPin[]
+  buildLog    BuildLogEntry[]
+  comments    Comment[]
+  likes       Like[]
+  bookmarks   Bookmark[]
 
   // Build DNA
-  inspiredByIds   String[]         @default([])
-  forkOfId        String?
-  forkOf          Build?           @relation("BuildForks", fields: [forkOfId], references: [id])
-  forks           Build[]          @relation("BuildForks")
+  inspiredByIds String[] @default([])
+  forkOfId      String?
+  forkOf        Build?   @relation("BuildForks", fields: [forkOfId], references: [id])
+  forks         Build[]  @relation("BuildForks")
 
   // Denormalized counters
-  likeCount       Int              @default(0)
-  commentCount    Int              @default(0)
-  forkCount       Int              @default(0)
-  bookmarkCount   Int              @default(0)
-  respectCount    Int              @default(0)
-  techniqueCount  Int              @default(0)
-  creativityCount Int              @default(0)
+  likeCount       Int @default(0)
+  commentCount    Int @default(0)
+  forkCount       Int @default(0)
+  bookmarkCount   Int @default(0)
+  respectCount    Int @default(0)
+  techniqueCount  Int @default(0)
+  creativityCount Int @default(0)
 
   // Showcase canvas layout (JSON blob for free-form page builder)
-  showcaseLayout  Json?
+  showcaseLayout Json?
 
   // Hangar
-  eraAssignments  BuildEraAssignment[]
-  reactions       Reaction[]
-  lineageNodes    LineageNode[]
+  eraAssignments BuildEraAssignment[]
+  reactions      Reaction[]
+  lineageNodes   LineageNode[]
 
-  commentsEnabled Boolean          @default(true)
-  isFeaturedBuild Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  commentsEnabled Boolean  @default(true)
+  isFeaturedBuild Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId])
   @@index([grade])
@@ -533,6 +536,10 @@ enum NotificationType {
   UNBAN
   CONTENT_DELETED
   SYSTEM
+  LIKE
+  COMMENT
+  MENTION
+  FORUM_REPLY
 }
 
 model Notification {
@@ -644,20 +651,20 @@ model Reaction {
 // ─── BRUSH PRESETS ─────────────────────────────────────────────
 
 model UserBrushPreset {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  category    String   @default("custom")
-  folder      String?
-  tags        String[] @default([])
-  isFavorite  Boolean  @default(false)
-  presetData  Json
-  stampUrl    String?
-  grainUrl    String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  category   String   @default("custom")
+  folder     String?
+  tags       String[] @default([])
+  isFavorite Boolean  @default(false)
+  presetData Json
+  stampUrl   String?
+  grainUrl   String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([userId, category])
   @@index([userId, isFavorite])
@@ -691,7 +698,7 @@ model CustomRole {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       UserCustomRole[]
+  users UserCustomRole[]
 
   @@index([priority])
 }
@@ -754,4 +761,91 @@ model SystemSetting {
   group     String?
   updatedAt DateTime @updatedAt
   updatedBy String?
+}
+
+// ─── ACHIEVEMENTS ────────────────────────────────────────────────
+
+enum AchievementCategory {
+  BUILDING
+  SOCIAL
+  POPULARITY
+  LINEAGE
+  FORUM
+  COLLECTOR
+  COMMUNITY
+}
+
+model Achievement {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  name        String
+  description String
+  category    AchievementCategory
+  icon        String?
+  xpReward    Int                 @default(10)
+  threshold   Int                 @default(1)
+  sortOrder   Int                 @default(0)
+  createdAt   DateTime            @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+  progress      Int         @default(0)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+// ─── COLLECTOR'S LORE (Gunpla Kit Database) ─────────────────────
+
+model GunplaKit {
+  id           String   @id @default(cuid())
+  name         String
+  seriesName   String
+  grade        String
+  scale        String?
+  releaseYear  Int?
+  manufacturer String   @default("Bandai")
+  imageUrl     String?
+  slug         String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userKits UserKit[]
+
+  @@index([grade])
+  @@index([seriesName])
+}
+
+enum KitStatus {
+  OWNED
+  BUILT
+  WISHLIST
+  BACKLOG
+}
+
+model UserKit {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kitId           String
+  kit             GunplaKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  status          KitStatus @default(OWNED)
+  buildDifficulty Int?
+  partQuality     Int?
+  overallRating   Int?
+  review          String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, kitId])
+  @@index([userId])
+  @@index([kitId])
 }

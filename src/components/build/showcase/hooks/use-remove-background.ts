@@ -1,80 +1,95 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 
-export type BgRemovalStage = "idle" | "loading-model" | "processing" | "finalizing";
+export type BgRemovalStage = "idle" | "queued" | "loading-model" | "processing" | "uploading" | "done";
 
-// Preloaded flag to avoid re-preloading across instances
-let modelPreloaded = false;
-let preloadPromise: Promise<void> | null = null;
+// Global queue to prevent concurrent WASM processing
+let globalQueue: Array<{
+  imageUrl: string;
+  resolve: (blob: Blob) => void;
+  reject: (err: Error) => void;
+  onProgress: (progress: number) => void;
+  onStage: (stage: BgRemovalStage) => void;
+}> = [];
+let isProcessing = false;
+
+async function processQueue() {
+  if (isProcessing || globalQueue.length === 0) return;
+  isProcessing = true;
+
+  const item = globalQueue[0];
+  try {
+    item.onStage("loading-model");
+    const { removeBackground } = await import("@imgly/background-removal");
+
+    item.onStage("processing");
+    // Yield to main thread before heavy WASM work
+    await new Promise((r) => setTimeout(r, 50));
+
+    const blob = await removeBackground(item.imageUrl, {
+      model: "isnet_quint8",
+      device: "gpu",
+      output: { format: "image/png", quality: 1 },
+      progress: (_key: string, current: number, total: number) => {
+        if (total > 0) item.onProgress(current / total);
+      },
+    });
+
+    item.resolve(blob);
+  } catch (err) {
+    item.reject(err instanceof Error ? err : new Error(String(err)));
+  } finally {
+    globalQueue.shift();
+    isProcessing = false;
+    // Small delay before next item to let UI breathe
+    if (globalQueue.length > 0) {
+      setTimeout(processQueue, 100);
+    }
+  }
+}
 
 export function useRemoveBackground() {
   const [isRemoving, setIsRemoving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<BgRemovalStage>("idle");
-  const abortRef = useRef(false);
-
-  // Preload model on mount for instant processing later
-  useEffect(() => {
-    if (!modelPreloaded && !preloadPromise) {
-      preloadPromise = (async () => {
-        try {
-          const { preload } = await import("@imgly/background-removal");
-          await preload({ model: "isnet_quint8", device: "gpu" });
-          modelPreloaded = true;
-        } catch {
-          // Silently fail — model will load on first use
-        }
-      })();
-    }
-  }, []);
+  const [queueSize, setQueueSize] = useState(0);
+  const [queuePosition, setQueuePosition] = useState(0);
 
   const removeBg = useCallback(async (imageUrl: string): Promise<Blob> => {
-    abortRef.current = false;
     setIsRemoving(true);
     setProgress(0);
-    setStage("loading-model");
+    setStage("queued");
 
-    try {
-      const { removeBackground } = await import("@imgly/background-removal");
-
-      if (abortRef.current) throw new Error("Aborted");
-
-      setStage("processing");
-
-      const blob = await removeBackground(imageUrl, {
-        model: "isnet_quint8",
-        device: "gpu",
-        output: { format: "image/png", quality: 1 },
-        progress: (_key: string, current: number, total: number) => {
-          if (total > 0) {
-            const p = current / total;
-            setProgress(p);
-            if (p > 0.9) setStage("finalizing");
-          }
-        },
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      globalQueue.push({
+        imageUrl,
+        resolve,
+        reject,
+        onProgress: (p) => setProgress(p),
+        onStage: (s) => setStage(s),
       });
+      setQueueSize(globalQueue.length);
+      setQueuePosition(globalQueue.length);
+      processQueue();
+    });
 
-      return blob;
-    } finally {
-      setIsRemoving(false);
-      setProgress(0);
-      setStage("idle");
-    }
+    setIsRemoving(false);
+    setStage("done");
+    setQueueSize(globalQueue.length);
+    return blob;
   }, []);
 
-  const abort = useCallback(() => {
-    abortRef.current = true;
-  }, []);
-
-  return { removeBg, abort, isRemoving, progress, stage };
+  return { removeBg, isRemoving, progress, stage, queueSize, queuePosition };
 }
 
 export function stageLabel(stage: BgRemovalStage): string {
   switch (stage) {
+    case "queued": return "Queued...";
     case "loading-model": return "Loading AI model...";
     case "processing": return "Removing background...";
-    case "finalizing": return "Finalizing...";
+    case "uploading": return "Uploading result...";
+    case "done": return "Done!";
     default: return "";
   }
 }

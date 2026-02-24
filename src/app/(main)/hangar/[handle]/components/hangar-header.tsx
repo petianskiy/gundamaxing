@@ -9,6 +9,9 @@ import {
   Twitter,
   Youtube,
   Instagram,
+  Github,
+  MessageCircle,
+  Music,
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,6 +30,9 @@ const socialIcons: Record<string, React.ElementType> = {
   twitter: Twitter,
   youtube: Youtube,
   instagram: Instagram,
+  github: Github,
+  discord: MessageCircle,
+  tiktok: Music,
   website: Globe,
 };
 
@@ -93,21 +99,24 @@ export function HangarHeader({ user, isOwner }: HangarHeaderProps) {
 
         {/* Social links */}
         <div className="hidden sm:flex items-center gap-1.5">
-          {Object.entries(user.socialLinks).slice(0, 4).map(([platform, url]) => {
-            const Icon = socialIcons[platform] || ExternalLink;
-            return (
-              <a
-                key={platform}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                title={platform}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </a>
-            );
-          })}
+          {Object.entries(user.socialLinks)
+            .filter(([_, url]) => url && url.trim() !== "")
+            .slice(0, 4)
+            .map(([platform, url]) => {
+              const Icon = socialIcons[platform] || ExternalLink;
+              return (
+                <a
+                  key={platform}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                  title={platform}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </a>
+              );
+            })}
         </div>
 
         {/* Edit button */}

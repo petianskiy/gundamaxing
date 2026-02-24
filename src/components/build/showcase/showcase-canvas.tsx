@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ShowcaseElement } from "./showcase-element";
 import { isWebGLPreset } from "./backgrounds";
-import type { Build, ShowcaseLayout } from "@/lib/types";
+import type { Build, ShowcaseLayout, ShowcasePageBackground } from "@/lib/types";
 
 // ─── WebGL Background Components (lazy, SSR-safe) ──────────────
 
@@ -18,6 +18,7 @@ const Grainient = dynamic(
 interface ShowcaseCanvasProps {
   layout: ShowcaseLayout;
   build: Build;
+  pageBackground?: ShowcasePageBackground;
 }
 
 const PRESET_STYLES: Record<string, React.CSSProperties> = {
@@ -28,22 +29,27 @@ const PRESET_STYLES: Record<string, React.CSSProperties> = {
   },
 };
 
-export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
+export function ShowcaseCanvas({ layout, build, pageBackground }: ShowcaseCanvasProps) {
   const { canvas, elements } = layout;
   const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
-  const bgUrl = canvas.backgroundImageUrl;
-  const bgOpacity = canvas.backgroundOpacity;
+
+  // Per-page background overrides canvas background
+  const bgUrl = pageBackground?.imageUrl !== undefined ? pageBackground.imageUrl : canvas.backgroundImageUrl;
+  const bgColor = pageBackground?.color !== undefined ? pageBackground.color : canvas.backgroundColor;
+  const bgOpacity = pageBackground?.opacity ?? canvas.backgroundOpacity;
+  const bgBlurVal = pageBackground?.blur ?? canvas.backgroundBlur;
+  const overlayOp = pageBackground?.overlayOpacity ?? canvas.overlayOpacity ?? 0.2;
+  const bgConfig = (pageBackground?.config ?? canvas.backgroundConfig ?? {}) as Record<string, unknown>;
   // Scale blur with canvas width using cqi (reference: 1000px = 100cqi)
-  const bgBlurStyle = canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur / 10}cqi)` : undefined;
-  const bgConfig = (canvas.backgroundConfig ?? {}) as Record<string, unknown>;
+  const bgBlurStyle = bgBlurVal > 0 ? `blur(${bgBlurVal / 10}cqi)` : undefined;
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5", containerType: "inline-size" }}>
+    <div className="relative w-full overflow-hidden select-none" style={{ aspectRatio: canvas.aspectRatio || "4 / 5", containerType: "inline-size" }}>
       {/* Solid color background */}
-      {canvas.backgroundColor && !bgUrl && (
+      {bgColor && !bgUrl && (
         <div
           className="absolute inset-0 z-0"
-          style={{ backgroundColor: canvas.backgroundColor }}
+          style={{ backgroundColor: bgColor! }}
         />
       )}
 
@@ -108,7 +114,7 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
       {/* Dark overlay for readability */}
       <div
         className="absolute inset-0 z-[1]"
-        style={{ backgroundColor: `rgba(0,0,0,${canvas.overlayOpacity ?? 0.2})` }}
+        style={{ backgroundColor: `rgba(0,0,0,${overlayOp})` }}
       />
 
       {/* Elements */}
