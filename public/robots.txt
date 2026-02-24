@@ -8,4 +8,4 @@ Disallow: /settings/
 Disallow: /notifications
 Disallow: /complete-profile
 
-Sitemap: https://gundamaxing.com/sitemap.xml
+Sitemap: https://www.gundamaxing.com/sitemap.xml

@@ -30,10 +30,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Gundamaxing — Showcase Your Build. Earn Your Rank.",
+  title: "Gundamaxing — Custom Gunpla Builder Showcase Platform",
   description:
-    "The definitive platform for Gunpla builders. Create Build Passports, showcase custom builds, track your lineage, and earn your rank.",
-  keywords: ["Gundam", "Gunpla", "model kit", "custom build", "Build Passport"],
+    "Gundamaxing is a community platform where Gunpla builders upload, showcase, and share custom Gundam builds.",
+  keywords: ["Gundam", "Gunpla", "model kit", "custom build", "Build Passport", "Gundam builder", "Gunpla showcase"],
+  metadataBase: new URL("https://www.gundamaxing.com"),
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -47,16 +51,16 @@ export const metadata: Metadata = {
     title: "Gundamaxing",
   },
   openGraph: {
-    title: "Gundamaxing — Showcase Your Build. Earn Your Rank.",
-    description: "The definitive platform for Gunpla builders.",
+    title: "Gundamaxing — Custom Gunpla Builder Showcase Platform",
+    description: "Gundamaxing is a community platform where Gunpla builders upload, showcase, and share custom Gundam builds.",
     siteName: "Gundamaxing",
     type: "website",
     url: "https://www.gundamaxing.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gundamaxing",
-    description: "The definitive platform for Gunpla builders.",
+    title: "Gundamaxing — Custom Gunpla Builder Showcase Platform",
+    description: "Gundamaxing is a community platform where Gunpla builders upload, showcase, and share custom Gundam builds.",
   },
 };
 
