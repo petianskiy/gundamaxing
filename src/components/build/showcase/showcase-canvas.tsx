@@ -24,7 +24,7 @@ const PRESET_STYLES: Record<string, React.CSSProperties> = {
   "preset:grid": {
     backgroundImage:
       "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-    backgroundSize: "40px 40px",
+    backgroundSize: "4cqi 4cqi",
   },
 };
 
@@ -33,7 +33,8 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
   const sortedElements = [...elements].sort((a, b) => a.zIndex - b.zIndex);
   const bgUrl = canvas.backgroundImageUrl;
   const bgOpacity = canvas.backgroundOpacity;
-  const bgBlurStyle = canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur}px)` : undefined;
+  // Scale blur with canvas width using cqi (reference: 1000px = 100cqi)
+  const bgBlurStyle = canvas.backgroundBlur > 0 ? `blur(${canvas.backgroundBlur / 10}cqi)` : undefined;
   const bgConfig = (canvas.backgroundConfig ?? {}) as Record<string, unknown>;
 
   return (

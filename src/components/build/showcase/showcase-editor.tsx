@@ -945,7 +945,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   const bgUrl = layout.canvas.backgroundImageUrl;
   const bgOpacity = layout.canvas.backgroundOpacity;
   const bgBlur = layout.canvas.backgroundBlur;
-  const bgBlurStyle = bgBlur > 0 ? `blur(${bgBlur}px)` : undefined;
+  const bgBlurStyle = bgBlur > 0 ? `blur(${bgBlur / 10}cqi)` : undefined;
   const bgConfig = (layout.canvas.backgroundConfig ?? {}) as Record<string, unknown>;
 
   const renderBackground = () => (

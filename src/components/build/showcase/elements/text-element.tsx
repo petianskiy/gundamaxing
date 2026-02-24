@@ -51,7 +51,7 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
   }, [isEditing, element.content]);
 
   const baseClassName = cn(
-    "w-full h-full px-3 py-2 leading-relaxed whitespace-pre-wrap break-words overflow-hidden",
+    "w-full h-full leading-relaxed whitespace-pre-wrap break-words overflow-hidden",
     textAlignMap[element.textAlign],
     fontFamilyMap[element.fontFamily] || "font-sans",
     element.bold && "font-bold",
@@ -59,12 +59,13 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
     isEditing && "outline-none cursor-text ring-1 ring-blue-400/50"
   );
 
-  // Scale fontSize proportionally with canvas width using container query units.
-  // Reference: ~1000px canvas width → fontSize in px maps to fontSize/10 in cqi.
+  // Scale all sizes proportionally with canvas width using container query units.
+  // Reference: ~1000px canvas width → 1cqi = 10px.
   const sharedStyle: React.CSSProperties = {
     fontSize: `${element.fontSize / 10}cqi`,
+    padding: `${0.8}cqi ${1.2}cqi`,
+    borderRadius: `${0.8}cqi`,
     backgroundColor: element.backgroundColor || "transparent",
-    borderRadius: "8px",
   };
 
   // Fuzzy text (canvas-based distortion effect) — takes priority over gradient

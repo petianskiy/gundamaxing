@@ -12,6 +12,11 @@ interface VideoElementProps {
   isEditing?: boolean;
 }
 
+// Helper: convert px to cqi (reference: 1000px canvas = 100cqi)
+function cqi(px: number): string {
+  return `${px / 10}cqi`;
+}
+
 export function VideoElement({ element, isEditing }: VideoElementProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const volumePopupRef = useRef<HTMLDivElement>(null);
@@ -94,7 +99,7 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
   return (
     <div
       className="relative w-full h-full overflow-hidden group"
-      style={{ borderRadius: element.borderRadius }}
+      style={{ borderRadius: cqi(element.borderRadius) }}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => { setShowControls(false); setShowVolumePopup(false); }}
     >
@@ -114,7 +119,7 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       {/* Loading placeholder before video loads */}
       {!hasLoaded && (
         <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
-          <Play className="h-6 w-6 text-white/40" />
+          <Play style={{ width: cqi(24), height: cqi(24) }} className="text-white/40" />
         </div>
       )}
 
@@ -131,8 +136,11 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
         <div
           className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none"
         >
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Play className="h-5 w-5 text-white ml-0.5" fill="white" />
+          <div
+            className="rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
+            style={{ width: cqi(48), height: cqi(48) }}
+          >
+            <Play style={{ width: cqi(20), height: cqi(20), marginLeft: cqi(2) }} className="text-white" fill="white" />
           </div>
         </div>
       )}
@@ -140,12 +148,13 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       {/* Controls bar */}
       {isPlaying && showControls && (
         <div
-          className="absolute bottom-0 inset-x-0 px-3 py-2.5 bg-gradient-to-t from-black/80 to-transparent flex items-center gap-2.5"
+          className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent flex items-center"
+          style={{ padding: `${cqi(10)} ${cqi(12)}`, gap: cqi(10) }}
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button onClick={togglePlay} className="text-white hover:text-blue-300 transition-colors shrink-0">
-            <Pause className="h-4 w-4" />
+            <Pause style={{ width: cqi(16), height: cqi(16) }} />
           </button>
 
           {/* Volume icon + vertical popup */}
@@ -158,17 +167,20 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
               }}
               className="text-white hover:text-blue-300 transition-colors"
             >
-              {volume > 0 ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              {volume > 0
+                ? <Volume2 style={{ width: cqi(16), height: cqi(16) }} />
+                : <VolumeX style={{ width: cqi(16), height: cqi(16) }} />}
             </button>
 
             {/* Vertical volume popup */}
             {showVolumePopup && (
               <div
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-3 rounded-lg bg-black/90 backdrop-blur-sm border border-white/10 flex flex-col items-center gap-2"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 rounded-lg bg-black/90 backdrop-blur-sm border border-white/10 flex flex-col items-center"
+                style={{ marginBottom: cqi(8), padding: `${cqi(12)} ${cqi(10)}`, gap: cqi(8) }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <span className="text-[10px] text-white/60 tabular-nums">{Math.round(volume * 100)}</span>
+                <span className="text-white/60 tabular-nums" style={{ fontSize: cqi(10) }}>{Math.round(volume * 100)}</span>
                 <input
                   type="range"
                   min={0}
@@ -187,7 +199,9 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
                   }}
                   className="text-white/60 hover:text-white transition-colors"
                 >
-                  {volume > 0 ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+                  {volume > 0
+                    ? <Volume2 style={{ width: cqi(12), height: cqi(12) }} />
+                    : <VolumeX style={{ width: cqi(12), height: cqi(12) }} />}
                 </button>
               </div>
             )}
@@ -198,7 +212,7 @@ export function VideoElement({ element, isEditing }: VideoElementProps) {
       {/* Editing overlay */}
       {isEditing && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-          <div className="text-white/60 text-xs font-medium">Video</div>
+          <div className="text-white/60 font-medium" style={{ fontSize: cqi(12) }}>Video</div>
         </div>
       )}
     </div>
