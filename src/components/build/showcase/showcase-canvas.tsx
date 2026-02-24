@@ -37,7 +37,7 @@ export function ShowcaseCanvas({ layout, build }: ShowcaseCanvasProps) {
   const bgConfig = (canvas.backgroundConfig ?? {}) as Record<string, unknown>;
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5" }}>
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: canvas.aspectRatio || "4 / 5", containerType: "inline-size" }}>
       {/* Solid color background */}
       {canvas.backgroundColor && !bgUrl && (
         <div

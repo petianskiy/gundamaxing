@@ -59,8 +59,10 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
     isEditing && "outline-none cursor-text ring-1 ring-blue-400/50"
   );
 
+  // Scale fontSize proportionally with canvas width using container query units.
+  // Reference: ~1000px canvas width → fontSize in px maps to fontSize/10 in cqi.
   const sharedStyle: React.CSSProperties = {
-    fontSize: element.fontSize,
+    fontSize: `${element.fontSize / 10}cqi`,
     backgroundColor: element.backgroundColor || "transparent",
     borderRadius: "8px",
   };

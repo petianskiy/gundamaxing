@@ -166,12 +166,15 @@ export function FuzzyText({
     const w = canvas.width;
     const h = canvas.height;
 
+    // Resolve font size from inherited CSS (supports cqi container query units)
+    const resolvedFontSize = parseFloat(getComputedStyle(container).fontSize) || fontSize;
+
     const currentLetterSpacing = propsRef.current.letterSpacing;
 
     // Draw clean text to offscreen canvas
     offCtx.clearRect(0, 0, w, h);
     offCtx.fillStyle = color;
-    offCtx.font = `${fontWeight} ${fontSize * dpr}px ${fontFamily}`;
+    offCtx.font = `${fontWeight} ${resolvedFontSize * dpr}px ${fontFamily}`;
     offCtx.textBaseline = "middle";
     offCtx.textAlign = "center";
 
@@ -198,7 +201,7 @@ export function FuzzyText({
     }
     lines.push(currentLine);
 
-    const lineHeight = fontSize * dpr * 1.3;
+    const lineHeight = resolvedFontSize * dpr * 1.3;
     const totalTextHeight = lines.length * lineHeight;
     const startY = (h - totalTextHeight) / 2 + lineHeight / 2;
 

@@ -1032,7 +1032,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
             Back to Editor
           </button>
         </div>
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: layout.canvas.aspectRatio }}>
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: layout.canvas.aspectRatio, containerType: "inline-size" }}>
           {renderBackground()}
           {sortedElements.map((element) => (
             <div
@@ -1131,7 +1131,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       <div
         ref={canvasRef}
         className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl select-none"
-        style={{ aspectRatio: layout.canvas.aspectRatio, isolation: "isolate" }}
+        style={{ aspectRatio: layout.canvas.aspectRatio, isolation: "isolate", containerType: "inline-size" }}
         onPointerDown={(e) => {
           // Start marquee selection when clicking on the canvas background
           const target = e.target as HTMLElement;
@@ -1250,25 +1250,25 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
                       e.stopPropagation();
                       deleteSelected();
                     }}
-                    className="absolute -top-3 -right-3 z-50 w-6 h-6 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-md transition-colors"
+                    className="absolute -top-4 -right-4 sm:-top-3 sm:-right-3 z-50 w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-md transition-colors"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                   </button>
 
                   {/* Resize handles */}
                   {(["tl", "tr", "bl", "br"] as const).map((corner) => {
                     const posClass = {
-                      tl: "-top-1.5 -left-1.5 cursor-nw-resize",
-                      tr: "-top-1.5 -right-1.5 cursor-ne-resize",
-                      bl: "-bottom-1.5 -left-1.5 cursor-sw-resize",
-                      br: "-bottom-1.5 -right-1.5 cursor-se-resize",
+                      tl: "-top-2 -left-2 sm:-top-1.5 sm:-left-1.5 cursor-nw-resize",
+                      tr: "-top-2 -right-2 sm:-top-1.5 sm:-right-1.5 cursor-ne-resize",
+                      bl: "-bottom-2 -left-2 sm:-bottom-1.5 sm:-left-1.5 cursor-sw-resize",
+                      br: "-bottom-2 -right-2 sm:-bottom-1.5 sm:-right-1.5 cursor-se-resize",
                     }[corner];
                     return (
                       <div
                         key={corner}
                         data-resize-handle
                         className={cn(
-                          "absolute w-3 h-3 rounded-full bg-blue-500 border-2 border-white z-50",
+                          "absolute w-4 h-4 sm:w-3 sm:h-3 rounded-full bg-blue-500 border-2 border-white z-50",
                           posClass
                         )}
                         onPointerDown={(e) => startResize(element.id, corner, e)}

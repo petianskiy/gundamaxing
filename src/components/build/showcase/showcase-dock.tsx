@@ -204,10 +204,10 @@ function DockIcon({
   });
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-  const baseSize = isMobile ? 34 : 40;
-  const hoverSize = isMobile ? 34 : 64;
-  const baseIcon = isMobile ? 16 : 18;
-  const hoverIcon = isMobile ? 16 : 28;
+  const baseSize = isMobile ? 40 : 40;
+  const hoverSize = isMobile ? 40 : 64;
+  const baseIcon = isMobile ? 18 : 18;
+  const hoverIcon = isMobile ? 18 : 28;
 
   const widthSync = useTransform(distance, [-150, 0, 150], [baseSize, hoverSize, baseSize]);
   const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
