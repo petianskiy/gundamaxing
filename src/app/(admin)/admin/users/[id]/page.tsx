@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getUserCustomRoles, getAllCustomRoles } from "@/lib/data/roles";
 import { assignRoleToUser, removeRoleFromUser } from "@/lib/actions/roles";
+import { adminSetUserLevel, adminSetUserXp } from "@/lib/actions/admin-users";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -481,6 +482,56 @@ export default async function UserDetailPage({
               <button
                 type="submit"
                 className="px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors"
+              >
+                Set
+              </button>
+            </div>
+          </form>
+
+          {/* Set Level */}
+          <form action={adminSetUserLevel} className="space-y-2">
+            <input type="hidden" name="userId" value={user.id} />
+            <label className="text-xs text-muted-foreground">
+              Set Level (adjusts XP accordingly)
+            </label>
+            <div className="flex gap-2">
+              <select
+                name="level"
+                defaultValue={user.level}
+                className="flex-1 px-3 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gx-red/50"
+              >
+                <option value="1">Level 1 (0 XP)</option>
+                <option value="2">Level 2 (100 XP)</option>
+                <option value="3">Level 3 (300 XP)</option>
+                <option value="4">Level 4 (700 XP)</option>
+                <option value="5">Level 5 (1500 XP)</option>
+              </select>
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+              >
+                Set
+              </button>
+            </div>
+          </form>
+
+          {/* Set XP */}
+          <form action={adminSetUserXp} className="space-y-2">
+            <input type="hidden" name="userId" value={user.id} />
+            <label className="text-xs text-muted-foreground">
+              Set XP (current: {user.xp})
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                name="xp"
+                defaultValue={user.xp}
+                min={0}
+                className="flex-1 px-3 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-gx-red/50"
+              />
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
               >
                 Set
               </button>

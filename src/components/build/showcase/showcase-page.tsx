@@ -44,9 +44,10 @@ interface ShowcasePageProps {
   likedCommentIds: string[];
   startEditing?: boolean;
   showGuide?: boolean;
+  userLevel?: number;
 }
 
-export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing, showGuide }: ShowcasePageProps) {
+export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing, showGuide, userLevel = 1 }: ShowcasePageProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(!!startEditing);
   const isOwner = currentUserId === build.userId;
@@ -84,6 +85,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
               build={build}
               initialLayout={layout}
               onExit={handleExit}
+              userLevel={userLevel}
             />
           </div>
         </div>

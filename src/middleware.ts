@@ -10,6 +10,7 @@ const publicRoutes = [
   "/forum",
   "/forum/search",
   "/lineages",
+  "/collector",
   "/faq",
   "/guidelines",
   "/privacy",
@@ -32,6 +33,7 @@ const publicRoutePatterns = [
   /^\/u\/[^/]+$/,
   /^\/hangar\/[^/]+$/,
   /^\/lineages\/[^/]+$/,
+  /^\/collector\/[^/]+$/,
   /^\/api\//,
 ];
 

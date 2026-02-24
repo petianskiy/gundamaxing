@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { createLineageSchema, updateLineageSchema, saveNodesSchema } from "@/lib/validations/lineage";
+import { checkAndAwardAchievements } from "@/lib/achievements";
 
 function generateSlug(title: string): string {
   return title
@@ -55,6 +56,10 @@ export async function createLineage(formData: FormData) {
 
   revalidatePath("/lineages");
   revalidatePath("/lineages/mine");
+
+  // Fire-and-forget achievement check
+  checkAndAwardAchievements(session.user.id, "LINEAGE").catch(() => {});
+
   return { success: true, slug: lineage.slug, id: lineage.id };
 }
 

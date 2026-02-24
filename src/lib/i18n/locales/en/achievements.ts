@@ -1,0 +1,90 @@
+export const achievements: Record<string, string> = {
+  // Page titles
+  "achievements.title": "Achievements",
+  "achievements.subtitle": "Track your progress and unlock rewards",
+  "achievements.unlocked": "Unlocked",
+  "achievements.locked": "Locked",
+  "achievements.progress": "Progress",
+  "achievements.unlockedOn": "Unlocked on",
+
+  // Categories
+  "achievements.category.BUILDING": "Building",
+  "achievements.category.SOCIAL": "Social",
+  "achievements.category.POPULARITY": "Popularity",
+  "achievements.category.LINEAGE": "Lineage",
+  "achievements.category.FORUM": "Forum",
+  "achievements.category.COLLECTOR": "Collector",
+  "achievements.category.COMMUNITY": "Community",
+
+  // Level
+  "achievements.level": "Level",
+  "achievements.level.label": "Lv.",
+  "achievements.xp": "XP",
+  "achievements.xpToNext": "XP to next level",
+  "achievements.maxLevel": "Max Level",
+  "achievements.totalXp": "Total XP",
+
+  // Stats
+  "achievements.total": "Total Achievements",
+  "achievements.completionRate": "Completion Rate",
+
+  // Empty states
+  "achievements.empty": "No achievements unlocked yet.",
+  "achievements.empty.subtitle": "Start building, engaging, and exploring to earn achievements!",
+
+  // Admin
+  "achievements.admin.setLevel": "Set Level",
+  "achievements.admin.setXp": "Set XP",
+  "achievements.admin.levelUpdated": "Level updated successfully",
+  "achievements.admin.xpUpdated": "XP updated successfully",
+
+  // Achievement names
+  "achievements.name.first_build": "First Steps",
+  "achievements.name.five_builds": "Hangar Builder",
+  "achievements.name.ten_builds": "Workshop Veteran",
+  "achievements.name.twenty_builds": "Master Builder",
+  "achievements.name.first_like": "Supporter",
+  "achievements.name.fifty_likes": "Enthusiast",
+  "achievements.name.hundred_likes": "True Fan",
+  "achievements.name.ten_likes_received": "Getting Noticed",
+  "achievements.name.fifty_likes_received": "Popular Builder",
+  "achievements.name.hundred_likes_received": "Community Star",
+  "achievements.name.first_thread": "Discussion Starter",
+  "achievements.name.first_comment": "Contributor",
+  "achievements.name.ten_posts": "Active Voice",
+  "achievements.name.fifty_comments": "Chatty Builder",
+  "achievements.name.first_lineage": "Genealogist",
+  "achievements.name.five_lineages": "Lineage Master",
+  "achievements.name.first_kit": "Collector",
+  "achievements.name.ten_kits": "Hoarder",
+  "achievements.name.twenty_five_kits": "Armory",
+  "achievements.name.fifty_kits": "Arsenal",
+  "achievements.name.first_review": "Critic",
+  "achievements.name.profile_complete": "Identity Established",
+  "achievements.name.hangar_setup": "Home Base",
+
+  // Achievement descriptions
+  "achievements.desc.first_build": "Upload your first build",
+  "achievements.desc.five_builds": "Upload 5 builds",
+  "achievements.desc.ten_builds": "Upload 10 builds",
+  "achievements.desc.twenty_builds": "Upload 20 builds",
+  "achievements.desc.first_like": "Like your first build",
+  "achievements.desc.fifty_likes": "Like 50 builds",
+  "achievements.desc.hundred_likes": "Like 100 builds",
+  "achievements.desc.ten_likes_received": "Receive 10 likes on your builds",
+  "achievements.desc.fifty_likes_received": "Receive 50 likes on your builds",
+  "achievements.desc.hundred_likes_received": "Receive 100 likes on your builds",
+  "achievements.desc.first_thread": "Create your first thread",
+  "achievements.desc.first_comment": "Post your first comment",
+  "achievements.desc.ten_posts": "Post 10 comments or threads",
+  "achievements.desc.fifty_comments": "Post 50 comments or threads",
+  "achievements.desc.first_lineage": "Create your first lineage",
+  "achievements.desc.five_lineages": "Create 5 lineages",
+  "achievements.desc.first_kit": "Add your first kit to your collection",
+  "achievements.desc.ten_kits": "Collect 10 kits",
+  "achievements.desc.twenty_five_kits": "Collect 25 kits",
+  "achievements.desc.fifty_kits": "Collect 50 kits",
+  "achievements.desc.first_review": "Write your first kit review",
+  "achievements.desc.profile_complete": "Complete your profile",
+  "achievements.desc.hangar_setup": "Customize your hangar",
+};

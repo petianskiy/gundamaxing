@@ -12,6 +12,7 @@ import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
 import { createNotification } from "@/lib/notifications";
+import { checkAndAwardAchievements } from "@/lib/achievements";
 
 const commentSchema = z.object({
   content: z.string().min(1).max(10000),
@@ -247,6 +248,9 @@ export async function createComment(formData: FormData) {
     } catch {
       // Don't let notification failures break the comment action
     }
+
+    // Fire-and-forget achievement check
+    checkAndAwardAchievements(user.id, "FORUM").catch(() => {});
 
     return { success: true, commentId: comment.id };
   } catch (error) {

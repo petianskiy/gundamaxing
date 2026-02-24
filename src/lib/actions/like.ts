@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
+import { checkAndAwardAchievements } from "@/lib/achievements";
 
 export async function toggleLike(buildId?: string, commentId?: string) {
   try {
@@ -97,11 +98,16 @@ export async function toggleLike(buildId?: string, commentId?: string) {
               message: `${session.user.username ?? "Someone"} liked your build "${build.title}"`,
               actionUrl: `/builds/${build.slug}`,
             }).catch(() => {});
+            // Fire-and-forget achievement check for likes received
+            checkAndAwardAchievements(build.userId, "POPULARITY").catch(() => {});
           }
         } catch {
           // Don't let notification failures break the like action
         }
       }
+
+      // Fire-and-forget achievement check for likes given
+      checkAndAwardAchievements(userId, "SOCIAL").catch(() => {});
 
       if (buildId) {
         revalidatePath("/builds");

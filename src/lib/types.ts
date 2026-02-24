@@ -263,11 +263,12 @@ export type ShowcaseElement =
   | ShowcaseTextElement
   | ShowcaseMetadataElement
   | ShowcaseEffectElement
-  | ShowcaseVideoElement;
+  | ShowcaseVideoElement
+  | ShowcaseShapeElement;
 
 export interface ShowcaseElementBase {
   id: string;
-  type: "image" | "text" | "metadata" | "effect" | "video";
+  type: "image" | "text" | "metadata" | "effect" | "video" | "shape";
   x: number;
   y: number;
   width: number;
@@ -342,6 +343,27 @@ export interface ShowcaseVideoElement extends ShowcaseElementBase {
   borderRadius: number;
 }
 
+// ─── Shape Element ──────────────────────────────────────────────
+
+export type ShapeType = "rectangle" | "circle" | "triangle" | "star" | "hexagon" | "arrow" | "diamond" | "pentagon";
+
+export type ShapeFill =
+  | { type: "solid"; color: string }
+  | { type: "gradient"; colors: string[]; angle: number }
+  | { type: "image"; imageUrl: string; objectFit: "cover" | "contain" }
+  | { type: "none" };
+
+export interface ShowcaseShapeElement extends ShowcaseElementBase {
+  type: "shape";
+  shapeType: ShapeType;
+  fill: ShapeFill;
+  stroke: string | null;
+  strokeWidth: number;
+  opacity: number;
+  cornerRadius: number;
+  shadow: boolean;
+}
+
 // ─── Lineages (Build DNA) ────────────────────────────────────────
 
 export interface LineageNodeUI {
@@ -383,4 +405,75 @@ export interface HangarData {
   latestBuilds: Build[];
   eras: BuildEra[];
   unassignedBuilds: Build[];
+}
+
+// ─── Collector's Lore ────────────────────────────────────────
+export type KitStatus = "OWNED" | "BUILT" | "WISHLIST" | "BACKLOG";
+
+export interface GunplaKitUI {
+  id: string;
+  name: string;
+  seriesName: string;
+  grade: string;
+  scale: string | null;
+  releaseYear: number | null;
+  manufacturer: string;
+  imageUrl: string | null;
+  slug: string;
+  totalOwners: number;
+  avgRating: number | null;
+}
+
+export interface UserKitUI {
+  id: string;
+  kitId: string;
+  kit: GunplaKitUI;
+  status: KitStatus;
+  buildDifficulty: number | null;
+  partQuality: number | null;
+  overallRating: number | null;
+  review: string | null;
+  createdAt: string;
+}
+
+export interface UserKitReviewUI {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatar: string | null;
+  status: KitStatus;
+  buildDifficulty: number | null;
+  partQuality: number | null;
+  overallRating: number | null;
+  review: string | null;
+  createdAt: string;
+}
+
+// ─── Achievements & Levels ──────────────────────────────────
+export type AchievementCategory = "BUILDING" | "SOCIAL" | "POPULARITY" | "LINEAGE" | "FORUM" | "COLLECTOR" | "COMMUNITY";
+
+export interface AchievementUI {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  icon: string | null;
+  xpReward: number;
+  threshold: number;
+}
+
+export interface UserAchievementUI {
+  achievement: AchievementUI;
+  unlockedAt: string | null;
+  progress: number;
+  isUnlocked: boolean;
+}
+
+export interface LevelInfo {
+  level: number;
+  xp: number;
+  currentLevelXp: number;
+  nextLevelXp: number;
+  progress: number; // 0-100 percentage
 }

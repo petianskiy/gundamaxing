@@ -8,7 +8,7 @@ import { CropModal } from "./crop-modal";
 import { BgRefineModal } from "./bg-refine-modal";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { toast } from "sonner";
-import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
+import type { ShowcaseElement, ShowcaseFontFamily, ShapeType, ShapeFill } from "@/lib/types";
 
 const SNAP_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 const SNAP_THRESHOLD = 5; // degrees — snap when within this range
@@ -793,7 +793,289 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
             </div>
           </>
         )}
+
+        {/* Shape-specific */}
+        {element.type === "shape" && (
+          <ShapePropsSection element={element} onUpdate={onUpdate} />
+        )}
       </div>
     </div>
+  );
+}
+
+// ─── Shape Properties Sub-component ──────────────────────────────
+
+const SHAPE_TYPES: { value: ShapeType; label: string }[] = [
+  { value: "rectangle", label: "Rectangle" },
+  { value: "circle", label: "Circle" },
+  { value: "triangle", label: "Triangle" },
+  { value: "star", label: "Star" },
+  { value: "hexagon", label: "Hexagon" },
+  { value: "arrow", label: "Arrow" },
+  { value: "diamond", label: "Diamond" },
+  { value: "pentagon", label: "Pentagon" },
+];
+
+const FILL_TABS = ["solid", "gradient", "image", "none"] as const;
+
+function ShapePropsSection({
+  element,
+  onUpdate,
+}: {
+  element: Extract<ShowcaseElement, { type: "shape" }>;
+  onUpdate: (updates: Partial<ShowcaseElement>) => void;
+}) {
+  const fill = element.fill;
+  const fillType = fill.type;
+
+  const updateFill = (newFill: ShapeFill) => {
+    onUpdate({ fill: newFill } as Partial<ShowcaseElement>);
+  };
+
+  return (
+    <>
+      {/* Shape type selector */}
+      <div>
+        <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Shape</label>
+        <select
+          value={element.shapeType}
+          onChange={(e) => onUpdate({ shapeType: e.target.value as ShapeType } as Partial<ShowcaseElement>)}
+          className="w-full px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-white focus:outline-none focus:border-blue-500"
+        >
+          {SHAPE_TYPES.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Fill type tabs */}
+      <div>
+        <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Fill</label>
+        <div className="flex gap-1 mb-2">
+          {FILL_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                if (tab === "solid") updateFill({ type: "solid", color: "#ffffff" });
+                else if (tab === "gradient") updateFill({ type: "gradient", colors: ["#40ffaa", "#4079ff"], angle: 90 });
+                else if (tab === "image") updateFill({ type: "image", imageUrl: "", objectFit: "cover" });
+                else updateFill({ type: "none" });
+              }}
+              className={cn(
+                "flex-1 px-2 py-1.5 rounded-md text-xs font-medium border transition-colors capitalize",
+                fillType === tab
+                  ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                  : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Solid fill */}
+        {fill.type === "solid" && (
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Color</label>
+            <input
+              type="color"
+              value={fill.color}
+              onChange={(e) => updateFill({ type: "solid", color: e.target.value })}
+              className="w-full h-8 rounded-md cursor-pointer"
+            />
+          </div>
+        )}
+
+        {/* Gradient fill */}
+        {fill.type === "gradient" && (
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Colors</label>
+              <div className="flex gap-1 flex-wrap">
+                {fill.colors.map((c, i) => (
+                  <div key={i} className="relative">
+                    <input
+                      type="color"
+                      value={c}
+                      onChange={(e) => {
+                        const newColors = [...fill.colors];
+                        newColors[i] = e.target.value;
+                        updateFill({ ...fill, colors: newColors });
+                      }}
+                      className="w-7 h-7 rounded cursor-pointer border border-zinc-700"
+                    />
+                    {fill.colors.length > 2 && (
+                      <button
+                        onClick={() => {
+                          const newColors = fill.colors.filter((_, idx) => idx !== i);
+                          updateFill({ ...fill, colors: newColors });
+                        }}
+                        className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-zinc-800 border border-zinc-600 text-zinc-400 hover:text-red-400 text-[8px] flex items-center justify-center"
+                      >
+                        x
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {fill.colors.length < 6 && (
+                  <button
+                    onClick={() => updateFill({ ...fill, colors: [...fill.colors, "#ff40ff"] })}
+                    className="w-7 h-7 rounded border border-dashed border-zinc-600 text-zinc-500 hover:text-white hover:border-zinc-400 flex items-center justify-center text-sm transition-colors"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 flex justify-between">
+                <span>Angle</span>
+                <span>{fill.angle}deg</span>
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={360}
+                step={1}
+                value={fill.angle}
+                onChange={(e) => updateFill({ ...fill, angle: parseInt(e.target.value) })}
+                className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Image fill */}
+        {fill.type === "image" && (
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Image URL</label>
+              <input
+                type="text"
+                value={fill.imageUrl}
+                onChange={(e) => updateFill({ ...fill, imageUrl: e.target.value })}
+                placeholder="https://..."
+                className="w-full px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Fit</label>
+              <div className="flex gap-2">
+                {(["cover", "contain"] as const).map((fit) => (
+                  <button
+                    key={fit}
+                    onClick={() => updateFill({ ...fill, objectFit: fit })}
+                    className={cn(
+                      "flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
+                      fill.objectFit === fit
+                        ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    )}
+                  >
+                    {fit}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Stroke */}
+      <div>
+        <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Stroke</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={element.stroke || "#ffffff"}
+            onChange={(e) => onUpdate({ stroke: e.target.value } as Partial<ShowcaseElement>)}
+            className="w-8 h-8 rounded cursor-pointer border border-zinc-700"
+          />
+          <button
+            onClick={() => onUpdate({ stroke: element.stroke ? null : "#ffffff" } as Partial<ShowcaseElement>)}
+            className={cn(
+              "px-2 py-1 rounded-md text-xs font-medium border transition-colors",
+              element.stroke
+                ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+            )}
+          >
+            {element.stroke ? "On" : "Off"}
+          </button>
+        </div>
+      </div>
+
+      {/* Stroke Width */}
+      {element.stroke && (
+        <div>
+          <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+            <span>Stroke Width</span>
+            <span className="text-zinc-500">{element.strokeWidth}</span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={10}
+            step={0.5}
+            value={element.strokeWidth}
+            onChange={(e) => onUpdate({ strokeWidth: parseFloat(e.target.value) } as Partial<ShowcaseElement>)}
+            className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+          />
+        </div>
+      )}
+
+      {/* Opacity */}
+      <div>
+        <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+          <span>Opacity</span>
+          <span className="text-zinc-500">{Math.round(element.opacity * 100)}%</span>
+        </label>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={element.opacity}
+          onChange={(e) => onUpdate({ opacity: parseFloat(e.target.value) } as Partial<ShowcaseElement>)}
+          className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+        />
+      </div>
+
+      {/* Corner Radius (rectangle only) */}
+      {element.shapeType === "rectangle" && (
+        <div>
+          <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+            <span>Corner Radius</span>
+            <span className="text-zinc-500">{element.cornerRadius}</span>
+          </label>
+          <ElasticSlider
+            defaultValue={element.cornerRadius}
+            startingValue={0}
+            maxValue={50}
+            onChange={(val) => onUpdate({ cornerRadius: Math.round(val) } as Partial<ShowcaseElement>)}
+            leftIcon={<Square className="h-3.5 w-3.5 text-zinc-400" />}
+            rightIcon={<Square className="h-3.5 w-3.5 text-zinc-400 rounded" />}
+            className="w-full"
+          />
+        </div>
+      )}
+
+      {/* Shadow */}
+      <div className="flex items-center justify-between">
+        <label className="text-xs text-zinc-400 uppercase tracking-wider">Shadow</label>
+        <button
+          onClick={() => onUpdate({ shadow: !element.shadow } as Partial<ShowcaseElement>)}
+          className={cn(
+            "w-10 h-5 rounded-full transition-colors",
+            element.shadow ? "bg-blue-500" : "bg-zinc-700"
+          )}
+        >
+          <div className={cn(
+            "w-4 h-4 rounded-full bg-white transition-transform mx-0.5",
+            element.shadow ? "translate-x-5" : "translate-x-0"
+          )} />
+        </button>
+      </div>
+    </>
   );
 }

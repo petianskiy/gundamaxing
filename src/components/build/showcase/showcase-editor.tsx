@@ -11,6 +11,8 @@ import { BackgroundPicker } from "./panels/background-picker";
 import { ElementPropsPanel } from "./panels/element-props-panel";
 import { LayersPanel } from "./panels/layers-panel";
 import { EffectsPanel } from "./panels/effects-panel";
+import { ShapePickerPanel } from "./panels/shape-picker-panel";
+import { TemplatePickerPanel } from "./panels/template-picker-panel";
 import { DrawingOverlay } from "./drawing/drawing-overlay";
 import type { DrawingOverlayHandle } from "./drawing/drawing-overlay";
 import { useUndoableReducer } from "./hooks/use-undoable-reducer";
@@ -32,6 +34,7 @@ import type {
   ShowcaseMetadataElement,
   ShowcaseEffectElement,
   ShowcaseVideoElement,
+  ShowcaseShapeElement,
 } from "@/lib/types";
 
 function normalizePages(layout: ShowcaseLayout): ShowcasePageType[] {
@@ -174,9 +177,10 @@ interface ShowcaseEditorProps {
   build: Build;
   initialLayout: ShowcaseLayout;
   onExit: () => void;
+  userLevel?: number;
 }
 
-export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorProps) {
+export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: ShowcaseEditorProps) {
   // Migrate old layouts (fontSize enum→number, fontWeight→bold, etc.)
   const safeInitial = migrateShowcaseLayout(initialLayout);
 
@@ -186,7 +190,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<"images" | "background" | "layers" | "effects" | null>(null);
+  const [activePanel, setActivePanel] = useState<"images" | "background" | "layers" | "effects" | "shapes" | "templates" | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
@@ -721,6 +725,24 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     videoInputRef.current?.click();
   }, []);
 
+  const addShape = useCallback((shape: ShowcaseShapeElement) => {
+    const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
+    const element: ShowcaseShapeElement = {
+      ...shape,
+      zIndex: maxZ + 1,
+    };
+    dispatch({ type: "ADD_ELEMENT", element });
+    setSelectedIds([element.id]);
+    setActivePanel(null);
+  }, [layout.elements, dispatch]);
+
+  const applyTemplate = useCallback((elements: ShowcaseElementType[]) => {
+    // Replace current page elements with template elements
+    dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements } });
+    setSelectedIds([]);
+    setActivePanel(null);
+  }, [layout, dispatch]);
+
   // ─── Image management callbacks ───────────────────────────────
 
   const handleImageUploaded = useCallback((newImage: { id: string; url: string }) => {
@@ -884,7 +906,18 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     setEditingTextId(null);
   }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
+  // Level-gated page limit: L5 = 2 pages, below L5 = 1 page
+  const maxPages = userLevel >= 5 ? 2 : 1;
+
   const addPage = useCallback(() => {
+    if (pagesState.length >= maxPages) {
+      toast.error(
+        maxPages === 1
+          ? "Reach Level 5 to unlock multiple showcase pages!"
+          : `Maximum ${maxPages} pages allowed.`
+      );
+      return;
+    }
     // Save current page first
     setPagesState((prev) => {
       const updated = [...prev];
@@ -899,7 +932,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     setCurrentPageIndex(newIndex);
     setSelectedIds([]);
     setEditingTextId(null);
-  }, [currentPageIndex, layout, pagesState.length, dispatch, currentPageBg]);
+  }, [currentPageIndex, layout, pagesState.length, dispatch, currentPageBg, maxPages]);
 
   const duplicatePage = useCallback((index: number) => {
     const sourcePage = index === currentPageIndex
@@ -1135,9 +1168,16 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         ))}
         <button
           onClick={addPage}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-dashed border-zinc-700 shrink-0 transition-colors"
+          disabled={pagesState.length >= maxPages}
+          className={cn(
+            "px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed shrink-0 transition-colors",
+            pagesState.length >= maxPages
+              ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-zinc-700"
+          )}
+          title={pagesState.length >= maxPages && maxPages === 1 ? "Reach Level 5 to unlock multiple pages" : undefined}
         >
-          + Add Page
+          + Add Page{maxPages === 1 && " (Lv.5)"}
         </button>
       </div>
 
@@ -1522,6 +1562,20 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
           onClose={() => setActivePanel(null)}
         />
       )}
+      {activePanel === "shapes" && (
+        <ShapePickerPanel
+          onSelect={addShape}
+          onClose={() => setActivePanel(null)}
+        />
+      )}
+      {activePanel === "templates" && (
+        <TemplatePickerPanel
+          buildImages={buildImages}
+          hasElements={layout.elements.length > 0}
+          onApply={applyTemplate}
+          onClose={() => setActivePanel(null)}
+        />
+      )}
 
       {/* Hidden video file input */}
       <input
@@ -1539,6 +1593,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         onAddMetadata={addMetadata}
         onAddEffect={() => setActivePanel(activePanel === "effects" ? null : "effects")}
         onAddVideo={addVideo}
+        onAddShape={() => setActivePanel(activePanel === "shapes" ? null : "shapes")}
+        onAddTemplate={() => setActivePanel(activePanel === "templates" ? null : "templates")}
         onDraw={() => setShowDrawing(true)}
         onBackground={() => setActivePanel(activePanel === "background" ? null : "background")}
         onLayers={() => setActivePanel(activePanel === "layers" ? null : "layers")}

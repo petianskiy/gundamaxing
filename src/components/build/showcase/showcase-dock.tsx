@@ -24,6 +24,8 @@ import {
   Redo2,
   Film,
   Pencil,
+  Pentagon,
+  LayoutTemplate,
 } from "lucide-react";
 
 interface ShowcaseDockProps {
@@ -32,6 +34,8 @@ interface ShowcaseDockProps {
   onAddMetadata: () => void;
   onAddEffect: () => void;
   onAddVideo: () => void;
+  onAddShape: () => void;
+  onAddTemplate: () => void;
   onDraw: () => void;
   onBackground: () => void;
   onLayers: () => void;
@@ -69,6 +73,8 @@ export function ShowcaseDock({
   onAddMetadata,
   onAddEffect,
   onAddVideo,
+  onAddShape,
+  onAddTemplate,
   onDraw,
   onBackground,
   onLayers,
@@ -101,7 +107,9 @@ export function ShowcaseDock({
     { icon: isVideoUploading ? Loader2 : Film, label: isVideoUploading ? "Uploading..." : videosAtLimit ? `Videos ${videoCount}/${maxVideos}` : `Add Video (${videoCount}/${maxVideos})`, onClick: onAddVideo, disabled: isVideoUploading || videosAtLimit },
     { icon: Type, label: "Add Text", onClick: onAddText },
     { icon: LayoutGrid, label: "Info Card", onClick: onAddMetadata },
+    { icon: Pentagon, label: "Shapes", onClick: onAddShape },
     { icon: Zap, label: "Effects", onClick: onAddEffect },
+    { icon: LayoutTemplate, label: "Templates", onClick: onAddTemplate },
     { icon: Pencil, label: "Draw", onClick: onDraw },
     { icon: Image, label: "Background", onClick: onBackground },
     { icon: Layers, label: "Layers", onClick: onLayers },

@@ -93,12 +93,35 @@ const showcaseVideoElement = z.object({
   borderRadius: z.number().min(0).max(100),
 });
 
+const shapeFillSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("solid"), color: colorHex }),
+  z.object({ type: z.literal("gradient"), colors: z.array(colorHex).min(2).max(10), angle: z.number().min(0).max(360) }),
+  z.object({ type: z.literal("image"), imageUrl: z.string(), objectFit: z.enum(["cover", "contain"]) }),
+  z.object({ type: z.literal("none") }),
+]);
+
+const showcaseShapeElement = z.object({
+  type: z.literal("shape"),
+  id: z.string().min(1),
+  x: posX, y: posY, width: dimW, height: dimH,
+  zIndex: z.number().int(),
+  rotation: rot,
+  shapeType: z.enum(["rectangle", "circle", "triangle", "star", "hexagon", "arrow", "diamond", "pentagon"]),
+  fill: shapeFillSchema,
+  stroke: colorHex.nullable(),
+  strokeWidth: z.number().min(0).max(10),
+  opacity: z.number().min(0).max(1),
+  cornerRadius: z.number().min(0).max(100),
+  shadow: z.boolean(),
+});
+
 const showcaseElement = z.discriminatedUnion("type", [
   showcaseImageElement,
   showcaseTextElement,
   showcaseMetadataElement,
   showcaseEffectElement,
   showcaseVideoElement,
+  showcaseShapeElement,
 ]);
 
 const showcasePageBackgroundSchema = z.object({

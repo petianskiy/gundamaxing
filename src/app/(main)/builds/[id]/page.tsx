@@ -73,13 +73,18 @@ export default async function BuildPage({ params, searchParams }: Props) {
     : [false, false, [] as string[]];
 
   // Check if editor guide should be shown (first build, not yet seen)
+  // Also fetch user level for showcase page limit gating
   let showGuide = false;
-  if (wantsGuide && isOwner && currentUserId) {
+  let userLevel = 1;
+  if (isOwner && currentUserId) {
     const userData = await db.user.findUnique({
       where: { id: currentUserId },
-      select: { editorGuideSeen: true },
+      select: { editorGuideSeen: true, level: true },
     });
-    showGuide = !(userData?.editorGuideSeen);
+    if (wantsGuide) {
+      showGuide = !(userData?.editorGuideSeen);
+    }
+    userLevel = userData?.level ?? 1;
   }
 
   // If owner opened with ?edit=1, go directly to showcase editor
@@ -96,6 +101,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
         likedCommentIds={likedCommentIds}
         startEditing={wantsEdit && isOwner}
         showGuide={showGuide}
+        userLevel={userLevel}
       />
     );
   }

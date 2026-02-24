@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { VerificationBadge } from "@/components/ui/verification-badge";
 import { RoleBadge } from "@/components/ui/role-badge";
+import { LevelBadge } from "@/components/ui/level-badge";
 
 interface ProfileUser {
   displayName: string | null;
@@ -133,6 +134,7 @@ export function ProfileHeader({
                 showLabel
                 size="md"
               />
+              <LevelBadge level={user.level} size="md" />
               <RoleBadge
                 role={user.role}
                 customRoles={user.customRoles}

@@ -5,6 +5,7 @@ import { TextElement } from "./elements/text-element";
 import { MetadataElement } from "./elements/metadata-element";
 import { EffectElement } from "./elements/effect-element";
 import { VideoElement } from "./elements/video-element";
+import { ShapeElement } from "./elements/shape-element";
 import type { Build, ShowcaseElement as ShowcaseElementType } from "@/lib/types";
 
 interface ShowcaseElementProps {
@@ -32,6 +33,8 @@ export function ShowcaseElement({ element, build, isEditing, onContentChange }: 
       return <EffectElement element={element} />;
     case "video":
       return <VideoElement element={element} isEditing={isEditing} />;
+    case "shape":
+      return <ShapeElement element={element} isEditing={isEditing} />;
     default:
       return null;
   }

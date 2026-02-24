@@ -11,6 +11,7 @@ import { checkSpamContent } from "@/lib/security/spam-heuristics";
 import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
+import { checkAndAwardAchievements } from "@/lib/achievements";
 
 const threadSchema = z.object({
   title: z.string().min(1).max(200),
@@ -162,6 +163,9 @@ export async function createThread(formData: FormData) {
         } as Record<string, unknown>,
       });
     }
+
+    // Fire-and-forget achievement check
+    checkAndAwardAchievements(user.id, "FORUM").catch(() => {});
 
     return { success: true, threadId: thread.id };
   } catch (error) {

@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import type { BuildStatus } from "@prisma/client";
 import { showcaseLayoutSchema } from "@/lib/validations/showcase";
 import { validateCleanContent } from "@/lib/security/profanity";
+import { checkAndAwardAchievements } from "@/lib/achievements";
 
 const buildSchema = z.object({
   title: z.string().min(1).max(200),
@@ -166,6 +167,9 @@ export async function createBuild(formData: FormData) {
     });
 
     revalidatePath("/builds");
+
+    // Fire-and-forget achievement check
+    checkAndAwardAchievements(user.id, "BUILDING").catch(() => {});
 
     return { success: true, buildId: build.id, slug: build.slug, isFirstBuild: existingBuildCount === 0 };
   } catch (error) {

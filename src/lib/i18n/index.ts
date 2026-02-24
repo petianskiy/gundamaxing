@@ -11,6 +11,8 @@ import { admin as enAdmin } from "./locales/en/admin";
 import { settings as enSettings } from "./locales/en/settings";
 import { hangar as enHangar } from "./locales/en/hangar";
 import { lineage as enLineage } from "./locales/en/lineage";
+import { achievements as enAchievements } from "./locales/en/achievements";
+import { collector as enCollector } from "./locales/en/collector";
 
 import { common as jaCommon } from "./locales/ja/common";
 import { landing as jaLanding } from "./locales/ja/landing";
@@ -25,6 +27,8 @@ import { admin as jaAdmin } from "./locales/ja/admin";
 import { settings as jaSettings } from "./locales/ja/settings";
 import { hangar as jaHangar } from "./locales/ja/hangar";
 import { lineage as jaLineage } from "./locales/ja/lineage";
+import { achievements as jaAchievements } from "./locales/ja/achievements";
+import { collector as jaCollector } from "./locales/ja/collector";
 
 export type Locale = "en" | "ja";
 export const DEFAULT_LOCALE: Locale = "en";
@@ -35,6 +39,6 @@ function merge(...objs: Record<string, string>[]): Record<string, string> {
 }
 
 export const translations: Record<Locale, Record<string, string>> = {
-  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar, enLineage),
-  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar, jaLineage),
+  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar, enLineage, enAchievements, enCollector),
+  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar, jaLineage, jaAchievements, jaCollector),
 };

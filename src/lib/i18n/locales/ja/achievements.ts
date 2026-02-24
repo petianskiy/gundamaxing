@@ -1,0 +1,90 @@
+export const achievements: Record<string, string> = {
+  // Page titles
+  "achievements.title": "実績",
+  "achievements.subtitle": "進捗を確認してリワードを獲得しよう",
+  "achievements.unlocked": "達成済み",
+  "achievements.locked": "未達成",
+  "achievements.progress": "進捗",
+  "achievements.unlockedOn": "達成日",
+
+  // Categories
+  "achievements.category.BUILDING": "ビルド",
+  "achievements.category.SOCIAL": "ソーシャル",
+  "achievements.category.POPULARITY": "人気",
+  "achievements.category.LINEAGE": "リネージュ",
+  "achievements.category.FORUM": "フォーラム",
+  "achievements.category.COLLECTOR": "コレクター",
+  "achievements.category.COMMUNITY": "コミュニティ",
+
+  // Level
+  "achievements.level": "レベル",
+  "achievements.level.label": "Lv.",
+  "achievements.xp": "XP",
+  "achievements.xpToNext": "次のレベルまで",
+  "achievements.maxLevel": "最大レベル",
+  "achievements.totalXp": "合計XP",
+
+  // Stats
+  "achievements.total": "実績合計",
+  "achievements.completionRate": "達成率",
+
+  // Empty states
+  "achievements.empty": "まだ実績がありません。",
+  "achievements.empty.subtitle": "ビルドを作成し、コミュニティに参加して実績を獲得しよう！",
+
+  // Admin
+  "achievements.admin.setLevel": "レベル設定",
+  "achievements.admin.setXp": "XP設定",
+  "achievements.admin.levelUpdated": "レベルが更新されました",
+  "achievements.admin.xpUpdated": "XPが更新されました",
+
+  // Achievement names
+  "achievements.name.first_build": "ファーストステップ",
+  "achievements.name.five_builds": "ハンガービルダー",
+  "achievements.name.ten_builds": "工房のベテラン",
+  "achievements.name.twenty_builds": "マスタービルダー",
+  "achievements.name.first_like": "サポーター",
+  "achievements.name.fifty_likes": "エンスージアスト",
+  "achievements.name.hundred_likes": "真のファン",
+  "achievements.name.ten_likes_received": "注目の的",
+  "achievements.name.fifty_likes_received": "人気ビルダー",
+  "achievements.name.hundred_likes_received": "コミュニティスター",
+  "achievements.name.first_thread": "ディスカッション開始",
+  "achievements.name.first_comment": "コントリビューター",
+  "achievements.name.ten_posts": "アクティブボイス",
+  "achievements.name.fifty_comments": "おしゃべりビルダー",
+  "achievements.name.first_lineage": "系図学者",
+  "achievements.name.five_lineages": "リネージュマスター",
+  "achievements.name.first_kit": "コレクター",
+  "achievements.name.ten_kits": "収集家",
+  "achievements.name.twenty_five_kits": "武器庫",
+  "achievements.name.fifty_kits": "兵器廠",
+  "achievements.name.first_review": "評論家",
+  "achievements.name.profile_complete": "アイデンティティ確立",
+  "achievements.name.hangar_setup": "ホームベース",
+
+  // Achievement descriptions
+  "achievements.desc.first_build": "最初のビルドをアップロード",
+  "achievements.desc.five_builds": "5つのビルドをアップロード",
+  "achievements.desc.ten_builds": "10のビルドをアップロード",
+  "achievements.desc.twenty_builds": "20のビルドをアップロード",
+  "achievements.desc.first_like": "最初のビルドにいいね",
+  "achievements.desc.fifty_likes": "50のビルドにいいね",
+  "achievements.desc.hundred_likes": "100のビルドにいいね",
+  "achievements.desc.ten_likes_received": "10のいいねを獲得",
+  "achievements.desc.fifty_likes_received": "50のいいねを獲得",
+  "achievements.desc.hundred_likes_received": "100のいいねを獲得",
+  "achievements.desc.first_thread": "最初のスレッドを作成",
+  "achievements.desc.first_comment": "最初のコメントを投稿",
+  "achievements.desc.ten_posts": "10のコメントまたはスレッドを投稿",
+  "achievements.desc.fifty_comments": "50のコメントまたはスレッドを投稿",
+  "achievements.desc.first_lineage": "最初のリネージュを作成",
+  "achievements.desc.five_lineages": "5つのリネージュを作成",
+  "achievements.desc.first_kit": "最初のキットをコレクションに追加",
+  "achievements.desc.ten_kits": "10のキットを収集",
+  "achievements.desc.twenty_five_kits": "25のキットを収集",
+  "achievements.desc.fifty_kits": "50のキットを収集",
+  "achievements.desc.first_review": "最初のキットレビューを執筆",
+  "achievements.desc.profile_complete": "プロフィールを完成",
+  "achievements.desc.hangar_setup": "ハンガーをカスタマイズ",
+};

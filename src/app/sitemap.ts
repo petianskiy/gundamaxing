@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/builds`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
     { url: `${baseUrl}/forum`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.8 },
     { url: `${baseUrl}/lineages`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    { url: `${baseUrl}/collector`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     { url: `${baseUrl}/login`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${baseUrl}/register`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${baseUrl}/faq`, changeFrequency: "monthly", priority: 0.4 },
@@ -77,5 +78,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...buildPages, ...userPages, ...threadPages, ...lineagePages];
+  // Dynamic: Gunpla kit pages
+  const gunplaKits = await db.gunplaKit.findMany({
+    select: { slug: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+    take: 5000,
+  });
+
+  const kitPages: MetadataRoute.Sitemap = gunplaKits.map((kit) => ({
+    url: `${baseUrl}/collector/${kit.slug}`,
+    lastModified: kit.updatedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...buildPages, ...userPages, ...threadPages, ...lineagePages, ...kitPages];
 }
