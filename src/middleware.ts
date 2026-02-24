@@ -21,6 +21,8 @@ const publicRoutes = [
   "/reset-password",
   "/verify-email-change",
   "/complete-profile",
+  "/robots.txt",
+  "/sitemap.xml",
 ];
 
 const publicRoutePatterns = [
@@ -66,6 +68,6 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm|mov|mp3|ogg|woff2?|ttf|eot)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm|mov|mp3|ogg|woff2?|ttf|eot|txt|xml)$).*)",
   ],
 };

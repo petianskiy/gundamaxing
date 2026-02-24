@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import { CropModal } from "./crop-modal";
 import { BgRefineModal } from "./bg-refine-modal";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { toast } from "sonner";
 import type { ShowcaseElement, ShowcaseFontFamily } from "@/lib/types";
 
@@ -24,7 +24,7 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
   const [rotationInput, setRotationInput] = useState(String(element.rotation));
   const [showCrop, setShowCrop] = useState(false);
   const [showBgRemoval, setShowBgRemoval] = useState(false);
-  const { startUpload } = useUploadThing("buildImageUpload");
+  const { upload } = useR2Upload({ type: "image" });
 
   const handleRotationSlider = useCallback((rawVal: number) => {
     // Snap to key angles when within threshold
@@ -211,9 +211,9 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 imageUrl={element.imageUrl}
                 onComplete={async (blob) => {
                   const file = new File([blob], "no-bg.png", { type: "image/png" });
-                  const result = await startUpload([file]);
-                  if (result?.[0]) {
-                    onUpdate({ imageUrl: result[0].ufsUrl, objectFit: "contain" });
+                  const result = await upload(file);
+                  if (result) {
+                    onUpdate({ imageUrl: result.url, objectFit: "contain" });
                     toast.success("Background removed");
                   }
                   setShowBgRemoval(false);

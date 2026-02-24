@@ -49,7 +49,7 @@ export const builds = {
   "builds.showcase.deleteImage": "画像を削除",
   "builds.showcase.clickOrDragToUpload": "クリックまたはドラッグでアップロード",
   "builds.showcase.uploading": "アップロード中...",
-  "builds.showcase.maxImages": "ビルドごとに最大25枚の画像",
+  "builds.showcase.maxImages": "ビルドごとに最大15枚の画像",
   "builds.showcase.solidColor": "単色",
   "builds.showcase.customColor": "カスタムカラー",
   "builds.showcase.hangarBackgrounds": "ハンガー背景",

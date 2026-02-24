@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { createBuild } from "@/lib/actions/build";
 
 function CollapsibleSection({
@@ -136,7 +136,7 @@ export function UploadForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { startUpload } = useUploadThing("buildImageUpload");
+  const { uploadMultiple, isUploading: uploading2 } = useR2Upload({ type: "image" });
 
   // Cleanup preview URLs on unmount
   useEffect(() => {
@@ -149,7 +149,7 @@ export function UploadForm() {
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
     setPreviews((prev) => {
-      const remaining = 25 - prev.length;
+      const remaining = 15 - prev.length;
       const toAdd = fileArray.slice(0, remaining);
       const newPreviews = toAdd.map((file) => ({
         file,
@@ -206,7 +206,7 @@ export function UploadForm() {
       // Step 1: Upload images
       setUploading(true);
       const files = previews.map((p) => p.file);
-      const uploadResult = await startUpload(files);
+      const uploadResult = await uploadMultiple(files);
       setUploading(false);
 
       if (!uploadResult || uploadResult.length === 0) {
@@ -214,7 +214,7 @@ export function UploadForm() {
         return;
       }
 
-      const imageUrls = uploadResult.map((r) => r.ufsUrl);
+      const imageUrls = uploadResult.map((r) => r.url);
 
       // Step 2: Create build
       setSubmitting(true);
@@ -407,7 +407,7 @@ export function UploadForm() {
                 {previews.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
-                      {previews.length} / 25 images
+                      {previews.length} / 15 images
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {previews.map((preview, i) => (

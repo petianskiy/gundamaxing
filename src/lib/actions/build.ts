@@ -448,7 +448,7 @@ export async function addBuildImage(formData: FormData) {
       if (user?.role !== "ADMIN") return { error: "Not authorized." };
     }
 
-    if (build._count.images >= 25) return { error: "Maximum 25 images per build." };
+    if (build._count.images >= 15) return { error: "Maximum 15 images per build." };
 
     const image = await db.buildImage.create({
       data: {

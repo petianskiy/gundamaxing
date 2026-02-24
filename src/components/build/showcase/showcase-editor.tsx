@@ -15,7 +15,7 @@ import { DrawingOverlay } from "./drawing/drawing-overlay";
 import { useUndoableReducer } from "./hooks/use-undoable-reducer";
 import { migrateShowcaseLayout } from "@/lib/validations/showcase";
 import { updateShowcaseLayout } from "@/lib/actions/build";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { isWebGLPreset } from "./backgrounds";
@@ -206,8 +206,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
   const marqueeThreshold = 4; // pixels before marquee activates
 
   // Upload hooks
-  const { startUpload: startVideoUpload, isUploading: isVideoUploading } = useUploadThing("buildVideoUpload");
-  const { startUpload: startImageUpload } = useUploadThing("buildImageUpload");
+  const { upload: uploadVideo, isUploading: isVideoUploading } = useR2Upload({ type: "video" });
+  const { upload: uploadImage } = useR2Upload({ type: "image" });
 
   // Drag state — stored in refs for smooth pointer tracking
   const dragRef = useRef<{
@@ -648,12 +648,12 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
 
     toast.info("Uploading video...");
     try {
-      const res = await startVideoUpload([file]);
-      if (!res || res.length === 0) {
+      const res = await uploadVideo(file);
+      if (!res) {
         toast.error("Video upload failed — no response");
         return;
       }
-      const videoUrl = res[0].ufsUrl || (res[0] as unknown as { url?: string }).url;
+      const videoUrl = res.url;
       if (!videoUrl) {
         toast.error("Video upload failed — no URL returned");
         return;
@@ -681,7 +681,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       console.error("Video upload error:", err);
       toast.error("Video upload failed");
     }
-  }, [layout.elements, dispatch, startVideoUpload]);
+  }, [layout.elements, dispatch, uploadVideo]);
 
   const addVideo = useCallback(() => {
     videoInputRef.current?.click();
@@ -710,8 +710,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     toast.info("Uploading drawing...");
     try {
       const file = new File([blob], `drawing-${Date.now()}.png`, { type: "image/png" });
-      const res = await startImageUpload([file]);
-      if (!res?.[0]) {
+      const res = await uploadImage(file);
+      if (!res) {
         toast.error("Drawing upload failed");
         return;
       }
@@ -719,7 +719,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
       // Link the uploaded image to the build in the DB
       const fd = new FormData();
       fd.append("buildId", build.id);
-      fd.append("url", res[0].ufsUrl);
+      fd.append("url", res.url);
       const { addBuildImage } = await import("@/lib/actions/build");
       const addResult = await addBuildImage(fd);
       const dbImageId = (addResult && "image" in addResult && addResult.image)
@@ -727,7 +727,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         : generateId();
 
       if (addResult && "image" in addResult && addResult.image) {
-        setBuildImages((prev) => [...prev, { id: dbImageId, url: res[0].ufsUrl, alt: "Drawing", isPrimary: false, order: prev.length }]);
+        setBuildImages((prev) => [...prev, { id: dbImageId, url: res.url, alt: "Drawing", isPrimary: false, order: prev.length }]);
       }
 
       const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
@@ -741,7 +741,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
         zIndex: maxZ + 1,
         rotation: 0,
         imageId: dbImageId,
-        imageUrl: res[0].ufsUrl,
+        imageUrl: res.url,
         objectFit: "contain",
         borderRadius: 0,
         shadow: false,
@@ -753,7 +753,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit }: ShowcaseEditorP
     } catch {
       toast.error("Failed to upload drawing");
     }
-  }, [startImageUpload, layout.elements, dispatch, build.id]);
+  }, [uploadImage, layout.elements, dispatch, build.id]);
 
   // ─── Save ─────────────────────────────────────────────────────
 

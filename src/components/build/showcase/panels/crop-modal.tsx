@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Loader2, Check } from "lucide-react";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { toast } from "sonner";
 
 interface CropModalProps {
@@ -44,7 +44,7 @@ export function CropModal({ imageUrl, onComplete, onClose }: CropModalProps) {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isUploading, setIsUploading] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-  const { startUpload } = useUploadThing("buildImageUpload");
+  const { upload } = useR2Upload({ type: "image" });
 
   const handleApply = useCallback(async () => {
     if (!completedCrop || !imgRef.current) return;
@@ -57,9 +57,9 @@ export function CropModal({ imageUrl, onComplete, onClose }: CropModalProps) {
     try {
       const blob = await getCroppedBlob(imgRef.current, completedCrop);
       const file = new File([blob], "cropped.png", { type: "image/png" });
-      const result = await startUpload([file]);
-      if (result?.[0]) {
-        onComplete(result[0].ufsUrl);
+      const result = await upload(file);
+      if (result) {
+        onComplete(result.url);
       } else {
         toast.error("Upload failed");
       }
@@ -68,7 +68,7 @@ export function CropModal({ imageUrl, onComplete, onClose }: CropModalProps) {
     } finally {
       setIsUploading(false);
     }
-  }, [completedCrop, startUpload, onComplete]);
+  }, [completedCrop, upload, onComplete]);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">

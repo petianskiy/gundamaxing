@@ -5,7 +5,7 @@ import Image from "next/image";
 import { X, Upload, Plus, Trash2, Loader2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { useRemoveBackground, stageLabel } from "../hooks/use-remove-background";
 import { addBuildImage, deleteBuildImage } from "@/lib/actions/build";
 import type { BuildImage } from "@/lib/types";
@@ -31,18 +31,18 @@ export function ImagePickerPanel({
   const [removingBgId, setRemovingBgId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { startUpload, isUploading } = useUploadThing("buildImageUpload");
+  const { upload, uploadMultiple, isUploading } = useR2Upload({ type: "image" });
   const { removeBg, isRemoving, progress, stage } = useRemoveBackground();
 
   const handleUpload = useCallback(
     async (files: File[]) => {
-      const result = await startUpload(files);
+      const result = await uploadMultiple(files);
       if (!result) return;
 
       for (const file of result) {
         const fd = new FormData();
         fd.append("buildId", buildId);
-        fd.append("url", file.ufsUrl);
+        fd.append("url", file.url);
         const res = await addBuildImage(fd);
         if (res && "image" in res && res.image) {
           onImageUploaded(res.image as { id: string; url: string });
@@ -51,7 +51,7 @@ export function ImagePickerPanel({
         }
       }
     },
-    [buildId, startUpload, onImageUploaded],
+    [buildId, uploadMultiple, onImageUploaded],
   );
 
   const handleDelete = useCallback(
@@ -78,11 +78,11 @@ export function ImagePickerPanel({
       try {
         const blob = await removeBg(img.url);
         const file = new File([blob], "no-bg.png", { type: "image/png" });
-        const result = await startUpload([file]);
-        if (result?.[0]) {
+        const result = await upload(file);
+        if (result) {
           const fd = new FormData();
           fd.append("buildId", buildId);
-          fd.append("url", result[0].ufsUrl);
+          fd.append("url", result.url);
           const res = await addBuildImage(fd);
           if (res && "image" in res && res.image) {
             onImageUploaded(res.image as { id: string; url: string });
@@ -95,7 +95,7 @@ export function ImagePickerPanel({
         setRemovingBgId(null);
       }
     },
-    [buildId, removeBg, startUpload, onImageUploaded],
+    [buildId, removeBg, upload, onImageUploaded],
   );
 
   const handleFileChange = useCallback(

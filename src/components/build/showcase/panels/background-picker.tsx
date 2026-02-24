@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { BuildImage } from "@/lib/types";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { addBuildImage } from "@/lib/actions/build";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -232,7 +232,7 @@ export function BackgroundPicker({
   const [isUploading, setIsUploading] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
-  const { startUpload } = useUploadThing("buildImageUpload");
+  const { upload } = useR2Upload({ type: "image" });
 
   const isConfigurableActive =
     currentBackground.backgroundImageUrl === "preset:grainient";
@@ -265,14 +265,14 @@ export function BackgroundPicker({
 
       setIsUploading(true);
       try {
-        const result = await startUpload([file]);
-        if (!result || result.length === 0) {
+        const result = await upload(file);
+        if (!result) {
           toast.error("Upload failed. Please try again.");
           setIsUploading(false);
           return;
         }
 
-        const uploadedUrl = result[0].ufsUrl;
+        const uploadedUrl = result.url;
 
         // Register as build image
         const formData = new FormData();
@@ -289,7 +289,7 @@ export function BackgroundPicker({
         setIsUploading(false);
       }
     },
-    [buildId, onUpdate, startUpload],
+    [buildId, onUpdate, upload],
   );
 
   const handleDrop = useCallback(

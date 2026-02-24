@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
-import { useUploadThing } from "@/lib/upload/uploadthing";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { updateBuild } from "@/lib/actions/build";
 import type { BuildStatus as PrismaBuildStatus } from "@prisma/client";
 
@@ -166,7 +166,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { startUpload } = useUploadThing("buildImageUpload");
+  const { uploadMultiple } = useR2Upload({ type: "image" });
 
   // Cleanup preview URLs on unmount
   useEffect(() => {
@@ -181,7 +181,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
     setImages((prev) => {
-      const remaining = 25 - prev.length;
+      const remaining = 15 - prev.length;
       const toAdd = fileArray.slice(0, remaining);
       const newItems: ImageItem[] = toAdd.map((file) => ({
         url: "",
@@ -234,14 +234,14 @@ export function EditBuildForm({ build }: { build: BuildData }) {
       if (newImages.length > 0) {
         setUploading(true);
         const files = newImages.map((img) => img.file!);
-        const uploadResult = await startUpload(files);
+        const uploadResult = await uploadMultiple(files);
         setUploading(false);
 
         if (!uploadResult || uploadResult.length !== newImages.length) {
           setError("Image upload failed. Please try again.");
           return;
         }
-        uploadedUrls = uploadResult.map((r) => r.ufsUrl);
+        uploadedUrls = uploadResult.map((r) => r.url);
       }
 
       // Build final image URL array (existing URLs + newly uploaded URLs)
@@ -431,7 +431,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                 {images.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
-                      {images.length} / 25 images
+                      {images.length} / 15 images
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {images.map((img, i) => (

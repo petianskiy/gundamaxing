@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /mod/
+Disallow: /settings/
+Disallow: /notifications
+Disallow: /complete-profile
+
+Sitemap: https://gundamaxing.com/sitemap.xml

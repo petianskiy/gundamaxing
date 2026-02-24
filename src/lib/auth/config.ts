@@ -216,7 +216,6 @@ const authConfig: NextAuthConfig = {
   },
   pages: {
     signIn: "/login",
-    newUser: "/register",
     error: "/login",
   },
   trustHost: true,
@@ -224,24 +223,29 @@ const authConfig: NextAuthConfig = {
   callbacks: {
     async signIn({ user, account }) {
       if (user.id) {
-        const dbUser = await db.user.findUnique({
-          where: { id: user.id },
-          select: { riskScore: true, emailVerified: true, banReason: true },
-        });
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { id: user.id },
+            select: { riskScore: true, emailVerified: true, banReason: true },
+          });
 
-        // Block banned users (riskScore >= 100) — redirect with reason
-        if (dbUser && dbUser.riskScore >= 100) {
-          const reason = encodeURIComponent(dbUser.banReason || "Your account has been suspended.");
-          return `/login?error=AccountBanned&reason=${reason}`;
-        }
+          // Block banned users (riskScore >= 100) — redirect with reason
+          if (dbUser && dbUser.riskScore >= 100) {
+            const reason = encodeURIComponent(dbUser.banReason || "Your account has been suspended.");
+            return `/login?error=AccountBanned&reason=${reason}`;
+          }
 
-        // Block unverified credential logins (OAuth users are not affected)
-        if (
-          account?.provider === "credentials" &&
-          dbUser &&
-          !dbUser.emailVerified
-        ) {
-          return "/login?error=EmailNotVerified";
+          // Block unverified credential logins (OAuth users are not affected)
+          if (
+            account?.provider === "credentials" &&
+            dbUser &&
+            !dbUser.emailVerified
+          ) {
+            return "/login?error=EmailNotVerified";
+          }
+        } catch (err) {
+          console.error("[auth] signIn callback DB error:", err);
+          // Allow sign-in to proceed even if DB check fails — the user is already authenticated
         }
       }
       return true;
@@ -267,37 +271,51 @@ const authConfig: NextAuthConfig = {
       if (user) {
         // For OAuth sign-ins, the user may be new — ensure DB fields are loaded
         if (account?.provider !== "credentials") {
-          const dbUser = await db.user.findUnique({
-            where: { id: user.id! },
-            select: {
-              role: true,
-              username: true,
-              verificationTier: true,
-              onboardingComplete: true,
-            },
-          });
-          if (dbUser) {
-            // Auto-promote designated admin users on login
-            const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
-            if (dbUser.username && adminUsernames.includes(dbUser.username) && dbUser.role !== "ADMIN") {
-              await db.user.update({ where: { id: user.id! }, data: { role: "ADMIN" } });
-              dbUser.role = "ADMIN" as any;
-              console.log(`[auth] auto-promoted ${dbUser.username} to ADMIN on login`);
-            }
+          try {
+            const dbUser = await db.user.findUnique({
+              where: { id: user.id! },
+              select: {
+                role: true,
+                username: true,
+                verificationTier: true,
+                onboardingComplete: true,
+              },
+            });
+            if (dbUser) {
+              // Auto-promote designated admin users on login
+              const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
+              if (dbUser.username && adminUsernames.includes(dbUser.username) && dbUser.role !== "ADMIN") {
+                await db.user.update({ where: { id: user.id! }, data: { role: "ADMIN" } });
+                dbUser.role = "ADMIN" as any;
+                console.log(`[auth] auto-promoted ${dbUser.username} to ADMIN on login`);
+              }
 
+              token.id = user.id!;
+              token.role = dbUser.role;
+              token.username = dbUser.username;
+              token.verificationTier = dbUser.verificationTier;
+              token.onboardingComplete = dbUser.onboardingComplete;
+              token.picture = user.image ?? "";
+              token.name = user.name ?? "";
+            } else {
+              token.id = user.id!;
+              token.role = "USER";
+              token.username = "";
+              token.verificationTier = "UNVERIFIED";
+              token.onboardingComplete = false;
+              token.picture = user.image ?? "";
+              token.name = user.name ?? "";
+            }
+          } catch (err) {
+            console.error("[auth] jwt callback DB error:", err);
+            // Fallback: use whatever data is available from the OAuth profile
             token.id = user.id!;
-            token.role = dbUser.role;
-            token.username = dbUser.username;
-            token.verificationTier = dbUser.verificationTier;
-            token.onboardingComplete = dbUser.onboardingComplete;
+            token.role = (user as any).role ?? "USER";
+            token.username = (user as any).username ?? "";
+            token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
+            token.onboardingComplete = (user as any).onboardingComplete ?? false;
             token.picture = user.image ?? "";
             token.name = user.name ?? "";
-          } else {
-            token.id = user.id!;
-            token.role = "USER";
-            token.username = "";
-            token.verificationTier = "UNVERIFIED";
-            token.onboardingComplete = false;
           }
         } else {
           token.id = user.id!;

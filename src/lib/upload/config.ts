@@ -24,7 +24,7 @@ export const uploadRouter = {
       return { url: file.ufsUrl, userId: metadata.userId };
     }),
 
-  buildImageUpload: f({ image: { maxFileSize: "8MB", maxFileCount: 25 } })
+  buildImageUpload: f({ image: { maxFileSize: "16MB", maxFileCount: 15 } })
     .middleware(async () => {
       const session = await auth();
       if (!session?.user) throw new Error("Unauthorized");
@@ -34,7 +34,7 @@ export const uploadRouter = {
       return { url: file.ufsUrl, userId: metadata.userId };
     }),
 
-  buildVideoUpload: f({ video: { maxFileSize: "64MB", maxFileCount: 3 } })
+  buildVideoUpload: f({ video: { maxFileSize: "128MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await auth();
       if (!session?.user) throw new Error("Unauthorized");

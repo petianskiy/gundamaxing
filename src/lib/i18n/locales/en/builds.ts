@@ -49,7 +49,7 @@ export const builds = {
   "builds.showcase.deleteImage": "Delete Image",
   "builds.showcase.clickOrDragToUpload": "Click or drag to upload",
   "builds.showcase.uploading": "Uploading...",
-  "builds.showcase.maxImages": "Maximum 25 images per build",
+  "builds.showcase.maxImages": "Maximum 15 images per build",
   "builds.showcase.solidColor": "Solid Color",
   "builds.showcase.customColor": "Custom Color",
   "builds.showcase.hangarBackgrounds": "Hangar Backgrounds",
