@@ -329,16 +329,17 @@ const authConfig: NextAuthConfig = {
         }
       }
 
-      // Periodic role refresh (every 5 minutes) to catch admin-side role changes
+      // Periodic refresh (every 5 minutes) to catch admin-side changes + avatar updates
       if (!user && trigger !== "update" && token.id) {
         const lastCheck = (token.lastRoleCheck as number) || 0;
         if (Date.now() - lastCheck > 5 * 60 * 1000) {
           const freshUser = await db.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true },
+            select: { role: true, avatar: true },
           });
           if (freshUser) {
             token.role = freshUser.role;
+            token.picture = freshUser.avatar ?? token.picture ?? "";
           }
           token.lastRoleCheck = Date.now();
         }
