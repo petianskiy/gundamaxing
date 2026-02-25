@@ -784,6 +784,8 @@ model Achievement {
   icon        String?
   xpReward    Int                 @default(10)
   threshold   Int                 @default(1)
+  tiers       Int[]               @default([])
+  xpPerTier   Int[]               @default([])
   sortOrder   Int                 @default(0)
   createdAt   DateTime            @default(now())
 
@@ -798,6 +800,7 @@ model UserAchievement {
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
   unlockedAt    DateTime    @default(now())
   progress      Int         @default(0)
+  tier          Int         @default(0)
 
   @@unique([userId, achievementId])
   @@index([userId])

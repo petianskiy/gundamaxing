@@ -4,20 +4,35 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Trophy,
-  Lock,
-  Star,
   ArrowLeft,
+  Star,
+  Check,
   Hammer,
   Heart,
-  Flame,
   MessageSquare,
   GitBranch,
   Package,
+  BookOpen,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LevelBadge } from "@/components/ui/level-badge";
 import type { UserAchievementUI, AchievementCategory, LevelInfo } from "@/lib/types";
+
+// ─── Icon Mapping ────────────────────────────────────────────────
+
+const iconMap: Record<string, React.ElementType> = {
+  hammer: Hammer,
+  heart: Heart,
+  star: Star,
+  "message-square": MessageSquare,
+  "git-branch": GitBranch,
+  package: Package,
+  "book-open": BookOpen,
+  users: Users,
+};
+
+// ─── Category Config ─────────────────────────────────────────────
 
 const categoryConfig: Record<
   AchievementCategory,
@@ -42,7 +57,7 @@ const categoryConfig: Record<
     color: "text-amber-400",
     bgColor: "bg-amber-500/10",
     borderColor: "border-amber-500/30",
-    icon: Flame,
+    icon: Star,
   },
   FORUM: {
     label: "Forum",
@@ -84,22 +99,51 @@ const ALL_CATEGORIES: AchievementCategory[] = [
   "COMMUNITY",
 ];
 
+// ─── Tier Colors ─────────────────────────────────────────────────
+
+const tierColors = [
+  { bg: "bg-zinc-700", text: "text-zinc-300", border: "border-zinc-600", glow: "" },
+  { bg: "bg-emerald-700", text: "text-emerald-300", border: "border-emerald-500", glow: "" },
+  { bg: "bg-blue-700", text: "text-blue-300", border: "border-blue-500", glow: "" },
+  { bg: "bg-purple-700", text: "text-purple-300", border: "border-purple-500", glow: "" },
+  { bg: "bg-amber-600", text: "text-amber-200", border: "border-amber-400", glow: "shadow-amber-500/30 shadow-lg" },
+];
+
+// ─── Unit labels per achievement slug for tier descriptions ──────
+
+const unitLabels: Record<string, string> = {
+  builder: "builds",
+  supporter: "likes given",
+  "rising-star": "likes received",
+  "forum-voice": "forum posts",
+  genealogist: "lineages",
+  collector: "kits",
+  critic: "reviews",
+  "community-pillar": "engagement",
+};
+
+// ─── Props ───────────────────────────────────────────────────────
+
 interface AchievementsViewProps {
   username: string;
   handle: string;
   achievements: UserAchievementUI[];
   levelInfo: LevelInfo;
-  unlockedCount: number;
-  totalCount: number;
+  earnedCount: number;
+  totalCount?: number;
+  isOwner: boolean;
 }
+
+// ─── Main Component ──────────────────────────────────────────────
 
 export function AchievementsView({
   username,
   handle,
   achievements,
   levelInfo,
-  unlockedCount,
+  earnedCount,
   totalCount,
+  isOwner,
 }: AchievementsViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | "ALL">("ALL");
 
@@ -107,16 +151,6 @@ export function AchievementsView({
     selectedCategory === "ALL"
       ? achievements
       : achievements.filter((a) => a.achievement.category === selectedCategory);
-
-  // Group by category for display
-  const grouped = ALL_CATEGORIES.reduce(
-    (acc, cat) => {
-      const items = filtered.filter((a) => a.achievement.category === cat);
-      if (items.length > 0) acc[cat] = items;
-      return acc;
-    },
-    {} as Record<AchievementCategory, UserAchievementUI[]>
-  );
 
   return (
     <div className="space-y-6">
@@ -134,13 +168,15 @@ export function AchievementsView({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold font-rajdhani text-foreground">
                 {username}&apos;s Achievements
               </h1>
               <LevelBadge level={levelInfo.level} size="md" />
             </div>
             <p className="text-sm text-muted-foreground">
-              {unlockedCount} of {totalCount} achievements unlocked
+              {totalCount !== undefined
+                ? `${earnedCount} of ${totalCount} achievements progressed`
+                : `${earnedCount} achievements earned`}
             </p>
           </div>
           <div className="text-right">
@@ -188,14 +224,13 @@ export function AchievementsView({
               : "text-muted-foreground hover:text-foreground border-border/50 hover:border-border"
           )}
         >
-          All ({totalCount})
+          All
         </button>
         {ALL_CATEGORIES.map((cat) => {
           const config = categoryConfig[cat];
-          const count = achievements.filter((a) => a.achievement.category === cat).length;
-          const unlocked = achievements.filter(
-            (a) => a.achievement.category === cat && a.isUnlocked
-          ).length;
+          const catAchievements = achievements.filter((a) => a.achievement.category === cat);
+          if (!isOwner && catAchievements.length === 0) return null;
+          const earned = catAchievements.filter((a) => a.tier >= 1).length;
           return (
             <button
               key={cat}
@@ -207,33 +242,19 @@ export function AchievementsView({
                   : "text-muted-foreground hover:text-foreground border-border/50 hover:border-border"
               )}
             >
-              {config.label} ({unlocked}/{count})
+              {config.label}
+              {isOwner && ` (${earned}/${catAchievements.length})`}
+              {!isOwner && ` (${earned})`}
             </button>
           );
         })}
       </div>
 
-      {/* Achievement cards by category */}
-      <div className="space-y-8">
-        {Object.entries(grouped).map(([category, items]) => {
-          const config = categoryConfig[category as AchievementCategory];
-          const CategoryIcon = config.icon;
-          return (
-            <section key={category}>
-              <div className="flex items-center gap-2 mb-4">
-                <CategoryIcon className={cn("h-4 w-4", config.color)} />
-                <h2 className={cn("text-sm font-bold uppercase tracking-wider", config.color)}>
-                  {config.label}
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {items.map((item) => (
-                  <AchievementCard key={item.achievement.id} item={item} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      {/* Achievement grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map((item) => (
+          <DetailedAchievementCard key={item.achievement.id} item={item} isOwner={isOwner} />
+        ))}
       </div>
 
       {filtered.length === 0 && (
@@ -246,82 +267,204 @@ export function AchievementsView({
   );
 }
 
-function AchievementCard({ item }: { item: UserAchievementUI }) {
-  const config = categoryConfig[item.achievement.category];
+// ─── Detailed Achievement Card ───────────────────────────────────
+
+function DetailedAchievementCard({
+  item,
+  isOwner,
+}: {
+  item: UserAchievementUI;
+  isOwner: boolean;
+}) {
+  const { achievement, tier, progress, nextTierThreshold } = item;
+  const catConfig = categoryConfig[achievement.category];
+  const IconComponent = (achievement.icon && iconMap[achievement.icon]) || Trophy;
+  const isEarned = tier >= 1;
+  const isMaxed = tier >= 5;
+  const unit = unitLabels[achievement.slug] || "actions";
+
+  // Calculate XP earned from this achievement
+  const xpEarned = achievement.xpPerTier
+    .slice(0, tier)
+    .reduce((sum, xp) => sum + xp, 0);
+
+  // Total possible XP
+  const totalXp = achievement.xpPerTier.reduce((sum, xp) => sum + xp, 0);
+
+  // Progress toward next tier
+  const currentTierThreshold = tier > 0 ? achievement.tiers[tier - 1] : 0;
+  const progressPercent = nextTierThreshold
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(((progress - currentTierThreshold) / (nextTierThreshold - currentTierThreshold)) * 100)
+        )
+      )
+    : 100;
+
+  // Determine card glow for high tiers
+  const cardGlow = tier >= 5
+    ? "shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+    : tier >= 4
+      ? "shadow-[0_0_10px_rgba(168,85,247,0.1)]"
+      : "";
 
   return (
     <div
       className={cn(
-        "relative rounded-xl border p-4 transition-all",
-        item.isUnlocked
-          ? `${config.bgColor} ${config.borderColor} shadow-sm`
-          : "bg-zinc-900/50 border-zinc-800/50 opacity-50"
+        "rounded-xl border p-5 transition-all",
+        isEarned
+          ? `bg-card ${catConfig.borderColor} ${cardGlow}`
+          : "bg-zinc-900/30 border-zinc-800/50",
+        !isEarned && "opacity-50"
       )}
     >
-      <div className="flex items-start gap-3">
+      {/* Header row */}
+      <div className="flex items-start gap-3 mb-4">
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg shrink-0",
-            item.isUnlocked ? `${config.bgColor} ${config.color}` : "bg-zinc-800 text-zinc-600"
+            "flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
+            isEarned
+              ? `${catConfig.bgColor} ${catConfig.color}`
+              : "bg-zinc-800/50 text-zinc-600"
           )}
         >
-          {item.isUnlocked ? (
-            <Trophy className="h-5 w-5" />
-          ) : (
-            <Lock className="h-5 w-5" />
-          )}
+          <IconComponent className="h-5.5 w-5.5" />
         </div>
         <div className="flex-1 min-w-0">
           <h3
             className={cn(
-              "text-sm font-semibold leading-tight",
-              item.isUnlocked ? "text-foreground" : "text-zinc-500"
+              "text-base font-bold font-rajdhani leading-tight",
+              isEarned ? "text-foreground" : "text-zinc-500"
             )}
           >
-            {item.achievement.name}
+            {achievement.name}
           </h3>
           <p
             className={cn(
               "text-xs mt-0.5 leading-relaxed",
-              item.isUnlocked ? "text-muted-foreground" : "text-zinc-600"
+              isEarned ? "text-muted-foreground" : "text-zinc-600"
             )}
           >
-            {item.achievement.description}
+            {achievement.description}
           </p>
-          <div className="flex items-center gap-3 mt-2">
-            <span
-              className={cn(
-                "text-[10px] font-bold uppercase tracking-wider",
-                item.isUnlocked ? "text-gx-gold" : "text-zinc-600"
-              )}
-            >
-              +{item.achievement.xpReward} XP
-            </span>
-            {item.isUnlocked && item.unlockedAt && (
-              <span className="text-[10px] text-muted-foreground">
-                {new Date(item.unlockedAt).toLocaleDateString()}
-              </span>
-            )}
-          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <p className={cn("text-xs font-bold", isEarned ? "text-gx-gold" : "text-zinc-600")}>
+            {xpEarned}/{totalXp}
+          </p>
+          <p className="text-[10px] text-muted-foreground">XP</p>
         </div>
       </div>
 
-      {/* Progress indicator for locked achievements */}
-      {!item.isUnlocked && item.achievement.threshold > 1 && (
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] text-zinc-600 mb-1">
-            <span>{item.progress} / {item.achievement.threshold}</span>
+      {/* Tier progression row */}
+      <div className="flex items-center justify-between gap-2 mb-4">
+        {Array.from({ length: 5 }, (_, i) => {
+          const tierNum = i + 1;
+          const earned = tier >= tierNum;
+          const isCurrent = tier === tierNum;
+          const colors = tierColors[i];
+          return (
+            <div key={i} className="flex flex-col items-center gap-1 flex-1">
+              <div
+                className={cn(
+                  "h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all relative",
+                  earned
+                    ? `${colors.bg} ${colors.border} ${colors.glow}`
+                    : "bg-zinc-800/30 border-zinc-700/40",
+                  isCurrent && !isMaxed && "ring-2 ring-offset-1 ring-offset-background ring-white/20"
+                )}
+              >
+                {earned ? (
+                  <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                ) : (
+                  <span className="text-[10px] font-bold text-zinc-600">{tierNum}</span>
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-[9px] font-medium",
+                  earned ? colors.text : "text-zinc-600"
+                )}
+              >
+                {achievement.tiers[i]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress bar between current and next tier */}
+      {!isMaxed && (
+        <div className="mb-3">
+          <div className="flex justify-between items-center text-[10px] mb-1">
+            <span className={isEarned ? "text-muted-foreground" : "text-zinc-600"}>
+              Progress to Tier {tier + 1}
+            </span>
+            <span className={isEarned ? "text-foreground font-medium" : "text-zinc-600"}>
+              {progress} / {nextTierThreshold}
+            </span>
           </div>
-          <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-zinc-600 rounded-full"
-              style={{
-                width: `${Math.min(100, (item.progress / item.achievement.threshold) * 100)}%`,
-              }}
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                tier === 0
+                  ? "bg-zinc-600"
+                  : tier >= 4
+                    ? "bg-gradient-to-r from-purple-600 to-purple-400"
+                    : tier >= 3
+                      ? "bg-gradient-to-r from-blue-600 to-blue-400"
+                      : tier >= 2
+                        ? "bg-gradient-to-r from-emerald-600 to-emerald-400"
+                        : "bg-gradient-to-r from-zinc-500 to-zinc-400"
+              )}
+              style={{ width: `${Math.max(0, progressPercent)}%` }}
             />
           </div>
         </div>
       )}
+      {isMaxed && (
+        <div className="mb-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-bold tracking-wider mb-1">
+            <Star className="h-3 w-3" />
+            FULLY MAXED
+          </div>
+          <div className="h-2 bg-gradient-to-r from-amber-600/40 to-amber-400/40 rounded-full" />
+        </div>
+      )}
+
+      {/* Tier threshold list */}
+      <div className="space-y-1">
+        {achievement.tiers.map((threshold, i) => {
+          const tierNum = i + 1;
+          const earned = tier >= tierNum;
+          return (
+            <div
+              key={i}
+              className={cn(
+                "flex items-center justify-between text-[10px] px-2 py-0.5 rounded",
+                earned ? "text-muted-foreground" : "text-zinc-600"
+              )}
+            >
+              <span>
+                <span
+                  className={cn(
+                    "inline-block w-1.5 h-1.5 rounded-full mr-1.5",
+                    earned ? tierColors[i].bg : "bg-zinc-700"
+                  )}
+                />
+                Tier {tierNum}: {threshold} {unit}
+              </span>
+              <span className={cn("font-medium", earned ? "text-gx-gold" : "")}>
+                {earned && <Check className="inline h-2.5 w-2.5 mr-0.5" />}
+                +{achievement.xpPerTier[i]} XP
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

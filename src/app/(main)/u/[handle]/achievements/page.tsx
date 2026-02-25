@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getAchievementProgress, getUserLevel } from "@/lib/data/achievements";
+import {
+  getAchievementProgress,
+  getEarnedAchievements,
+  getUserLevel,
+} from "@/lib/data/achievements";
 import { AchievementsView } from "./achievements-view";
 
 type Props = {
@@ -43,7 +48,10 @@ export default async function AchievementsPage({ params }: Props) {
 
   if (!user) notFound();
 
-  if (user.isProfilePrivate) {
+  const session = await auth();
+  const isOwner = session?.user?.id === user.id;
+
+  if (user.isProfilePrivate && !isOwner) {
     return (
       <div className="pt-24 pb-16 px-4 text-center">
         <div className="mx-auto max-w-md">
@@ -56,13 +64,31 @@ export default async function AchievementsPage({ params }: Props) {
     );
   }
 
-  const [achievementProgress, levelInfo] = await Promise.all([
-    getAchievementProgress(user.id),
+  const [achievements, levelInfo] = await Promise.all([
+    isOwner
+      ? getAchievementProgress(user.id)
+      : getEarnedAchievements(user.id),
     getUserLevel(user.id),
   ]);
 
-  const unlockedCount = achievementProgress.filter((a) => a.isUnlocked).length;
-  const totalCount = achievementProgress.length;
+  // Visitor with no earned achievements
+  if (!isOwner && achievements.length === 0) {
+    return (
+      <div className="pt-24 pb-16 px-4 text-center">
+        <div className="mx-auto max-w-md">
+          <h1 className="text-2xl font-bold text-foreground">
+            {user.displayName || user.username}&apos;s Achievements
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            This pilot hasn&apos;t earned any achievements yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalCount = isOwner ? achievements.length : undefined;
+  const earnedCount = achievements.filter((a) => a.tier >= 1).length;
 
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
@@ -70,10 +96,11 @@ export default async function AchievementsPage({ params }: Props) {
         <AchievementsView
           username={user.displayName || user.username}
           handle={user.username}
-          achievements={achievementProgress}
+          achievements={achievements}
           levelInfo={levelInfo}
-          unlockedCount={unlockedCount}
+          earnedCount={earnedCount}
           totalCount={totalCount}
+          isOwner={isOwner}
         />
       </div>
     </div>

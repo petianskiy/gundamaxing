@@ -17,8 +17,8 @@ function toAchievementUI(a: {
   description: string;
   category: string;
   icon: string | null;
-  xpReward: number;
-  threshold: number;
+  tiers: number[];
+  xpPerTier: number[];
 }): AchievementUI {
   return {
     id: a.id,
@@ -27,9 +27,14 @@ function toAchievementUI(a: {
     description: a.description,
     category: a.category as AchievementCategory,
     icon: a.icon,
-    xpReward: a.xpReward,
-    threshold: a.threshold,
+    tiers: a.tiers,
+    xpPerTier: a.xpPerTier,
   };
+}
+
+function getNextTierThreshold(tiers: number[], currentTier: number): number | null {
+  if (currentTier >= tiers.length) return null; // maxed out
+  return tiers[currentTier] ?? null; // currentTier is 0-based index for the next tier
 }
 
 // ─── Queries ────────────────────────────────────────────────────
@@ -44,42 +49,79 @@ export const getUserAchievements = cache(
 
     return userAchievements.map((ua) => ({
       achievement: toAchievementUI(ua.achievement),
-      unlockedAt: ua.unlockedAt.toISOString(),
+      tier: ua.tier,
       progress: ua.progress,
-      isUnlocked: true,
+      nextTierThreshold: getNextTierThreshold(ua.achievement.tiers, ua.tier),
     }));
   }
 );
 
 export const getAchievementProgress = cache(
   async (userId: string): Promise<UserAchievementUI[]> => {
-    // Get all achievements
+    // Get all achievements ordered by sortOrder
     const allAchievements = await db.achievement.findMany({
-      orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
+      orderBy: { sortOrder: "asc" },
     });
 
-    // Get user's unlocked achievements
+    // Get user's UserAchievement records
     const userAchievements = await db.userAchievement.findMany({
       where: { userId },
-      select: { achievementId: true, unlockedAt: true, progress: true },
+      select: { achievementId: true, tier: true, progress: true },
     });
 
-    const unlockedMap = new Map(
+    const userMap = new Map(
       userAchievements.map((ua) => [
         ua.achievementId,
-        { unlockedAt: ua.unlockedAt, progress: ua.progress },
+        { tier: ua.tier, progress: ua.progress },
       ])
     );
 
     return allAchievements.map((a) => {
-      const unlock = unlockedMap.get(a.id);
+      const userData = userMap.get(a.id);
+      const tier = userData?.tier ?? 0;
+      const progress = userData?.progress ?? 0;
       return {
         achievement: toAchievementUI(a),
-        unlockedAt: unlock?.unlockedAt.toISOString() ?? null,
-        progress: unlock?.progress ?? 0,
-        isUnlocked: !!unlock,
+        tier,
+        progress,
+        nextTierThreshold: getNextTierThreshold(a.tiers, tier),
       };
     });
+  }
+);
+
+export const getEarnedAchievements = cache(
+  async (userId: string): Promise<UserAchievementUI[]> => {
+    // Get all achievements ordered by sortOrder
+    const allAchievements = await db.achievement.findMany({
+      orderBy: { sortOrder: "asc" },
+    });
+
+    // Get user's UserAchievement records where tier >= 1
+    const userAchievements = await db.userAchievement.findMany({
+      where: { userId, tier: { gte: 1 } },
+      select: { achievementId: true, tier: true, progress: true },
+    });
+
+    const userMap = new Map(
+      userAchievements.map((ua) => [
+        ua.achievementId,
+        { tier: ua.tier, progress: ua.progress },
+      ])
+    );
+
+    // Only return achievements where the user has tier >= 1
+    return allAchievements
+      .filter((a) => userMap.has(a.id))
+      .map((a) => {
+        const userData = userMap.get(a.id)!;
+        return {
+          achievement: toAchievementUI(a),
+          tier: userData.tier,
+          progress: userData.progress,
+          nextTierThreshold: getNextTierThreshold(a.tiers, userData.tier),
+        };
+      });
   }
 );
 

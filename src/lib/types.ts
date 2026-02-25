@@ -459,15 +459,15 @@ export interface AchievementUI {
   description: string;
   category: AchievementCategory;
   icon: string | null;
-  xpReward: number;
-  threshold: number;
+  tiers: number[];
+  xpPerTier: number[];
 }
 
 export interface UserAchievementUI {
   achievement: AchievementUI;
-  unlockedAt: string | null;
+  tier: number;
   progress: number;
-  isUnlocked: boolean;
+  nextTierThreshold: number | null;
 }
 
 export interface LevelInfo {

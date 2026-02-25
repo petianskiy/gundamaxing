@@ -10,6 +10,7 @@ import { WorkshopSpecs } from "./components/workshop-specs";
 import { Achievements } from "./components/achievements";
 import { SavedBuilds } from "./components/saved-builds";
 import { getBookmarkedBuilds } from "@/lib/data/bookmarks";
+import { getAchievementProgress, getEarnedAchievements } from "@/lib/data/achievements";
 
 type Props = {
   params: Promise<{ handle: string }>;
@@ -43,7 +44,6 @@ export default async function ProfilePage({ params }: Props) {
   const user = await db.user.findUnique({
     where: { username: handle },
     include: {
-      badges: { include: { badge: true } },
       _count: {
         select: {
           builds: true,
@@ -100,6 +100,9 @@ export default async function ProfilePage({ params }: Props) {
   const session = await auth();
   const isOwner = session?.user?.id === user.id;
   const bookmarkedBuilds = isOwner ? await getBookmarkedBuilds(user.id) : [];
+  const achievementData = isOwner
+    ? await getAchievementProgress(user.id)
+    : await getEarnedAchievements(user.id);
 
   // Privacy check: if profile is private and viewer is not the owner, show limited view
   if (user.isProfilePrivate && !isOwner) {
@@ -181,18 +184,18 @@ export default async function ProfilePage({ params }: Props) {
         preferredGrades={user.preferredGrades}
       />
     ) : null,
-    achievements: !hiddenSections.has("achievements") ? (
-      <Achievements
-        key="achievements"
-        badges={user.badges.map((ub) => ({
-          id: ub.badge.id,
-          name: ub.badge.name,
-          icon: ub.badge.icon,
-          description: ub.badge.description,
-          tier: ub.badge.tier,
-        }))}
-      />
-    ) : null,
+    achievements: (() => {
+      if (hiddenSections.has("achievements")) return null;
+      if (!isOwner && achievementData.length === 0) return null;
+      return (
+        <Achievements
+          key="achievements"
+          achievements={achievementData}
+          isOwner={isOwner}
+          handle={user.username}
+        />
+      );
+    })(),
     saved: isOwner ? (
       <SavedBuilds key="saved" builds={bookmarkedBuilds} />
     ) : null,

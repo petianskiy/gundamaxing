@@ -57,56 +57,82 @@ function canCheck(userId: string, category: string): boolean {
   return true;
 }
 
-// ─── Count Metric per Category ─────────────────────────────────
+// ─── Count Metrics per Category ───────────────────────────────
 
-async function countMetric(
+async function countMetrics(
   userId: string,
   category: PrismaAchievementCategory
-): Promise<number> {
+): Promise<Record<string, number>> {
   switch (category) {
-    case "BUILDING":
-      return db.build.count({ where: { userId } });
+    case "BUILDING": {
+      const count = await db.build.count({ where: { userId } });
+      return { builder: count };
+    }
 
-    case "SOCIAL":
+    case "SOCIAL": {
       // Likes given on builds (not comments)
-      return db.like.count({ where: { userId, buildId: { not: null } } });
+      const count = await db.like.count({ where: { userId, buildId: { not: null } } });
+      return { supporter: count };
+    }
 
-    case "POPULARITY":
+    case "POPULARITY": {
       // Total likes received across all builds
-      return db.like.count({
+      const count = await db.like.count({
         where: {
           build: { userId },
           buildId: { not: null },
         },
       });
+      return { rising_star: count };
+    }
 
     case "FORUM": {
       const [threads, comments] = await Promise.all([
         db.thread.count({ where: { userId } }),
         db.comment.count({ where: { userId, flagged: false } }),
       ]);
-      return threads + comments;
+      return { forum_voice: threads + comments };
     }
 
-    case "LINEAGE":
-      return db.lineage.count({ where: { userId } });
+    case "LINEAGE": {
+      const count = await db.lineage.count({ where: { userId } });
+      return { genealogist: count };
+    }
 
-    case "COLLECTOR":
-      return db.userKit.count({ where: { userId } });
+    case "COLLECTOR": {
+      const [kitCount, reviewCount] = await Promise.all([
+        db.userKit.count({ where: { userId } }),
+        db.userKit.count({ where: { userId, review: { not: null } } }),
+      ]);
+      return { collector: kitCount, critic: reviewCount };
+    }
 
-    case "COMMUNITY":
+    case "COMMUNITY": {
       // Profile completion check: count 1 if user has filled out key fields
       const user = await db.user.findUnique({
         where: { id: userId },
         select: { displayName: true, bio: true, avatar: true, country: true },
       });
-      if (!user) return 0;
+      if (!user) return { community_pillar: 0 };
       const filledFields = [user.displayName, user.bio, user.avatar, user.country].filter(Boolean).length;
-      return filledFields >= 3 ? 1 : 0;
+      return { community_pillar: filledFields >= 3 ? 1 : 0 };
+    }
 
     default:
-      return 0;
+      return {};
   }
+}
+
+// ─── Tier Calculation ─────────────────────────────────────────
+
+function calculateTier(count: number, tiers: number[]): number {
+  let tier = 0;
+  for (let i = 0; i < tiers.length; i++) {
+    if (count >= tiers[i]) {
+      tier = i + 1; // 1-based tier
+    }
+  }
+  return tier;
 }
 
 // ─── Main Achievement Check ─────────────────────────────────────
@@ -124,61 +150,83 @@ export async function checkAndAwardAchievements(
     // 1. Get all achievements for this category
     const achievements = await db.achievement.findMany({
       where: { category },
-      orderBy: { threshold: "asc" },
+      orderBy: { sortOrder: "asc" },
     });
 
     if (achievements.length === 0) return;
 
-    // 2. Get user's existing unlocked achievements for this category
-    const existingUnlocks = await db.userAchievement.findMany({
+    // 2. Get user's existing UserAchievement records for this category
+    const existingRecords = await db.userAchievement.findMany({
       where: {
         userId,
         achievementId: { in: achievements.map((a) => a.id) },
       },
-      select: { achievementId: true },
+      select: { achievementId: true, tier: true },
     });
 
-    const unlockedSet = new Set(existingUnlocks.map((u) => u.achievementId));
-
-    // 3. Count the relevant metric
-    const count = await countMetric(userId, category);
-
-    // 4. Find newly eligible achievements
-    const toUnlock = achievements.filter(
-      (a) => count >= a.threshold && !unlockedSet.has(a.id)
+    const existingMap = new Map(
+      existingRecords.map((r) => [r.achievementId, r.tier])
     );
 
-    if (toUnlock.length === 0) return;
+    // 3. Count metrics for this category
+    const metrics = await countMetrics(userId, category);
 
-    // 5. Award achievements + XP in a transaction
-    const totalXp = toUnlock.reduce((sum, a) => sum + a.xpReward, 0);
+    // 4. Process each achievement
+    let totalNewXp = 0;
 
     await db.$transaction(async (tx) => {
-      // Create all UserAchievement records
-      for (const achievement of toUnlock) {
-        await tx.userAchievement.create({
-          data: {
+      for (const achievement of achievements) {
+        // Determine metric value for this specific achievement
+        const metricValue = metrics[achievement.slug] ?? 0;
+
+        // Calculate new tier
+        const newTier = calculateTier(metricValue, achievement.tiers);
+        const previousTier = existingMap.get(achievement.id) ?? 0;
+
+        // Upsert UserAchievement — always update progress and tier
+        await tx.userAchievement.upsert({
+          where: {
+            userId_achievementId: {
+              userId,
+              achievementId: achievement.id,
+            },
+          },
+          create: {
             userId,
             achievementId: achievement.id,
-            progress: count,
+            progress: metricValue,
+            tier: newTier,
+          },
+          update: {
+            progress: metricValue,
+            tier: newTier,
           },
         });
+
+        // If tier increased, calculate XP for newly earned tiers only
+        if (newTier > previousTier) {
+          for (let t = previousTier; t < newTier; t++) {
+            totalNewXp += achievement.xpPerTier[t] ?? 0;
+          }
+        }
       }
 
-      // Award XP and recalculate level
-      const user = await tx.user.findUnique({
-        where: { id: userId },
-        select: { xp: true },
-      });
-
-      if (user) {
-        const newXp = user.xp + totalXp;
-        const newLevel = calculateLevel(newXp);
-
-        await tx.user.update({
+      // 5. If total new XP > 0, update user xp and level
+      if (totalNewXp > 0) {
+        const user = await tx.user.findUnique({
           where: { id: userId },
-          data: { xp: newXp, level: newLevel },
+          select: { xp: true },
         });
+
+        if (user) {
+          const newXp = user.xp + totalNewXp;
+          const newLevel = calculateLevel(newXp);
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { xp: newXp, level: newLevel },
+          });
+        }
       }
     });
   } catch (error) {
