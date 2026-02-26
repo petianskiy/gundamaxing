@@ -120,8 +120,10 @@ export async function searchGifs(
     return { gifs: [], hasNext: false };
   }
 
+  // Query already ensures "gundam" + allowlisted term, so KLIPY results
+  // are inherently Gundam-related. Tags are typically empty so title-based
+  // filtering would drop valid results with generic titles.
   const gifs = json.data.data
-    .filter((item) => isGundamRelated(item.title, item.tags))
     .map(toKlipyGif)
     .filter((g): g is KlipyGif => g !== null);
 
