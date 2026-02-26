@@ -34,8 +34,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10) || 1);
     const query = term ? `gundam ${term}` : "gundam";
-    const { gifs, hasNext } = await searchGifs(query);
+    const { gifs, hasNext } = await searchGifs(query, page);
 
     return NextResponse.json(
       { gifs, hasNext },

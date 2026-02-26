@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/security/rate-limiter";
 import { getTrendingGifs } from "@/lib/klipy";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -15,7 +15,8 @@ export async function GET() {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const { gifs, hasNext } = await getTrendingGifs();
+    const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10) || 1);
+    const { gifs, hasNext } = await getTrendingGifs(page);
 
     return NextResponse.json(
       { gifs, hasNext },

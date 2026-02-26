@@ -30,7 +30,7 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchHint, setShowSearchHint] = useState(false);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -61,7 +61,11 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
       const data = await res.json();
 
       if (append) {
-        setGifs((prev) => [...prev, ...data.gifs]);
+        setGifs((prev) => {
+          const existingSlugs = new Set(prev.map((g: KlipyGif) => g.slug));
+          const newGifs = data.gifs.filter((g: KlipyGif) => !existingSlugs.has(g.slug));
+          return [...prev, ...newGifs];
+        });
       } else {
         setGifs(data.gifs);
       }
@@ -82,8 +86,8 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
       setActiveFilter(null);
       setSearchTerm("");
       setShowSearchHint(false);
-      setPage(0);
-      fetchGifs(null, 0, false);
+      setPage(1);
+      fetchGifs(null, 1, false);
     }
     return () => {
       if (abortRef.current) {
@@ -106,8 +110,8 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
     setActiveFilter(term);
     setSearchTerm(term);
     setShowSearchHint(false);
-    setPage(0);
-    fetchGifs(term, 0, false);
+    setPage(1);
+    fetchGifs(term, 1, false);
   }
 
   function handleSearchKeyDown(e: React.KeyboardEvent) {
