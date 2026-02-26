@@ -45,6 +45,13 @@ function toUIComment(c: any): Comment {
     likes: c.likeCount,
     createdAt: formatDate(c.createdAt),
     children: (c.children ?? []).map(toUIComment),
+    gif: c.gifUrl ? {
+      url: c.gifUrl,
+      previewUrl: c.gifPreviewUrl ?? null,
+      width: c.gifWidth ?? 0,
+      height: c.gifHeight ?? 0,
+      slug: c.gifSlug ?? null,
+    } : null,
   };
 }
 

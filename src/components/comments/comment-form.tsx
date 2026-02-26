@@ -3,10 +3,12 @@
 import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Send, AlertCircle } from "lucide-react";
+import { Send, AlertCircle, Film } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { GifPicker } from "@/components/gifs/gif-picker";
+import { GifPreview } from "@/components/gifs/gif-preview";
 import { createComment } from "@/lib/actions/comment";
 import { generateTimingToken } from "@/lib/security/timing";
 
@@ -24,6 +26,8 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<{ slug: string; title: string; url: string; previewUrl: string; width: number; height: number } | null>(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const timingRef = useRef(generateTimingToken());
 
   if (!session?.user) {
@@ -54,7 +58,7 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim() || loading) return;
+    if ((!content.trim() && !selectedGif) || loading) return;
 
     setLoading(true);
     setError("");
@@ -64,6 +68,13 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
     if (buildId) formData.set("buildId", buildId);
     if (threadId) formData.set("threadId", threadId);
     if (parentId) formData.set("parentId", parentId);
+    if (selectedGif) {
+      formData.set("gifUrl", selectedGif.url);
+      formData.set("gifPreviewUrl", selectedGif.previewUrl);
+      formData.set("gifWidth", String(selectedGif.width));
+      formData.set("gifHeight", String(selectedGif.height));
+      formData.set("gifSlug", selectedGif.slug);
+    }
     formData.set("_timing", timingRef.current);
     // Honeypot fields left empty (bots will fill them)
     formData.set("website_url_confirm", "");
@@ -76,6 +87,7 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
       setError(typeof result.error === "string" ? result.error : "Failed to post comment");
     } else {
       setContent("");
+      setSelectedGif(null);
       timingRef.current = generateTimingToken();
       onSuccess?.();
     }
@@ -98,6 +110,10 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
         className="mb-2"
       />
 
+      {selectedGif && (
+        <GifPreview gif={selectedGif} onRemove={() => setSelectedGif(null)} />
+      )}
+
       {/* Hidden honeypot fields */}
       <div className="absolute -left-[9999px]" aria-hidden="true" tabIndex={-1}>
         <input type="text" name="website_url_confirm" tabIndex={-1} autoComplete="off" />
@@ -115,16 +131,35 @@ export function CommentForm({ buildId, threadId, parentId, onSuccess, autoFocus,
         <span className="text-xs text-muted-foreground/50">
           {content.length}/5000
         </span>
-        <Button
-          type="submit"
-          size="sm"
-          loading={loading}
-          disabled={!content.trim()}
-        >
-          <Send className="h-3 w-3" />
-          Post
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGifPicker(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors"
+          >
+            <Film className="h-3 w-3" />
+            GIF
+          </button>
+          <Button
+            type="submit"
+            size="sm"
+            loading={loading}
+            disabled={!content.trim() && !selectedGif}
+          >
+            <Send className="h-3 w-3" />
+            Post
+          </Button>
+        </div>
       </div>
+
+      <GifPicker
+        open={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onSelect={(gif) => {
+          setSelectedGif(gif);
+          setShowGifPicker(false);
+        }}
+      />
     </motion.form>
   );
 }

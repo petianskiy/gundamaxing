@@ -13,6 +13,7 @@ import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
 import { createNotification } from "@/lib/notifications";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { parseGifFromFormData } from "@/lib/validations/gif";
 
 const commentSchema = z.object({
   content: z.string().min(1).max(10000),
@@ -121,6 +122,9 @@ export async function createComment(formData: FormData) {
       }
     }
 
+    // Parse GIF fields
+    const gifData = parseGifFromFormData(formData);
+
     // Spam heuristics check
     const spamResult = await checkSpamContent(content, user.id);
 
@@ -138,6 +142,11 @@ export async function createComment(formData: FormData) {
         userId: user.id,
         ipAddress,
         flagged: spamResult.score > 0.7,
+        gifUrl: gifData.gifUrl,
+        gifPreviewUrl: gifData.gifPreviewUrl,
+        gifWidth: gifData.gifWidth,
+        gifHeight: gifData.gifHeight,
+        gifSlug: gifData.gifSlug,
       },
     });
 

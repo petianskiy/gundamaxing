@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Pin, Lock, MessageSquare, Eye, ThumbsUp, Reply, Trash2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import { CommentForm } from "@/components/comments/comment-form";
+import { GifDisplay } from "@/components/gifs/gif-display";
 import { toggleLike } from "@/lib/actions/like";
 import { deleteComment } from "@/lib/actions/comment";
 import { togglePinThread, toggleLockThread, deleteThread } from "@/lib/actions/thread";
@@ -122,6 +123,12 @@ function CommentItem({
             <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
           </div>
           <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content)}</p>
+
+          {comment.gif && (
+            <div className="mt-2">
+              <GifDisplay gif={comment.gif} />
+            </div>
+          )}
 
           {/* Action bar */}
           <div className="flex items-center gap-3 mt-2">
@@ -343,6 +350,12 @@ export function ThreadView({
               {renderCommentContent(thread.content)}
             </p>
           </div>
+
+          {thread.gif && (
+            <div className="mt-4">
+              <GifDisplay gif={thread.gif} />
+            </div>
+          )}
 
           <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">

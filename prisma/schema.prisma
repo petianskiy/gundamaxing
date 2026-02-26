@@ -337,10 +337,15 @@ model Thread {
   category    ForumCategory @relation(fields: [categoryId], references: [id])
   userId      String
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comments    Comment[]
-  lastReplyAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  comments      Comment[]
+  lastReplyAt   DateTime?
+  gifUrl        String?
+  gifPreviewUrl String?
+  gifWidth      Int?
+  gifHeight     Int?
+  gifSlug       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([categoryId])
   @@index([userId])
@@ -351,24 +356,29 @@ model Thread {
 // ─── COMMENTS ─────────────────────────────────────────────────────
 
 model Comment {
-  id         String    @id @default(cuid())
-  content    String    @db.Text
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  buildId    String?
-  build      Build?    @relation(fields: [buildId], references: [id], onDelete: Cascade)
-  threadId   String?
-  thread     Thread?   @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  parentId   String?
-  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  children   Comment[] @relation("CommentReplies")
-  likeCount  Int       @default(0)
-  likes      Like[]
-  ipAddress  String?
-  flagged    Boolean   @default(false)
-  flagReason String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  content       String    @db.Text
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId       String?
+  build         Build?    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  threadId      String?
+  thread        Thread?   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Comment[] @relation("CommentReplies")
+  likeCount     Int       @default(0)
+  likes         Like[]
+  ipAddress     String?
+  flagged       Boolean   @default(false)
+  flagReason    String?
+  gifUrl        String?
+  gifPreviewUrl String?
+  gifWidth      Int?
+  gifHeight     Int?
+  gifSlug       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([userId])
   @@index([buildId])

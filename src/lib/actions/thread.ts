@@ -12,6 +12,7 @@ import { logEvent } from "@/lib/data/events";
 import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { parseGifFromFormData } from "@/lib/validations/gif";
 
 const threadSchema = z.object({
   title: z.string().min(1).max(200),
@@ -127,6 +128,9 @@ export async function createThread(formData: FormData) {
       }
     }
 
+    // Parse GIF fields
+    const gifData = parseGifFromFormData(formData);
+
     // Spam heuristics check
     const spamResult = await checkSpamContent(`${title} ${content}`, user.id);
 
@@ -141,6 +145,11 @@ export async function createThread(formData: FormData) {
         content,
         categoryId,
         userId: user.id,
+        gifUrl: gifData.gifUrl,
+        gifPreviewUrl: gifData.gifPreviewUrl,
+        gifWidth: gifData.gifWidth,
+        gifHeight: gifData.gifHeight,
+        gifSlug: gifData.gifSlug,
       },
     });
 

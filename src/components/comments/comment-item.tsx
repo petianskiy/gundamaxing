@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { ThumbsUp, MessageSquare, Flag, Trash2, MoreHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { GifDisplay } from "@/components/gifs/gif-display";
 import { toggleLike } from "@/lib/actions/like";
 import { deleteComment } from "@/lib/actions/comment";
 import { CommentForm } from "./comment-form";
@@ -22,6 +23,7 @@ interface CommentData {
   liked: boolean;
   flagged: boolean;
   createdAt: string;
+  gif?: { url: string; previewUrl: string | null; width: number; height: number; slug: string | null } | null;
   children?: CommentData[];
 }
 
@@ -95,6 +97,12 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
           </div>
 
           <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
+
+          {comment.gif && (
+            <div className="mt-2">
+              <GifDisplay gif={comment.gif} />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-3 mt-2">

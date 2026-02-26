@@ -377,6 +377,7 @@ export const mockThreads: Thread[] = [
     isLocked: false,
     createdAt: "2024-03-15",
     lastReplyAt: "2024-03-18",
+    gif: null,
   },
   {
     id: "t2",
@@ -394,6 +395,7 @@ export const mockThreads: Thread[] = [
     isLocked: false,
     createdAt: "2024-02-10",
     lastReplyAt: "2024-06-01",
+    gif: null,
   },
   {
     id: "t3",
@@ -411,6 +413,7 @@ export const mockThreads: Thread[] = [
     isLocked: false,
     createdAt: "2024-05-20",
     lastReplyAt: "2024-05-25",
+    gif: null,
   },
   {
     id: "t4",
@@ -428,6 +431,7 @@ export const mockThreads: Thread[] = [
     isLocked: false,
     createdAt: "2024-04-15",
     lastReplyAt: "2024-06-10",
+    gif: null,
   },
   {
     id: "t5",
@@ -445,6 +449,7 @@ export const mockThreads: Thread[] = [
     isLocked: false,
     createdAt: "2024-06-01",
     lastReplyAt: "2024-06-05",
+    gif: null,
   },
 ];
 
@@ -468,8 +473,10 @@ export const mockComments: Comment[] = [
         userAvatar: "https://picsum.photos/seed/avatar1/200/200",
         likes: 15,
         createdAt: "2024-03-15",
+        gif: null,
       },
     ],
+    gif: null,
   },
   {
     id: "c2",
@@ -490,8 +497,10 @@ export const mockComments: Comment[] = [
         userAvatar: "https://picsum.photos/seed/avatar1/200/200",
         likes: 12,
         createdAt: "2024-03-16",
+        gif: null,
       },
     ],
+    gif: null,
   },
   {
     id: "c3",
@@ -502,6 +511,7 @@ export const mockComments: Comment[] = [
     userAvatar: "https://picsum.photos/seed/avatar2/200/200",
     likes: 31,
     createdAt: "2024-03-17",
+    gif: null,
   },
   {
     id: "c4",
@@ -512,6 +522,7 @@ export const mockComments: Comment[] = [
     userAvatar: "https://picsum.photos/seed/avatar1/200/200",
     likes: 27,
     createdAt: "2024-03-17",
+    gif: null,
   },
 ];
 

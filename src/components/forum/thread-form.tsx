@@ -4,9 +4,11 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Send, AlertCircle, ArrowLeft } from "lucide-react";
+import { Send, AlertCircle, ArrowLeft, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { GifPicker } from "@/components/gifs/gif-picker";
+import { GifPreview } from "@/components/gifs/gif-preview";
 import { useTranslation } from "@/lib/i18n/context";
 import { createThread } from "@/lib/actions/thread";
 import { generateTimingToken } from "@/lib/security/timing";
@@ -27,6 +29,8 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
   const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<{ slug: string; title: string; url: string; previewUrl: string; width: number; height: number } | null>(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const timingRef = useRef(generateTimingToken());
 
   if (!session?.user) {
@@ -65,6 +69,13 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
     formData.set("title", title.trim());
     formData.set("content", content.trim());
     formData.set("categoryId", categoryId);
+    if (selectedGif) {
+      formData.set("gifUrl", selectedGif.url);
+      formData.set("gifPreviewUrl", selectedGif.previewUrl);
+      formData.set("gifWidth", String(selectedGif.width));
+      formData.set("gifHeight", String(selectedGif.height));
+      formData.set("gifSlug", selectedGif.slug);
+    }
     formData.set("_timing", timingRef.current);
     formData.set("website_url_confirm", "");
     formData.set("phone_verify", "");
@@ -139,6 +150,11 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
         </p>
       </div>
 
+      {/* GIF preview */}
+      {selectedGif && (
+        <GifPreview gif={selectedGif} onRemove={() => setSelectedGif(null)} />
+      )}
+
       {/* Hidden honeypot fields */}
       <div className="absolute -left-[9999px]" aria-hidden="true" tabIndex={-1}>
         <input type="text" name="website_url_confirm" tabIndex={-1} autoComplete="off" />
@@ -162,11 +178,30 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
           <ArrowLeft className="h-3 w-3" />
           {t("forum.backToForum")}
         </Link>
-        <Button type="submit" size="sm" loading={loading} disabled={!title.trim() || !content.trim() || !categoryId}>
-          <Send className="h-3 w-3" />
-          {loading ? t("forum.posting") : t("forum.createThread")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGifPicker(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors"
+          >
+            <Film className="h-3 w-3" />
+            GIF
+          </button>
+          <Button type="submit" size="sm" loading={loading} disabled={!title.trim() || !content.trim() || !categoryId}>
+            <Send className="h-3 w-3" />
+            {loading ? t("forum.posting") : t("forum.createThread")}
+          </Button>
+        </div>
       </div>
+
+      <GifPicker
+        open={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onSelect={(gif) => {
+          setSelectedGif(gif);
+          setShowGifPicker(false);
+        }}
+      />
     </form>
   );
 }

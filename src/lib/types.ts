@@ -137,6 +137,14 @@ export interface ForumCategory {
   color: string;
 }
 
+export interface GifAttachment {
+  url: string;
+  previewUrl: string | null;
+  width: number;
+  height: number;
+  slug: string | null;
+}
+
 export interface Thread {
   id: string;
   title: string;
@@ -153,6 +161,7 @@ export interface Thread {
   isLocked: boolean;
   createdAt: string;
   lastReplyAt: string;
+  gif: GifAttachment | null;
 }
 
 export interface Comment {
@@ -165,6 +174,7 @@ export interface Comment {
   likes: number;
   createdAt: string;
   children?: Comment[];
+  gif: GifAttachment | null;
 }
 
 export interface Workshop {

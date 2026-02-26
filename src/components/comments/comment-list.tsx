@@ -14,6 +14,7 @@ interface CommentData {
   liked: boolean;
   flagged: boolean;
   createdAt: string;
+  gif?: { url: string; previewUrl: string | null; width: number; height: number; slug: string | null } | null;
   children?: CommentData[];
 }
 

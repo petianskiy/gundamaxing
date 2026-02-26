@@ -51,6 +51,13 @@ function toUIThread(t: any): Thread {
     isLocked: t.isLocked,
     createdAt: formatDate(t.createdAt),
     lastReplyAt: t.lastReplyAt ? formatDate(t.lastReplyAt) : formatDate(t.createdAt),
+    gif: t.gifUrl ? {
+      url: t.gifUrl,
+      previewUrl: t.gifPreviewUrl ?? null,
+      width: t.gifWidth ?? 0,
+      height: t.gifHeight ?? 0,
+      slug: t.gifSlug ?? null,
+    } : null,
   };
 }
 
