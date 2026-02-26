@@ -16,7 +16,7 @@ import { checkAndAwardAchievements } from "@/lib/achievements";
 import { parseGifFromFormData } from "@/lib/validations/gif";
 
 const commentSchema = z.object({
-  content: z.string().min(1).max(10000),
+  content: z.string().max(10000),
   buildId: z.string().optional(),
   threadId: z.string().optional(),
   parentId: z.string().optional(),
@@ -105,28 +105,37 @@ export async function createComment(formData: FormData) {
 
     const { content, buildId, threadId, parentId } = parsed.data;
 
-    if (containsProfanity(content)) {
+    // Parse GIF fields early so we can check content-or-GIF
+    const gifData = parseGifFromFormData(formData);
+
+    // Require either text content or a GIF
+    if (!content.trim() && !gifData.gifUrl) {
+      return { error: "Comment must have text or a GIF." };
+    }
+
+    if (content && containsProfanity(content)) {
       return { error: "Your comment contains inappropriate language." };
     }
 
     // Reputation gating: block links for new low-rep users
-    const accountAge = Date.now() - user.createdAt.getTime();
-    const thirtyDays = 30 * 86400000;
-    if (accountAge < thirtyDays && (user.reputation ?? 0) < 50) {
-      const linkPattern = /https?:\/\/|www\./i;
-      if (linkPattern.test(content)) {
-        return {
-          error:
-            "Your account is too new to post links. Build up reputation first.",
-        };
+    if (content) {
+      const accountAge = Date.now() - user.createdAt.getTime();
+      const thirtyDays = 30 * 86400000;
+      if (accountAge < thirtyDays && (user.reputation ?? 0) < 50) {
+        const linkPattern = /https?:\/\/|www\./i;
+        if (linkPattern.test(content)) {
+          return {
+            error:
+              "Your account is too new to post links. Build up reputation first.",
+          };
+        }
       }
     }
 
-    // Parse GIF fields
-    const gifData = parseGifFromFormData(formData);
-
     // Spam heuristics check
-    const spamResult = await checkSpamContent(content, user.id);
+    const spamResult = content
+      ? await checkSpamContent(content, user.id)
+      : { score: 0, reasons: [] };
 
     // Get IP address from headers
     const headersList = await headers();

@@ -16,7 +16,7 @@ import { parseGifFromFormData } from "@/lib/validations/gif";
 
 const threadSchema = z.object({
   title: z.string().min(1).max(200),
-  content: z.string().min(1).max(50000),
+  content: z.string().max(50000),
   categoryId: z.string().min(1),
 });
 
@@ -108,10 +108,18 @@ export async function createThread(formData: FormData) {
 
     const { title, content, categoryId } = parsed.data;
 
+    // Parse GIF fields early so we can check content-or-GIF
+    const gifData = parseGifFromFormData(formData);
+
+    // Require either text content or a GIF
+    if (!content.trim() && !gifData.gifUrl) {
+      return { error: "Thread must have text content or a GIF." };
+    }
+
     if (containsProfanity(title)) {
       return { error: "Thread title contains inappropriate language." };
     }
-    if (containsProfanity(content)) {
+    if (content && containsProfanity(content)) {
       return { error: "Thread content contains inappropriate language." };
     }
 
@@ -120,7 +128,7 @@ export async function createThread(formData: FormData) {
     const thirtyDays = 30 * 86400000;
     if (accountAge < thirtyDays && (user.reputation ?? 0) < 50) {
       const linkPattern = /https?:\/\/|www\./i;
-      if (linkPattern.test(content) || linkPattern.test(title)) {
+      if ((content && linkPattern.test(content)) || linkPattern.test(title)) {
         return {
           error:
             "Your account is too new to post links. Build up reputation first.",
@@ -128,11 +136,10 @@ export async function createThread(formData: FormData) {
       }
     }
 
-    // Parse GIF fields
-    const gifData = parseGifFromFormData(formData);
-
     // Spam heuristics check
-    const spamResult = await checkSpamContent(`${title} ${content}`, user.id);
+    const spamResult = content
+      ? await checkSpamContent(`${title} ${content}`, user.id)
+      : await checkSpamContent(title, user.id);
 
     // Get IP address from headers
     const headersList = await headers();
