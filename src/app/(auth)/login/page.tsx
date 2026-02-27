@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -43,9 +43,17 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { update: updateSession } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // If already authenticated (e.g. OAuth succeeded but redirected here with error),
+  // skip the login page and send user to their hangar
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.username) {
+      router.replace(`/hangar/${session.user.username}`);
+    }
+  }, [status, session, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -78,7 +86,7 @@ function LoginForm() {
         // Refresh session to get username for redirect
         const session = await updateSession();
         const username = (session as any)?.user?.username;
-        router.push(username ? `/u/${username}` : "/builds");
+        router.push(username ? `/hangar/${username}` : "/builds");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -88,7 +96,7 @@ function LoginForm() {
   }
 
   async function handleOAuth(provider: string) {
-    await signIn(provider, { callbackUrl: "/builds" });
+    await signIn(provider, { callbackUrl: "/auth-redirect" });
   }
 
   return (

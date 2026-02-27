@@ -22,6 +22,7 @@ const publicRoutes = [
   "/reset-password",
   "/verify-email-change",
   "/complete-profile",
+  "/auth-redirect",
   "/robots.txt",
   "/sitemap.xml",
 ];

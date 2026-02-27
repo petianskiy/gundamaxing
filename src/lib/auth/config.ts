@@ -318,7 +318,7 @@ const authConfig: NextAuthConfig = {
         // Invalid URL — fall through to default
       }
       // Reject everything else
-      return `${baseUrl}/builds`;
+      return `${baseUrl}/auth-redirect`;
     },
     async jwt({ token, user, trigger, account }) {
       // On initial sign-in, populate the token with user data
