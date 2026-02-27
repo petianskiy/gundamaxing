@@ -17,7 +17,7 @@ export default async function BuildsPage() {
           unoptimized
         />
       </div>
-      <div className="fixed inset-0 -z-10 bg-black/70 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 -z-10 bg-black/60" />
       <BuildsFeed builds={builds} />
     </div>
   );
