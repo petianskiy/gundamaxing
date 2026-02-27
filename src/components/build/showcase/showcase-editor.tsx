@@ -1638,6 +1638,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         onUndo={() => dispatch({ type: "UNDO" })}
         onRedo={() => dispatch({ type: "REDO" })}
         onShowGuide={() => setShowEditorGuide(true)}
+        frozen={showEditorGuide}
         canUndo={canUndo}
         canRedo={canRedo}
         isSaving={isSaving}

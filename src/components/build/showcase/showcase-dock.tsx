@@ -45,6 +45,7 @@ interface ShowcaseDockProps {
   onUndo: () => void;
   onRedo: () => void;
   onShowGuide?: () => void;
+  frozen?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   isSaving: boolean;
@@ -85,6 +86,7 @@ export function ShowcaseDock({
   onUndo,
   onRedo,
   onShowGuide,
+  frozen,
   canUndo,
   canRedo,
   isSaving,
@@ -157,7 +159,7 @@ export function ShowcaseDock({
 
       {/* Dock */}
       <motion.div
-        onMouseMove={(e) => mouseX.set(e.pageX)}
+        onMouseMove={(e) => { if (!frozen) mouseX.set(e.pageX); }}
         onMouseLeave={() => {
           mouseX.set(Infinity);
           setTooltip(null);
