@@ -101,6 +101,11 @@ export function ShowcaseDock({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  // Snap all items to base size immediately when frozen
+  useEffect(() => {
+    if (frozen) mouseX.set(Infinity);
+  }, [frozen, mouseX]);
+
   const imagesAtLimit = imageCount >= maxImages;
   const videosAtLimit = videoCount >= maxVideos;
 
