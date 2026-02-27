@@ -101,7 +101,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <div className="space-y-3 md:space-y-0 md:flex md:gap-3 mb-8">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -114,45 +114,48 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             />
           </div>
 
-          {/* Grade filter */}
-          <select
-            value={gradeFilter}
-            onChange={(e) => handleFilterChange(setGradeFilter, e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50 min-w-[140px]"
-          >
-            <option value="">{t("collector.allGrades")}</option>
-            {grades.map((grade) => (
-              <option key={grade} value={grade}>
-                {grade}
-              </option>
-            ))}
-          </select>
+          {/* Dropdowns row — side by side on mobile, inline on md+ */}
+          <div className="grid grid-cols-3 gap-2 md:contents">
+            {/* Grade filter */}
+            <select
+              value={gradeFilter}
+              onChange={(e) => handleFilterChange(setGradeFilter, e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+            >
+              <option value="">{t("collector.allGrades")}</option>
+              {grades.map((grade) => (
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
+              ))}
+            </select>
 
-          {/* Series filter */}
-          <select
-            value={seriesFilter}
-            onChange={(e) => handleFilterChange(setSeriesFilter, e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50 min-w-[180px]"
-          >
-            <option value="">{t("collector.allSeries")}</option>
-            {seriesList.map((series) => (
-              <option key={series} value={series}>
-                {series}
-              </option>
-            ))}
-          </select>
+            {/* Series filter */}
+            <select
+              value={seriesFilter}
+              onChange={(e) => handleFilterChange(setSeriesFilter, e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+            >
+              <option value="">{t("collector.allSeries")}</option>
+              {seriesList.map((series) => (
+                <option key={series} value={series}>
+                  {series}
+                </option>
+              ))}
+            </select>
 
-          {/* Sort */}
-          <select
-            value={sort}
-            onChange={(e) => { setSort(e.target.value as SortOption); setPage(1); }}
-            className="px-4 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50 min-w-[160px]"
-          >
-            <option value="name">{t("collector.sortName")}</option>
-            <option value="rating">{t("collector.sortRating")}</option>
-            <option value="owners">{t("collector.sortOwners")}</option>
-            <option value="newest">{t("collector.sortNewest")}</option>
-          </select>
+            {/* Sort */}
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value as SortOption); setPage(1); }}
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+            >
+              <option value="name">{t("collector.sortName")}</option>
+              <option value="rating">{t("collector.sortRating")}</option>
+              <option value="owners">{t("collector.sortOwners")}</option>
+              <option value="newest">{t("collector.sortNewest")}</option>
+            </select>
+          </div>
         </div>
 
         {/* Grid */}

@@ -281,7 +281,7 @@ export function BuildPassport({
             )}
 
             {/* Main image area */}
-            <div className="flex-1 flex items-center justify-center w-full px-16 py-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 flex items-center justify-center w-full px-12 sm:px-16 py-4" onClick={(e) => e.stopPropagation()}>
               {/* Prev arrow */}
               {build.images.length > 1 && (
                 <button

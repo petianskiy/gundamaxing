@@ -14,19 +14,21 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="relative min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#09090b]">
-      {/* Background image */}
-      <Image
-        src="/bookmarks-bg.jpg"
-        alt=""
-        fill
-        className="object-cover object-center"
-        priority
-        unoptimized
-      />
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+    <div className="relative min-h-screen">
+      {/* Fixed background */}
+      <div className="fixed inset-0 -z-20">
+        <Image
+          src="/bookmarks-bg.jpg"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          unoptimized
+        />
+      </div>
+      <div className="fixed inset-0 -z-10 bg-black/60" />
 
-      <div className="relative z-10 mx-auto max-w-7xl">
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-3">

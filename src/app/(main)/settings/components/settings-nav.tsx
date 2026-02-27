@@ -20,7 +20,7 @@ export function SettingsNav() {
   const { t } = useTranslation();
 
   return (
-    <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+    <nav className="flex flex-col gap-1">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (
@@ -28,7 +28,7 @@ export function SettingsNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+              "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               isActive
                 ? "bg-gx-red/10 text-gx-red border border-gx-red/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

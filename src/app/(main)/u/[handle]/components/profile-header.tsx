@@ -72,7 +72,7 @@ export function ProfileHeader({
   return (
     <section className="rounded-xl border border-border/50 bg-card overflow-hidden">
       {/* Banner */}
-      <div className="relative h-48 w-full bg-gradient-to-br from-gx-surface via-gx-surface-elevated to-gx-surface">
+      <div className="relative h-32 sm:h-48 w-full bg-gradient-to-br from-gx-surface via-gx-surface-elevated to-gx-surface">
         {user.banner ? (
           <Image
             src={user.banner}
@@ -96,13 +96,13 @@ export function ProfileHeader({
       </div>
 
       {/* Profile content */}
-      <div className="px-6 pb-6">
+      <div className="px-4 sm:px-6 pb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Avatar - overlapping banner */}
           <div className="-mt-12 relative z-10">
             <div
               className={cn(
-                "h-24 w-24 rounded-full ring-4 ring-offset-4 ring-offset-card overflow-hidden bg-muted",
+                "h-20 w-20 sm:h-24 sm:w-24 rounded-full ring-4 ring-offset-4 ring-offset-card overflow-hidden bg-muted",
                 tierRingColor[user.verificationTier] || "ring-zinc-600"
               )}
             >

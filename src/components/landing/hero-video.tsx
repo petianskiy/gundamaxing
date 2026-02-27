@@ -33,8 +33,10 @@ export function HeroVideo() {
       muted
       loop
       playsInline
-      poster="/hero-poster.jpg"
-      className="absolute inset-0 w-full h-full object-cover"
+      preload="auto"
+      disablePictureInPicture
+      controlsList="nodownload nofullscreen noremoteplayback"
+      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
     >
       <source src="/hero.mp4" type="video/mp4" />
     </video>

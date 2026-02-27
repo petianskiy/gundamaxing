@@ -16,13 +16,13 @@ export function HeroSection({ buildOfTheWeek }: HeroSectionProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="relative h-screen min-h-[600px] max-h-[1000px] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[100svh] min-h-[500px] max-h-[1000px] flex items-center justify-center overflow-hidden">
       {/* Video background */}
       <HeroVideo />
 
       {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
 
       {/* Noise layer */}
       <div className="noise-overlay" />
