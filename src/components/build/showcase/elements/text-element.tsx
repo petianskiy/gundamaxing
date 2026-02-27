@@ -1,13 +1,10 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { GradientText } from "./gradient-text";
 import { FuzzyText } from "./fuzzy-text";
 import type { ShowcaseTextElement } from "@/lib/types";
-
-const RichTextEditor = dynamic(() => import("./rich-text-editor"), { ssr: false });
 
 const textAlignMap: Record<string, string> = {
   left: "text-left",
@@ -29,10 +26,9 @@ interface TextElementProps {
   element: ShowcaseTextElement;
   isEditing?: boolean;
   onContentChange?: (content: string) => void;
-  onHtmlContentChange?: (html: string) => void;
 }
 
-export function TextElement({ element, isEditing, onContentChange, onHtmlContentChange }: TextElementProps) {
+export function TextElement({ element, isEditing, onContentChange }: TextElementProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   // Auto-focus when entering edit mode
@@ -73,31 +69,6 @@ export function TextElement({ element, isEditing, onContentChange, onHtmlContent
     writingMode: element.textDirection === "vertical" ? "vertical-rl" : undefined,
     textOrientation: element.textDirection === "vertical" ? "upright" : undefined,
   };
-
-  // Rich text mode: render Tiptap editor when editing, or render HTML when viewing
-  if (element.htmlContent) {
-    if (isEditing && onHtmlContentChange) {
-      return (
-        <div className={baseClassName} style={sharedStyle}>
-          <RichTextEditor
-            content={element.htmlContent}
-            color={element.color}
-            fontSize={`${element.fontSize / 10}cqi`}
-            fontFamily={fontFamilyMap[element.fontFamily] || "sans-serif"}
-            textAlign={element.textAlign}
-            onChange={onHtmlContentChange}
-          />
-        </div>
-      );
-    }
-    return (
-      <div
-        className={baseClassName}
-        style={{ ...sharedStyle, color: element.color }}
-        dangerouslySetInnerHTML={{ __html: element.htmlContent }}
-      />
-    );
-  }
 
   // Fuzzy text (canvas-based distortion effect) — takes priority over gradient
   if (element.fuzzy && !isEditing) {

@@ -13,10 +13,9 @@ interface ShowcaseElementProps {
   build: Build;
   isEditing?: boolean;
   onContentChange?: (content: string) => void;
-  onHtmlContentChange?: (html: string) => void;
 }
 
-export function ShowcaseElement({ element, build, isEditing, onContentChange, onHtmlContentChange }: ShowcaseElementProps) {
+export function ShowcaseElement({ element, build, isEditing, onContentChange }: ShowcaseElementProps) {
   switch (element.type) {
     case "image":
       return <ImageElement element={element} />;
@@ -26,7 +25,6 @@ export function ShowcaseElement({ element, build, isEditing, onContentChange, on
           element={element}
           isEditing={isEditing}
           onContentChange={onContentChange}
-          onHtmlContentChange={onHtmlContentChange}
         />
       );
     case "metadata":

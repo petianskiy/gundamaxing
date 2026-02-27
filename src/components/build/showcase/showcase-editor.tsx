@@ -504,15 +504,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
       if (e.key === "Escape") {
         if (editingTextId) {
-          // For rich text elements, Tiptap handles its own state — just exit edit mode
-          const editingElement = layout.elements.find((el) => el.id === editingTextId);
-          if (!editingElement || editingElement.type !== "text" || !editingElement.htmlContent) {
-            // Plain text: save text content before exiting edit mode
-            const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
-            if (editingEl) {
-              const newContent = editingEl.textContent || "";
-              dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
-            }
+          // Save text content before exiting edit mode
+          const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+          if (editingEl) {
+            const newContent = editingEl.textContent || "";
+            dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
           }
           setEditingTextId(null);
           return;
@@ -1310,15 +1306,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
             const y = ((e.clientY - rect.top) / rect.height) * 100;
             marqueeRef.current = { startX: x, startY: y, currentX: x, currentY: y };
             // Save text content before deselecting (blur may fire too late)
-            // Skip for rich text elements — Tiptap handles its own state
             if (editingTextId) {
-              const editingElement = layout.elements.find((el) => el.id === editingTextId);
-              if (!editingElement || editingElement.type !== "text" || !editingElement.htmlContent) {
-                const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
-                if (editingEl) {
-                  const newContent = editingEl.textContent || "";
-                  dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
-                }
+              const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+              if (editingEl) {
+                const newContent = editingEl.textContent || "";
+                dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
               }
             }
             // Deselect immediately unless shift is held
@@ -1408,11 +1400,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                 onContentChange={
                   element.type === "text"
                     ? (content) => dispatch({ type: "UPDATE_ELEMENT", id: element.id, updates: { content } })
-                    : undefined
-                }
-                onHtmlContentChange={
-                  element.type === "text"
-                    ? (html) => dispatch({ type: "UPDATE_ELEMENT", id: element.id, updates: { htmlContent: html } })
                     : undefined
                 }
               />

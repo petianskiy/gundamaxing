@@ -330,7 +330,6 @@ export interface ShowcaseTextElement extends ShowcaseElementBase {
   fuzzyGlitchInterval: number;
   fuzzyGlitchDuration: number;
   textDirection?: "horizontal" | "vertical";
-  htmlContent?: string;
 }
 
 export interface ShowcaseMetadataElement extends ShowcaseElementBase {

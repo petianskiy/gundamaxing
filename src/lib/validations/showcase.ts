@@ -58,7 +58,6 @@ const showcaseTextElement = z.object({
   fuzzyGlitchInterval: z.number().default(5),
   fuzzyGlitchDuration: z.number().default(0.3),
   textDirection: z.enum(["horizontal", "vertical"]).optional(),
-  htmlContent: z.string().max(10000).optional(),
 });
 
 const showcaseMetadataElement = z.object({
