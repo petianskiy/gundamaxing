@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
           unoptimized
         />
       </div>
-      <div className="fixed inset-0 -z-10 bg-black/60" />
+      <div className="fixed inset-0 -z-10 bg-black/70" />
       <div className="relative pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-10">
