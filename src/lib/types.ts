@@ -297,6 +297,7 @@ export interface ShowcaseImageElement extends ShowcaseElementBase {
   caption: string | null;
   flipH?: boolean;
   flipV?: boolean;
+  interactive?: boolean;
 }
 
 export type ShowcaseFontFamily = "geist" | "orbitron" | "rajdhani" | "exo2" | "shareTechMono" | "audiowide" | "chakraPetch";
@@ -328,6 +329,8 @@ export interface ShowcaseTextElement extends ShowcaseElementBase {
   fuzzyGlitchMode: boolean;
   fuzzyGlitchInterval: number;
   fuzzyGlitchDuration: number;
+  textDirection?: "horizontal" | "vertical";
+  htmlContent?: string;
 }
 
 export interface ShowcaseMetadataElement extends ShowcaseElementBase {

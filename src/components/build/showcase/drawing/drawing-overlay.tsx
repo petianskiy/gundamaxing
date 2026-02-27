@@ -40,7 +40,7 @@ export interface DrawingBounds {
 interface DrawingOverlayProps {
   canvasWidth: number;
   canvasHeight: number;
-  onComplete: (blob: Blob, bounds: DrawingBounds) => void;
+  onComplete: (blob: Blob, bounds: DrawingBounds) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -52,7 +52,7 @@ interface UndoSnapshot {
 const MAX_LAYERS = 12;
 
 export interface DrawingOverlayHandle {
-  flush: () => void;
+  flush: () => Promise<void>;
 }
 
 // ─── Tool shortcuts ─────────────────────────────────────────────
@@ -711,14 +711,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
 
     // ─── Done (export) ──────────────────────────────────────────
 
-    const handleDone = useCallback(() => {
+    const handleDone = useCallback((): Promise<void> => {
       const lm = layerManagerRef.current;
       const comp = compositorRef.current;
-      if (!lm || !comp) return;
+      if (!lm || !comp) return Promise.resolve();
 
       const flatCanvas = comp.flatten(lm.layers);
       const ctx = flatCanvas.getContext("2d");
-      if (!ctx) return;
+      if (!ctx) return Promise.resolve();
 
       const imageData = ctx.getImageData(0, 0, flatCanvas.width, flatCanvas.height);
       const { data, width, height } = imageData;
@@ -743,7 +743,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
 
       if (!hasContent) {
         onCancel();
-        return;
+        return Promise.resolve();
       }
 
       const pad = Math.max(
@@ -762,7 +762,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
       croppedCanvas.width = cropW;
       croppedCanvas.height = cropH;
       const croppedCtx = croppedCanvas.getContext("2d");
-      if (!croppedCtx) return;
+      if (!croppedCtx) return Promise.resolve();
 
       croppedCtx.drawImage(
         flatCanvas,
@@ -783,13 +783,16 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
         height: (cropH / height) * 100,
       };
 
-      croppedCanvas.toBlob(
-        (blob) => {
-          if (blob) onComplete(blob, bounds);
-        },
-        "image/png",
-        1
-      );
+      return new Promise<void>((resolve) => {
+        croppedCanvas.toBlob(
+          async (blob) => {
+            if (blob) await onComplete(blob, bounds);
+            resolve();
+          },
+          "image/png",
+          1
+        );
+      });
     }, [onComplete, onCancel]);
 
     // ─── Expose flush() for parent ──────────────────────────────
@@ -818,16 +821,18 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
           return;
         }
 
-        // Undo: Ctrl/Cmd+Z
+        // Undo: Ctrl/Cmd+Z — stop propagation to prevent editor undo
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleUndo();
           return;
         }
 
-        // Redo: Ctrl/Cmd+Shift+Z
+        // Redo: Ctrl/Cmd+Shift+Z — stop propagation to prevent editor redo
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") {
           e.preventDefault();
+          e.stopImmediatePropagation();
           handleRedo();
           return;
         }
@@ -851,8 +856,8 @@ export const DrawingOverlay = forwardRef<DrawingOverlayHandle, DrawingOverlayPro
         }
       }
 
-      window.addEventListener("keydown", onKeyDown);
-      return () => window.removeEventListener("keydown", onKeyDown);
+      window.addEventListener("keydown", onKeyDown, { capture: true });
+      return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
     }, [handleSetTool, handleUndo, handleRedo]);
 
     // ─── Render ─────────────────────────────────────────────────

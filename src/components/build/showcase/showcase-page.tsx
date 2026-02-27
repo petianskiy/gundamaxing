@@ -98,7 +98,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
     <div className="pt-20 pb-16">
       {/* Combined header: Author + Build info */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
           {/* Author info */}
           <div className="flex items-center gap-3 min-w-0">
             <Link href={`/u/${build.userHandle}`} className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-border/50">
@@ -121,12 +121,15 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
             </div>
           </div>
 
-          {/* Build info */}
-          <div className="text-right shrink-0">
-            <h1 className="text-lg font-bold text-foreground">{build.title}</h1>
+          {/* Build info — centered */}
+          <div className="text-center min-w-0">
+            <h1 className="text-lg font-bold text-foreground truncate">{build.title}</h1>
             <p className="text-xs text-muted-foreground">{build.grade} &middot; {build.scale}</p>
-            {build.kitName && <p className="text-xs text-muted-foreground">{build.kitName}</p>}
+            {build.kitName && <p className="text-xs text-muted-foreground truncate">{build.kitName}</p>}
           </div>
+
+          {/* Spacer to balance the grid */}
+          <div className="w-10 shrink-0" />
         </div>
 
         {/* Techniques tags */}
@@ -145,7 +148,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
       </div>
 
       {/* Canvas pages (stacked vertically) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none" onContextMenu={(e) => e.preventDefault()}>
         {pages.map((page, i) => (
           <div key={page.id} className={cn("relative", i > 0 && "mt-4")}>
             <ShowcaseCanvas layout={{ ...layout, elements: page.elements }} build={build} pageBackground={page.background} />

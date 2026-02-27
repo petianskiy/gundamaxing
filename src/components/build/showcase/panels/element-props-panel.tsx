@@ -209,6 +209,24 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 className="w-full px-3 py-1.5 rounded-md bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
               />
             </div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-zinc-400 uppercase tracking-wider">Lightbox</label>
+              <button
+                onClick={() => onUpdate({ interactive: !element.interactive })}
+                className={cn(
+                  "w-10 h-5 rounded-full transition-colors",
+                  element.interactive ? "bg-blue-500" : "bg-zinc-700"
+                )}
+              >
+                <div className={cn(
+                  "w-4 h-4 rounded-full bg-white transition-transform mx-0.5",
+                  element.interactive ? "translate-x-5" : "translate-x-0"
+                )} />
+              </button>
+            </div>
+            {element.interactive && (
+              <p className="text-[10px] text-zinc-500 -mt-1">Viewers can click to expand this image</p>
+            )}
             {/* Crop & Remove BG */}
             <div className="pt-2 border-t border-zinc-700/50 space-y-2">
               <button
@@ -364,6 +382,59 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 ))}
               </div>
             </div>
+
+            {/* Text direction */}
+            <div>
+              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Direction</label>
+              <div className="flex gap-2">
+                {(["horizontal", "vertical"] as const).map((dir) => (
+                  <button
+                    key={dir}
+                    onClick={() => onUpdate({ textDirection: dir })}
+                    className={cn(
+                      "flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
+                      (element.textDirection ?? "horizontal") === dir
+                        ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                    )}
+                  >
+                    {dir === "horizontal" ? "Horizontal" : "Vertical"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rich text toggle */}
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-zinc-400 uppercase tracking-wider">Rich Text</label>
+              <button
+                onClick={() => {
+                  if (element.htmlContent) {
+                    // Disable rich text — clear htmlContent, disable gradient/fuzzy
+                    onUpdate({ htmlContent: undefined });
+                  } else {
+                    // Enable rich text — convert plain content to HTML, disable gradient/fuzzy
+                    onUpdate({
+                      htmlContent: `<p>${element.content}</p>`,
+                      gradient: false,
+                      fuzzy: false,
+                    });
+                  }
+                }}
+                className={cn(
+                  "w-10 h-5 rounded-full transition-colors",
+                  element.htmlContent ? "bg-blue-500" : "bg-zinc-700"
+                )}
+              >
+                <div className={cn(
+                  "w-4 h-4 rounded-full bg-white transition-transform mx-0.5",
+                  element.htmlContent ? "translate-x-5" : "translate-x-0"
+                )} />
+              </button>
+            </div>
+            {element.htmlContent && (
+              <p className="text-[10px] text-zinc-500 -mt-1">Double-click to edit with inline formatting</p>
+            )}
 
             {/* Gradient text */}
             <div className="pt-2 border-t border-zinc-700/50">

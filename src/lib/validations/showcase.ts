@@ -23,6 +23,7 @@ const showcaseImageElement = z.object({
   caption: z.string().max(500).nullable(),
   flipH: z.boolean().optional(),
   flipV: z.boolean().optional(),
+  interactive: z.boolean().optional(),
 });
 
 const showcaseTextElement = z.object({
@@ -56,6 +57,8 @@ const showcaseTextElement = z.object({
   fuzzyGlitchMode: z.boolean().default(false),
   fuzzyGlitchInterval: z.number().default(5),
   fuzzyGlitchDuration: z.number().default(0.3),
+  textDirection: z.enum(["horizontal", "vertical"]).optional(),
+  htmlContent: z.string().max(10000).optional(),
 });
 
 const showcaseMetadataElement = z.object({

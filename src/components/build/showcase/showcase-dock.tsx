@@ -15,7 +15,7 @@ import {
   LayoutGrid,
   Image,
   Layers,
-  Eye,
+
   Save,
   X,
   Loader2,
@@ -26,6 +26,7 @@ import {
   Pencil,
   Pentagon,
   LayoutTemplate,
+  HelpCircle,
 } from "lucide-react";
 
 interface ShowcaseDockProps {
@@ -39,11 +40,11 @@ interface ShowcaseDockProps {
   onDraw: () => void;
   onBackground: () => void;
   onLayers: () => void;
-  onPreview: () => void;
   onSave: () => void;
   onExit: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  onShowGuide?: () => void;
   canUndo: boolean;
   canRedo: boolean;
   isSaving: boolean;
@@ -60,6 +61,7 @@ interface DockItemData {
   onClick: () => void;
   highlight?: boolean;
   disabled?: boolean;
+  dockId?: string;
 }
 
 interface DockTooltipState {
@@ -78,11 +80,11 @@ export function ShowcaseDock({
   onDraw,
   onBackground,
   onLayers,
-  onPreview,
   onSave,
   onExit,
   onUndo,
   onRedo,
+  onShowGuide,
   canUndo,
   canRedo,
   isSaving,
@@ -101,21 +103,20 @@ export function ShowcaseDock({
   const videosAtLimit = videoCount >= maxVideos;
 
   const items: DockItemData[] = [
-    { icon: Undo2, label: "Undo", onClick: onUndo, disabled: !canUndo },
-    { icon: Redo2, label: "Redo", onClick: onRedo, disabled: !canRedo },
-    { icon: ImagePlus, label: imagesAtLimit ? `Images ${imageCount}/${maxImages}` : `Add Image (${imageCount}/${maxImages})`, onClick: onAddImage, disabled: imagesAtLimit },
-    { icon: isVideoUploading ? Loader2 : Film, label: isVideoUploading ? "Uploading..." : videosAtLimit ? `Videos ${videoCount}/${maxVideos}` : `Add Video (${videoCount}/${maxVideos})`, onClick: onAddVideo, disabled: isVideoUploading || videosAtLimit },
-    { icon: Type, label: "Add Text", onClick: onAddText },
-    { icon: LayoutGrid, label: "Info Card", onClick: onAddMetadata },
-    { icon: Pentagon, label: "Shapes", onClick: onAddShape },
-    { icon: Zap, label: "Effects", onClick: onAddEffect },
-    { icon: LayoutTemplate, label: "Templates", onClick: onAddTemplate },
-    { icon: Pencil, label: "Draw", onClick: onDraw },
-    { icon: Image, label: "Background", onClick: onBackground },
-    { icon: Layers, label: "Layers", onClick: onLayers },
-    { icon: Eye, label: "Preview", onClick: onPreview },
-    { icon: isSaving ? Loader2 : Save, label: isSaving ? "Saving..." : "Save", onClick: onSave, highlight: true },
-    { icon: X, label: "Exit", onClick: onExit },
+    { icon: Undo2, label: "Undo", onClick: onUndo, disabled: !canUndo, dockId: "undo" },
+    { icon: Redo2, label: "Redo", onClick: onRedo, disabled: !canRedo, dockId: "redo" },
+    { icon: ImagePlus, label: imagesAtLimit ? `Images ${imageCount}/${maxImages}` : `Add Image (${imageCount}/${maxImages})`, onClick: onAddImage, disabled: imagesAtLimit, dockId: "add-image" },
+    { icon: isVideoUploading ? Loader2 : Film, label: isVideoUploading ? "Uploading..." : videosAtLimit ? `Videos ${videoCount}/${maxVideos}` : `Add Video (${videoCount}/${maxVideos})`, onClick: onAddVideo, disabled: isVideoUploading || videosAtLimit, dockId: "add-video" },
+    { icon: Type, label: "Add Text", onClick: onAddText, dockId: "add-text" },
+    { icon: LayoutGrid, label: "Info Card", onClick: onAddMetadata, dockId: "info-card" },
+    { icon: Pentagon, label: "Shapes", onClick: onAddShape, dockId: "shapes" },
+    { icon: Zap, label: "Effects", onClick: onAddEffect, dockId: "effects" },
+    { icon: LayoutTemplate, label: "Templates", onClick: onAddTemplate, dockId: "templates" },
+    { icon: Pencil, label: "Draw", onClick: onDraw, dockId: "draw" },
+    { icon: Image, label: "Background", onClick: onBackground, dockId: "background" },
+    { icon: Layers, label: "Layers", onClick: onLayers, dockId: "layers" },
+    { icon: isSaving ? Loader2 : Save, label: isSaving ? "Saving..." : "Save", onClick: onSave, highlight: true, dockId: "save" },
+    { icon: X, label: "Exit", onClick: onExit, dockId: "exit" },
   ];
 
   const totalUsed = imageCount + videoCount;
@@ -173,6 +174,14 @@ export function ShowcaseDock({
             onHideTooltip={() => setTooltip(null)}
           />
         ))}
+        {onShowGuide && (
+          <DockIcon
+            mouseX={mouseX}
+            item={{ icon: HelpCircle, label: "Guide", onClick: onShowGuide, dockId: "guide" }}
+            onShowTooltip={setTooltip}
+            onHideTooltip={() => setTooltip(null)}
+          />
+        )}
       </motion.div>
 
       {/* Tooltip rendered via portal to escape transform-based containing block */}
@@ -228,6 +237,7 @@ function DockIcon({
   return (
     <motion.button
       ref={ref}
+      data-dock-item={item.dockId}
       style={{ width, height: width }}
       onClick={item.onClick}
       disabled={item.disabled}

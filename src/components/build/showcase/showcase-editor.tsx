@@ -15,10 +15,12 @@ import { ShapePickerPanel } from "./panels/shape-picker-panel";
 import { TemplatePickerPanel } from "./panels/template-picker-panel";
 import { DrawingOverlay } from "./drawing/drawing-overlay";
 import type { DrawingOverlayHandle } from "./drawing/drawing-overlay";
+import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { useUndoableReducer } from "./hooks/use-undoable-reducer";
 import { migrateShowcaseLayout } from "@/lib/validations/showcase";
 import { updateShowcaseLayout } from "@/lib/actions/build";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
+import { calcSnapGuides, type SnapGuide } from "./hooks/use-snap-guides";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { isWebGLPreset } from "./backgrounds";
@@ -63,7 +65,7 @@ const PRESET_STYLES: Record<string, React.CSSProperties> = {
   },
 };
 
-const MAX_IMAGES = 50;
+const MAX_IMAGES = 25;
 const MAX_VIDEOS = 2;
 const MAX_VIDEO_DURATION_SECONDS = 60;
 
@@ -192,8 +194,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<"images" | "background" | "layers" | "effects" | "shapes" | "templates" | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPreviewing, setIsPreviewing] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
+  const [showEditorGuide, setShowEditorGuide] = useState(false);
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
 
   // Multi-page state
@@ -229,16 +231,21 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   } | null>(null);
 
   // Resize state
+  type HandlePos = "tl" | "t" | "tr" | "r" | "br" | "b" | "bl" | "l";
   const resizeRef = useRef<{
     elementId: string;
-    corner: "tl" | "tr" | "bl" | "br";
+    handle: HandlePos;
     startX: number;
     startY: number;
     elStartX: number;
     elStartY: number;
     elStartW: number;
     elStartH: number;
+    aspectRatio: number;
   } | null>(null);
+
+  // Snap guide state
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
 
   const selectedElement = selectedIds.length === 1
     ? layout.elements.find((el) => el.id === selectedIds[0]) ?? null
@@ -277,47 +284,86 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         const dy = e.clientY - dragRef.current.startY;
         const deltaXPct = (dx / rect.width) * 100;
         const deltaYPct = (dy / rect.height) * 100;
-        for (const elId of dragRef.current.elementIds) {
-          const el = layout.elements.find((el) => el.id === elId);
-          const start = dragRef.current.elStarts[elId];
-          if (!el || !start) continue;
-          const newX = Math.max(-el.width * 0.5, Math.min(100 - el.width * 0.5, start.x + deltaXPct));
-          const newY = Math.max(-el.height * 0.5, Math.min(100 - el.height * 0.5, start.y + deltaYPct));
-          dispatch({ type: "MOVE_ELEMENT", id: elId, x: newX, y: newY });
+
+        // Calculate snap for the primary (first) dragged element
+        const primaryId = dragRef.current.elementIds[0];
+        const primaryEl = layout.elements.find((el) => el.id === primaryId);
+        const primaryStart = dragRef.current.elStarts[primaryId];
+        if (primaryEl && primaryStart) {
+          const candidateX = primaryStart.x + deltaXPct;
+          const candidateY = primaryStart.y + deltaYPct;
+          const snap = calcSnapGuides(
+            layout.elements.map((el) => ({ id: el.id, x: el.x, y: el.y, width: el.width, height: el.height })),
+            primaryId,
+            { x: candidateX, y: candidateY, width: primaryEl.width, height: primaryEl.height }
+          );
+          setSnapGuides(snap.guides);
+          const snapOffsetX = snap.snappedX !== null ? snap.snappedX - candidateX : 0;
+          const snapOffsetY = snap.snappedY !== null ? snap.snappedY - candidateY : 0;
+
+          for (const elId of dragRef.current.elementIds) {
+            const el = layout.elements.find((el) => el.id === elId);
+            const start = dragRef.current.elStarts[elId];
+            if (!el || !start) continue;
+            const newX = Math.max(-el.width * 0.5, Math.min(100 - el.width * 0.5, start.x + deltaXPct + snapOffsetX));
+            const newY = Math.max(-el.height * 0.5, Math.min(100 - el.height * 0.5, start.y + deltaYPct + snapOffsetY));
+            dispatch({ type: "MOVE_ELEMENT", id: elId, x: newX, y: newY });
+          }
         }
         return;
       }
 
-      // Handle resize
+      // Handle resize (8 handles, aspect-ratio lock on corners unless Shift held)
       if (resizeRef.current) {
         const dx = e.clientX - resizeRef.current.startX;
         const dy = e.clientY - resizeRef.current.startY;
         const dxPct = (dx / rect.width) * 100;
         const dyPct = (dy / rect.height) * 100;
-        const corner = resizeRef.current.corner;
+        const h = resizeRef.current.handle;
+        const ar = resizeRef.current.aspectRatio;
+        const isCorner = ["tl", "tr", "bl", "br"].includes(h);
+        const lockAspect = isCorner && !e.shiftKey;
 
         let newX = resizeRef.current.elStartX;
         let newY = resizeRef.current.elStartY;
         let newW = resizeRef.current.elStartW;
         let newH = resizeRef.current.elStartH;
 
-        if (corner === "br") {
+        if (h === "br") {
           newW = Math.max(5, resizeRef.current.elStartW + dxPct);
-          newH = Math.max(5, resizeRef.current.elStartH + dyPct);
-        } else if (corner === "bl") {
+          newH = lockAspect ? newW / ar : Math.max(5, resizeRef.current.elStartH + dyPct);
+        } else if (h === "bl") {
           newW = Math.max(5, resizeRef.current.elStartW - dxPct);
-          newH = Math.max(5, resizeRef.current.elStartH + dyPct);
+          newH = lockAspect ? newW / ar : Math.max(5, resizeRef.current.elStartH + dyPct);
           newX = resizeRef.current.elStartX + (resizeRef.current.elStartW - newW);
-        } else if (corner === "tr") {
+        } else if (h === "tr") {
           newW = Math.max(5, resizeRef.current.elStartW + dxPct);
+          newH = lockAspect ? newW / ar : Math.max(5, resizeRef.current.elStartH - dyPct);
+          newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
+        } else if (h === "tl") {
+          newW = Math.max(5, resizeRef.current.elStartW - dxPct);
+          newH = lockAspect ? newW / ar : Math.max(5, resizeRef.current.elStartH - dyPct);
+          newX = resizeRef.current.elStartX + (resizeRef.current.elStartW - newW);
+          newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
+        } else if (h === "t") {
           newH = Math.max(5, resizeRef.current.elStartH - dyPct);
           newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
-        } else if (corner === "tl") {
+        } else if (h === "b") {
+          newH = Math.max(5, resizeRef.current.elStartH + dyPct);
+        } else if (h === "l") {
           newW = Math.max(5, resizeRef.current.elStartW - dxPct);
-          newH = Math.max(5, resizeRef.current.elStartH - dyPct);
           newX = resizeRef.current.elStartX + (resizeRef.current.elStartW - newW);
-          newY = resizeRef.current.elStartY + (resizeRef.current.elStartH - newH);
+        } else if (h === "r") {
+          newW = Math.max(5, resizeRef.current.elStartW + dxPct);
         }
+
+        // Snap guides during resize
+        const snap = calcSnapGuides(
+          layout.elements.map((el) => ({ id: el.id, x: el.x, y: el.y, width: el.width, height: el.height })),
+          resizeRef.current.elementId,
+          { x: newX, y: newY, width: newW, height: newH }
+        );
+        setSnapGuides(snap.guides);
 
         dispatch({ type: "MOVE_ELEMENT", id: resizeRef.current.elementId, x: newX, y: newY });
         dispatch({ type: "RESIZE_ELEMENT", id: resizeRef.current.elementId, width: newW, height: newH });
@@ -356,6 +402,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     }
     dragRef.current = null;
     resizeRef.current = null;
+    setSnapGuides([]);
   }, [dispatch, marquee, layout.elements]);
 
   useEffect(() => {
@@ -409,7 +456,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   );
 
   const startResize = useCallback(
-    (elementId: string, corner: "tl" | "tr" | "bl" | "br", e: React.PointerEvent) => {
+    (elementId: string, handle: HandlePos, e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const el = layout.elements.find((el) => el.id === elementId);
@@ -417,13 +464,14 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       dispatch({ type: "BEGIN_BATCH" });
       resizeRef.current = {
         elementId,
-        corner,
+        handle,
         startX: e.clientX,
         startY: e.clientY,
         elStartX: el.x,
         elStartY: el.y,
         elStartW: el.width,
         elStartH: el.height,
+        aspectRatio: el.width / Math.max(el.height, 0.1),
       };
     },
     [layout.elements, dispatch]
@@ -603,6 +651,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       fuzzyGlitchMode: false,
       fuzzyGlitchInterval: 5,
       fuzzyGlitchDuration: 0.3,
+      textDirection: "horizontal",
     };
     dispatch({ type: "ADD_ELEMENT", element });
     setSelectedIds([element.id]);
@@ -816,9 +865,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const handleSave = useCallback(async () => {
     // If drawing overlay is open, flush it first (triggers drawing save via onComplete)
     if (showDrawing && drawingRef.current) {
-      drawingRef.current.flush();
-      // Small delay to let the drawing completion handler finish uploading
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await drawingRef.current.flush();
     }
 
     setIsSaving(true);
@@ -906,14 +953,14 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     setEditingTextId(null);
   }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
-  // Level-gated page limit: L5 = 2 pages, below L5 = 1 page
-  const maxPages = userLevel >= 5 ? 2 : 1;
+  // Level-gated page limit: L5+ = 3 pages, below L5 = 2 pages
+  const maxPages = userLevel >= 5 ? 3 : 2;
 
   const addPage = useCallback(() => {
     if (pagesState.length >= maxPages) {
       toast.error(
-        maxPages === 1
-          ? "Reach Level 5 to unlock multiple showcase pages!"
+        maxPages < 3
+          ? `Maximum ${maxPages} pages. Reach Level 5 for a 3rd page!`
           : `Maximum ${maxPages} pages allowed.`
       );
       return;
@@ -1106,42 +1153,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     </>
   );
 
-  // ─── Preview mode ─────────────────────────────────────────────
-
-  if (isPreviewing) {
-    return (
-      <div>
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={() => setIsPreviewing(false)}
-            className="px-4 py-2 rounded-lg bg-gx-red text-white text-sm font-medium hover:bg-red-700 transition-colors"
-          >
-            Back to Editor
-          </button>
-        </div>
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: layout.canvas.aspectRatio, containerType: "inline-size" }}>
-          {renderBackground()}
-          {sortedElements.map((element) => (
-            <div
-              key={element.id}
-              className="absolute"
-              style={{
-                left: `${element.x}%`,
-                top: `${element.y}%`,
-                width: `${element.width}%`,
-                height: `${element.height}%`,
-                zIndex: element.zIndex + 2,
-                transform: element.rotation !== 0 ? `rotate(${element.rotation}deg)` : undefined,
-              }}
-            >
-              <ShowcaseElement element={element} build={build} />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   // ─── Editor mode ──────────────────────────────────────────────
 
   return (
@@ -1175,9 +1186,9 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
               ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-zinc-700"
           )}
-          title={pagesState.length >= maxPages && maxPages === 1 ? "Reach Level 5 to unlock multiple pages" : undefined}
+          title={pagesState.length >= maxPages && maxPages < 3 ? "Reach Level 5 to unlock a 3rd page" : undefined}
         >
-          + Add Page{maxPages === 1 && " (Lv.5)"}
+          + Add Page{maxPages < 3 && " (Lv.5)"}
         </button>
       </div>
 
@@ -1387,6 +1398,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                     ? (content) => dispatch({ type: "UPDATE_ELEMENT", id: element.id, updates: { content } })
                     : undefined
                 }
+                onHtmlContentChange={
+                  element.type === "text"
+                    ? (html) => dispatch({ type: "UPDATE_ELEMENT", id: element.id, updates: { htmlContent: html } })
+                    : undefined
+                }
               />
 
               {/* Selection controls */}
@@ -1404,23 +1420,31 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                     <Trash2 className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                   </button>
 
-                  {/* Resize handles */}
-                  {(["tl", "tr", "bl", "br"] as const).map((corner) => {
-                    const posClass = {
+                  {/* Resize handles — 4 corners + 4 edge midpoints */}
+                  {(["tl", "t", "tr", "r", "br", "b", "bl", "l"] as HandlePos[]).map((handle) => {
+                    const isCorner = ["tl", "tr", "bl", "br"].includes(handle);
+                    const posClass: Record<string, string> = {
                       tl: "-top-2 -left-2 sm:-top-1.5 sm:-left-1.5 cursor-nw-resize",
+                      t: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize",
                       tr: "-top-2 -right-2 sm:-top-1.5 sm:-right-1.5 cursor-ne-resize",
-                      bl: "-bottom-2 -left-2 sm:-bottom-1.5 sm:-left-1.5 cursor-sw-resize",
+                      r: "top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-e-resize",
                       br: "-bottom-2 -right-2 sm:-bottom-1.5 sm:-right-1.5 cursor-se-resize",
-                    }[corner];
+                      b: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize",
+                      bl: "-bottom-2 -left-2 sm:-bottom-1.5 sm:-left-1.5 cursor-sw-resize",
+                      l: "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 cursor-w-resize",
+                    };
                     return (
                       <div
-                        key={corner}
+                        key={handle}
                         data-resize-handle
                         className={cn(
-                          "absolute w-4 h-4 sm:w-3 sm:h-3 rounded-full bg-blue-500 border-2 border-white z-50",
-                          posClass
+                          "absolute z-50 bg-blue-500 border-2 border-white",
+                          isCorner
+                            ? "w-4 h-4 sm:w-3 sm:h-3 rounded-full"
+                            : "w-3 h-2 sm:w-2.5 sm:h-1.5 rounded-sm",
+                          posClass[handle]
                         )}
-                        onPointerDown={(e) => startResize(element.id, corner, e)}
+                        onPointerDown={(e) => startResize(element.id, handle, e)}
                       />
                     );
                   })}
@@ -1442,6 +1466,19 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
             }}
           />
         )}
+
+        {/* Snap guide lines */}
+        {snapGuides.map((guide, i) => (
+          <div
+            key={`${guide.type}-${guide.position}-${i}`}
+            className="absolute pointer-events-none z-[199]"
+            style={
+              guide.type === "vertical"
+                ? { left: `${guide.position}%`, top: 0, bottom: 0, width: "1px", backgroundColor: "rgba(239,68,68,0.7)" }
+                : { top: `${guide.position}%`, left: 0, right: 0, height: "1px", backgroundColor: "rgba(239,68,68,0.7)" }
+            }
+          />
+        ))}
 
         {/* Drawing overlay */}
         {showDrawing && canvasRef.current && (
@@ -1598,11 +1635,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         onDraw={() => setShowDrawing(true)}
         onBackground={() => setActivePanel(activePanel === "background" ? null : "background")}
         onLayers={() => setActivePanel(activePanel === "layers" ? null : "layers")}
-        onPreview={() => setIsPreviewing(true)}
         onSave={handleSave}
         onExit={onExit}
         onUndo={() => dispatch({ type: "UNDO" })}
         onRedo={() => dispatch({ type: "REDO" })}
+        onShowGuide={() => setShowEditorGuide(true)}
         canUndo={canUndo}
         canRedo={canRedo}
         isSaving={isSaving}
@@ -1612,6 +1649,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         videoCount={videoCount}
         maxVideos={MAX_VIDEOS}
       />
+
+      {/* Editor guide overlay (manual trigger) */}
+      {showEditorGuide && (
+        <EditorGuideOverlay onDismiss={() => setShowEditorGuide(false)} />
+      )}
     </div>
   );
 }
