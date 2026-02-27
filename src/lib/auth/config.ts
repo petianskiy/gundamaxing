@@ -15,6 +15,42 @@ import { logEvent } from "@/lib/data/events";
 function createAdapter() {
   const base = PrismaAdapter(db);
 
+  const USER_SELECT = {
+    id: true,
+    displayName: true,
+    email: true,
+    emailVerified: true,
+    avatar: true,
+    role: true,
+    username: true,
+    verificationTier: true,
+    onboardingComplete: true,
+  } as const;
+
+  function toAdapterUser(u: {
+    id: string;
+    displayName: string | null;
+    email: string;
+    emailVerified: Date | null;
+    avatar: string | null;
+    role: string;
+    username: string;
+    verificationTier: string;
+    onboardingComplete: boolean;
+  }) {
+    return {
+      id: u.id,
+      name: u.displayName,
+      email: u.email,
+      emailVerified: u.emailVerified,
+      image: u.avatar,
+      role: u.role,
+      username: u.username,
+      verificationTier: u.verificationTier,
+      onboardingComplete: u.onboardingComplete,
+    };
+  }
+
   return {
     ...base,
     async createUser(data: { name?: string | null; email: string; emailVerified?: Date | null; image?: string | null }) {
@@ -40,46 +76,64 @@ function createAdapter() {
         username = `${prefix}_${suffix}`;
       }
 
-      // OAuth users are inherently verified — they authenticated via a trusted provider
-      const user = await db.user.create({
-        data: {
-          displayName: data.name ?? null,
-          email,
-          emailVerified: new Date(),
-          avatar: data.image ?? null,
-          username,
-          verificationTier: "VERIFIED",
-          onboardingComplete: true,
-          onboardingStep: 4,
-        },
-      });
+      try {
+        // OAuth users are inherently verified — they authenticated via a trusted provider
+        const user = await db.user.create({
+          data: {
+            displayName: data.name ?? null,
+            email,
+            emailVerified: new Date(),
+            avatar: data.image ?? null,
+            username,
+            verificationTier: "VERIFIED",
+            onboardingComplete: true,
+            onboardingStep: 4,
+          },
+        });
 
-      console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=VERIFIED`);
+        console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=VERIFIED`);
 
-      // Auto-promote designated admin users on first registration
-      const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
-      let assignedRole: "USER" | "ADMIN" = "USER";
-      if (adminUsernames.includes(username)) {
-        await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
-        assignedRole = "ADMIN";
-        console.log(`[auth] auto-promoted ${username} to ADMIN`);
+        // Auto-promote designated admin users on first registration
+        const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
+        if (adminUsernames.includes(username)) {
+          await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+          user.role = "ADMIN" as any;
+          console.log(`[auth] auto-promoted ${username} to ADMIN`);
+        }
+
+        return toAdapterUser(user);
+      } catch (err: any) {
+        // If user already exists (from a previous failed OAuth attempt where createUser
+        // succeeded but linkAccount failed), reuse the existing user
+        if (err?.code === "P2002") {
+          const existingUser = await db.user.findFirst({
+            where: { OR: [{ email }, { username }] },
+            select: USER_SELECT,
+          });
+          if (existingUser) {
+            console.log(`[auth] user_already_exists: reusing id=${existingUser.id}, username=${existingUser.username}`);
+            return toAdapterUser(existingUser);
+          }
+        }
+        console.error("[auth] createUser failed:", err);
+        throw err;
       }
-
-      return {
-        id: user.id,
-        name: user.displayName,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        image: user.avatar,
-        role: assignedRole,
-        username: user.username,
-        verificationTier: "VERIFIED" as const,
-        onboardingComplete: user.onboardingComplete,
-      };
     },
     async linkAccount(account: any) {
-      console.log(`[auth] linked_account: provider=${account.provider}, userId=${account.userId}`);
-      return base.linkAccount!(account);
+      try {
+        const result = await base.linkAccount!(account);
+        console.log(`[auth] linked_account: provider=${account.provider}, userId=${account.userId}`);
+        return result;
+      } catch (err: any) {
+        // If this provider account is already linked (from a previous partial attempt),
+        // treat it as success rather than failing the entire sign-in flow
+        if (err?.code === "P2002") {
+          console.log(`[auth] account_already_linked: provider=${account.provider}, userId=${account.userId}`);
+          return;
+        }
+        console.error(`[auth] linkAccount failed: provider=${account.provider}, userId=${account.userId}`, err);
+        throw err;
+      }
     },
   } as NextAuthConfig["adapter"];
 }

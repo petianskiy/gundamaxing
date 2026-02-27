@@ -16,6 +16,11 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   OAuthSignin: "Could not start the sign-in process. Please try again.",
   OAuthCallback: "Sign-in was interrupted. Please try again.",
   Callback: "An error occurred during sign-in. Please try again.",
+  Default: "An error occurred during sign-in. Please try again.",
+  Configuration: "There is a server configuration issue. Please try again later.",
+  Verification: "The sign-in link has expired. Please request a new one.",
+  CredentialsSignin: "Invalid credentials. Check your email/username and password.",
+  SessionRequired: "Please sign in to access this page.",
   AccessDenied: "Access denied.",
   AccountBanned: "Your account has been suspended.",
   EmailNotVerified:
