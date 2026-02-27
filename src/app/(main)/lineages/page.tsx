@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { GitFork, Plus } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -16,7 +17,19 @@ export default async function LineagesPage() {
   ]);
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen">
+      <div className="fixed inset-0 -z-20">
+        <Image
+          src="/images/lineages-bg.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          unoptimized
+        />
+      </div>
+      <div className="fixed inset-0 -z-10 bg-black/60" />
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -74,6 +87,7 @@ export default async function LineagesPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
