@@ -153,9 +153,9 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   const bubbleStyle: React.CSSProperties = targetRect
     ? {
         position: "absolute",
-        bottom: `${window.innerHeight - top + 16}px`,
+        top: `${top - 16}px`,
         left: `${left + (right - left) / 2}px`,
-        transform: "translateX(-50%)",
+        transform: "translateX(-50%) translateY(-100%)",
       }
     : {
         position: "absolute",

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -58,27 +57,20 @@ export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
           <X className="h-6 w-6" />
         </button>
 
-        {/* Image container */}
-        <motion.div
-          className="relative max-h-[90vh] max-w-[90vw]"
-          style={{ width: "90vw", height: "90vh" }}
+        {/* Image — sized to its natural dimensions, capped at viewport */}
+        <motion.img
+          src={imageUrl}
+          alt={alt}
+          className="max-w-[90vw] max-h-[90vh] object-contain"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          onDragStart={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Image
-            src={imageUrl}
-            alt={alt}
-            fill
-            className="object-contain"
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-            onDragStart={(e) => e.preventDefault()}
-            unoptimized
-          />
-        </motion.div>
+        />
       </motion.div>
     </AnimatePresence>,
     document.body

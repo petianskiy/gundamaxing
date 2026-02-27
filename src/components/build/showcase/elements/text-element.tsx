@@ -71,6 +71,7 @@ export function TextElement({ element, isEditing, onContentChange, onHtmlContent
     borderRadius: `${0.8}cqi`,
     backgroundColor: element.backgroundColor || "transparent",
     writingMode: element.textDirection === "vertical" ? "vertical-rl" : undefined,
+    textOrientation: element.textDirection === "vertical" ? "upright" : undefined,
   };
 
   // Rich text mode: render Tiptap editor when editing, or render HTML when viewing

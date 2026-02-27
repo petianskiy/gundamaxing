@@ -63,6 +63,17 @@ function undoReducer(
       };
     }
 
+    // APPLY_TEMPLATE: same as SET_LAYOUT but preserves undo history
+    if (action.type === "APPLY_TEMPLATE") {
+      const newPresent = innerReducer(state.present, action);
+      return {
+        past: [...state.past, state.present].slice(-MAX_HISTORY),
+        present: newPresent,
+        future: [],
+        batchSnapshot: null,
+      };
+    }
+
     // BEGIN_BATCH: snapshot current state before a drag/resize starts
     if (action.type === "BEGIN_BATCH") {
       return { ...state, batchSnapshot: state.present };

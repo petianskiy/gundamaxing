@@ -276,32 +276,34 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
         {/* Text-specific */}
         {element.type === "text" && (
           <>
-            {/* Formatting toolbar */}
-            <div>
-              <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Format</label>
-              <div className="flex gap-1">
-                {[
-                  { key: "bold" as const, icon: Bold, label: "Bold" },
-                  { key: "italic" as const, icon: Italic, label: "Italic" },
-                  { key: "underline" as const, icon: Underline, label: "Underline" },
-                  { key: "strikethrough" as const, icon: Strikethrough, label: "Strikethrough" },
-                ].map(({ key, icon: Icon, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => onUpdate({ [key]: !element[key] })}
-                    className={cn(
-                      "flex-1 h-8 rounded-md flex items-center justify-center border transition-colors",
-                      element[key]
-                        ? "border-blue-500 bg-blue-500/10 text-blue-400"
-                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
-                    )}
-                    title={label}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </button>
-                ))}
+            {/* Formatting toolbar — hidden when rich text is active (Tiptap has its own) */}
+            {!element.htmlContent && (
+              <div>
+                <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Format</label>
+                <div className="flex gap-1">
+                  {[
+                    { key: "bold" as const, icon: Bold, label: "Bold" },
+                    { key: "italic" as const, icon: Italic, label: "Italic" },
+                    { key: "underline" as const, icon: Underline, label: "Underline" },
+                    { key: "strikethrough" as const, icon: Strikethrough, label: "Strikethrough" },
+                  ].map(({ key, icon: Icon, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => onUpdate({ [key]: !element[key] })}
+                      className={cn(
+                        "flex-1 h-8 rounded-md flex items-center justify-center border transition-colors",
+                        element[key]
+                          ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                          : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                      )}
+                      title={label}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Font size — numeric */}
             <div>
@@ -436,7 +438,8 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
               <p className="text-[10px] text-zinc-500 -mt-1">Double-click to edit with inline formatting</p>
             )}
 
-            {/* Gradient text */}
+            {/* Gradient text — incompatible with rich text */}
+            {!element.htmlContent && (
             <div className="pt-2 border-t border-zinc-700/50">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs text-zinc-400 uppercase tracking-wider">Gradient</label>
@@ -511,8 +514,10 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 </div>
               )}
             </div>
+            )}
 
-            {/* Fuzzy text */}
+            {/* Fuzzy text — incompatible with rich text */}
+            {!element.htmlContent && (
             <div className="pt-2 border-t border-zinc-700/50">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs text-zinc-400 uppercase tracking-wider">Fuzzy</label>
@@ -728,6 +733,7 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
                 </div>
               )}
             </div>
+            )}
           </>
         )}
 

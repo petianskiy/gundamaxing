@@ -82,6 +82,7 @@ type Action =
   | { type: "SET_ASPECT_RATIO"; aspectRatio: string }
   | { type: "REORDER_Z"; id: string; direction: "up" | "down" | "top" | "bottom" }
   | { type: "SET_LAYOUT"; layout: ShowcaseLayout }
+  | { type: "APPLY_TEMPLATE"; layout: ShowcaseLayout }
   | { type: "UNDO" }
   | { type: "REDO" };
 
@@ -162,6 +163,9 @@ function layoutReducer(state: ShowcaseLayout, action: Action): ShowcaseLayout {
     }
 
     case "SET_LAYOUT":
+      return action.layout;
+
+    case "APPLY_TEMPLATE":
       return action.layout;
 
     default:
@@ -500,11 +504,15 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
       if (e.key === "Escape") {
         if (editingTextId) {
-          // Save text content before exiting edit mode
-          const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
-          if (editingEl) {
-            const newContent = editingEl.textContent || "";
-            dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+          // For rich text elements, Tiptap handles its own state — just exit edit mode
+          const editingElement = layout.elements.find((el) => el.id === editingTextId);
+          if (!editingElement || editingElement.type !== "text" || !editingElement.htmlContent) {
+            // Plain text: save text content before exiting edit mode
+            const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+            if (editingEl) {
+              const newContent = editingEl.textContent || "";
+              dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+            }
           }
           setEditingTextId(null);
           return;
@@ -787,7 +795,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
   const applyTemplate = useCallback((elements: ShowcaseElementType[]) => {
     // Replace current page elements with template elements
-    dispatch({ type: "SET_LAYOUT", layout: { ...layout, elements } });
+    dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
     setSelectedIds([]);
     setActivePanel(null);
   }, [layout, dispatch]);
@@ -1302,11 +1310,15 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
             const y = ((e.clientY - rect.top) / rect.height) * 100;
             marqueeRef.current = { startX: x, startY: y, currentX: x, currentY: y };
             // Save text content before deselecting (blur may fire too late)
+            // Skip for rich text elements — Tiptap handles its own state
             if (editingTextId) {
-              const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
-              if (editingEl) {
-                const newContent = editingEl.textContent || "";
-                dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+              const editingElement = layout.elements.find((el) => el.id === editingTextId);
+              if (!editingElement || editingElement.type !== "text" || !editingElement.htmlContent) {
+                const editingEl = canvasRef.current?.querySelector(`[data-element-wrapper] [contenteditable="true"]`) as HTMLElement | null;
+                if (editingEl) {
+                  const newContent = editingEl.textContent || "";
+                  dispatch({ type: "UPDATE_ELEMENT", id: editingTextId, updates: { content: newContent } });
+                }
               }
             }
             // Deselect immediately unless shift is held
@@ -1578,8 +1590,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
               overlayOpacity: bg.overlayOpacity ?? prev?.overlayOpacity,
               config: bg.backgroundConfig !== undefined ? bg.backgroundConfig : prev?.config,
             }));
-            // Also update the canvas state so renderBackground picks it up
-            dispatch({ type: "SET_BACKGROUND", ...bg });
+            // Per-page bg state is sufficient — renderBackground reads effectiveBg* from currentPageBg
           }}
           onClose={() => setActivePanel(null)}
         />
