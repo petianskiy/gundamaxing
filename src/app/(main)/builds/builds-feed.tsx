@@ -8,10 +8,11 @@ import {
   X,
   Grid3X3,
   LayoutList,
-  Film,
   Flame,
   Heart,
   MessageCircle,
+  Bookmark,
+  Camera,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -70,7 +71,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "cinematic">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "wall">("grid");
   const [timeRange, setTimeRange] = useState<"all" | "week" | "month" | "year">("all");
 
   const hasActiveFilters = useMemo(() => {
@@ -139,10 +140,9 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
     { value: "year", label: "This Year" },
   ];
 
-  const viewOptions: { value: "grid" | "list" | "cinematic"; icon: typeof Grid3X3; label: string }[] = [
+  const viewOptions: { value: "grid" | "wall"; icon: typeof Grid3X3; label: string }[] = [
     { value: "grid", icon: Grid3X3, label: "Grid" },
-    { value: "list", icon: LayoutList, label: "List" },
-    { value: "cinematic", icon: Film, label: "Cinematic" },
+    { value: "wall", icon: LayoutList, label: "Wall" },
   ];
 
   return (
@@ -345,7 +345,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
                     key={build.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: i * 0.05 }}
+                    transition={{ duration: 0.35, delay: Math.min(i, 20) * 0.03 }}
                   >
                     <BuildCard build={build} />
                   </motion.div>
@@ -353,82 +353,103 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
               </div>
             )}
 
-            {/* List View */}
-            {viewMode === "list" && (
-              <div className="space-y-3">
+            {/* Instagram-style Wall View */}
+            {viewMode === "wall" && (
+              <div className="max-w-[470px] mx-auto space-y-5">
                 {filteredBuilds.map((build, i) => {
                   const primaryImage = build.images.find(img => img.isPrimary) || build.images[0];
                   return (
-                    <motion.div
+                    <motion.article
                       key={build.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 24 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, delay: i * 0.05 }}
+                      transition={{ duration: 0.4, delay: Math.min(i, 10) * 0.06 }}
+                      className="rounded-xl border border-border/50 bg-card overflow-hidden"
                     >
-                      <div className="flex gap-4 p-3 rounded-xl border border-border/50 bg-card hover:border-border transition-colors">
-                        <Link href={`/builds/${build.slug}`} className="shrink-0">
-                          <div className="relative w-32 h-24 sm:w-40 sm:h-28 rounded-lg overflow-hidden">
-                            <Image src={primaryImage.url} alt={primaryImage.alt} fill className="object-cover" unoptimized />
-                            <div className="absolute top-1.5 left-1.5"><GradeBadge grade={build.grade} /></div>
+                      {/* Header — user row */}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <Link href={`/u/${build.userHandle}`} className="shrink-0">
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-gx-red/30">
+                            <Image src={build.userAvatar} alt={build.username} fill className="object-cover" unoptimized />
                           </div>
                         </Link>
-                        <div className="flex-1 min-w-0 py-1">
-                          <Link href={`/builds/${build.slug}`}>
-                            <h3 className="font-semibold text-sm text-foreground line-clamp-1 hover:text-gx-red transition-colors">{build.title}</h3>
+                        <div className="flex-1 min-w-0">
+                          <Link href={`/u/${build.userHandle}`} className="text-sm font-semibold text-foreground hover:text-gx-red transition-colors">
+                            {build.username}
                           </Link>
-                          <p className="text-xs text-muted-foreground mt-0.5">{build.kitName} · {build.scale}</p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {build.techniques.slice(0, 4).map(t => <span key={t} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-800 text-zinc-400">{t}</span>)}
-                          </div>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{build.likes}</span>
-                            <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" />{build.comments}</span>
-                            <Link href={`/u/${build.userHandle}`} className="flex items-center gap-1 ml-auto hover:text-foreground">
-                              <div className="w-4 h-4 rounded-full overflow-hidden relative"><Image src={build.userAvatar} alt="" fill className="object-cover" unoptimized /></div>
-                              {build.username}
-                            </Link>
-                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-tight">{build.kitName}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <GradeBadge grade={build.grade} />
+                          <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{build.scale}</span>
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
 
-            {/* Cinematic View */}
-            {viewMode === "cinematic" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {filteredBuilds.map((build, i) => {
-                  const primaryImage = build.images.find(img => img.isPrimary) || build.images[0];
-                  return (
-                    <motion.div key={build.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: i * 0.05 }}>
-                      <Link href={`/builds/${build.slug}`} className="group block rounded-xl border border-border/50 bg-card overflow-hidden hover:border-border transition-colors">
-                        <div className="relative aspect-[16/9] overflow-hidden">
-                          <Image src={primaryImage.url} alt={primaryImage.alt} fill className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                          <div className="absolute bottom-0 inset-x-0 p-5">
-                            <div className="flex items-center gap-2 mb-2">
-                              <GradeBadge grade={build.grade} />
-                              <span className="text-[10px] font-mono text-zinc-300 bg-black/40 px-1.5 py-0.5 rounded">{build.scale}</span>
-                              {build.status === "WIP" && <span className="text-[10px] font-bold uppercase bg-amber-500/90 text-black px-2 py-0.5 rounded">WIP</span>}
+                      {/* Image */}
+                      <Link href={`/builds/${build.slug}`} className="block">
+                        <div className="relative aspect-square overflow-hidden bg-muted">
+                          <Image
+                            src={primaryImage.url}
+                            alt={primaryImage.alt}
+                            fill
+                            className="object-cover"
+                            style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
+                            unoptimized
+                          />
+                          {build.images.length > 1 && (
+                            <div className="absolute top-3 right-3">
+                              <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-black/60 text-white backdrop-blur-sm">
+                                <Camera className="h-3 w-3" />
+                                {build.images.length}
+                              </span>
                             </div>
-                            <h3 className="text-lg font-bold text-white line-clamp-2">{build.title}</h3>
-                            <p className="text-sm text-zinc-300 mt-1">{build.kitName}</p>
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full overflow-hidden relative"><Image src={build.userAvatar} alt="" fill className="object-cover" unoptimized /></div>
-                                <span className="text-xs text-zinc-400">{build.username}</span>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-zinc-400">
-                                <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{build.likes}</span>
-                                <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" />{build.comments}</span>
-                              </div>
+                          )}
+                          {build.status === "WIP" && (
+                            <div className="absolute top-3 left-3">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-black">
+                                WIP
+                              </span>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </Link>
-                    </motion.div>
+
+                      {/* Actions row */}
+                      <div className="px-4 pt-3 pb-1">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5 text-sm text-foreground">
+                            <Heart className="h-5 w-5" />
+                            <span className="font-semibold">{build.likes}</span>
+                          </span>
+                          <span className="flex items-center gap-1.5 text-sm text-foreground">
+                            <MessageCircle className="h-5 w-5" />
+                            <span className="font-semibold">{build.comments}</span>
+                          </span>
+                          <span className="flex items-center gap-1.5 text-sm text-foreground ml-auto">
+                            <Bookmark className="h-5 w-5" />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Title & techniques */}
+                      <div className="px-4 pb-4 pt-1">
+                        <Link href={`/builds/${build.slug}`}>
+                          <h3 className="text-sm font-semibold text-foreground hover:text-gx-red transition-colors line-clamp-2">
+                            {build.title}
+                          </h3>
+                        </Link>
+                        {build.techniques.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {build.techniques.slice(0, 4).map(tech => (
+                              <span key={tech} className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">{tech}</span>
+                            ))}
+                            {build.techniques.length > 4 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">+{build.techniques.length - 4}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </motion.article>
                   );
                 })}
               </div>
