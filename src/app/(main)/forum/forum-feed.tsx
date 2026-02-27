@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { MessageSquare, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "@/lib/i18n/context";
 import { ForumSearch } from "@/components/forum/forum-search";
@@ -30,26 +30,31 @@ export function ForumFeed({
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("forum.title")}</h1>
-            <p className="mt-1 text-muted-foreground">
-              {t("forum.subtitle")}
-            </p>
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <MessageSquare className="h-5 w-5 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              討論 · Pilot Comms
+            </span>
           </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            {t("forum.title")}
+          </h1>
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
+            {t("forum.subtitle")}
+          </p>
           {session?.user && (
-            <Link
-              href="/forum/new"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gx-red text-white text-xs font-medium hover:bg-red-600 transition-colors flex-shrink-0"
-            >
-              <Plus className="h-3 w-3" />
-              {t("forum.newThread")}
-            </Link>
+            <div className="mt-6">
+              <Link href="/forum/new" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-gx-red text-white text-sm font-medium hover:bg-red-600 transition-colors">
+                <Plus className="h-4 w-4" />
+                {t("forum.newThread")}
+              </Link>
+            </div>
           )}
         </div>
 
         {/* Search */}
-        <div className="mb-8 max-w-md">
+        <div className="mb-8 max-w-md mx-auto">
           <ForumSearch />
         </div>
 

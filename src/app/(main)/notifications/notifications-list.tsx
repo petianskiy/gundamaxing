@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Ban, Undo2, Trash2, Info } from "lucide-react";
+import { AlertTriangle, Ban, Undo2, Trash2, Info, Heart, MessageCircle, AtSign, Reply, Bell } from "lucide-react";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notification";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,10 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   UNBAN: { icon: Undo2, color: "text-green-400" },
   CONTENT_DELETED: { icon: Trash2, color: "text-orange-400" },
   SYSTEM: { icon: Info, color: "text-blue-400" },
+  LIKE: { icon: Heart, color: "text-pink-400" },
+  COMMENT: { icon: MessageCircle, color: "text-sky-400" },
+  MENTION: { icon: AtSign, color: "text-purple-400" },
+  FORUM_REPLY: { icon: Reply, color: "text-emerald-400" },
 };
 
 function timeAgo(date: Date): string {
@@ -61,7 +65,9 @@ export function NotificationsList({ notifications }: { notifications: Notificati
   if (notifications.length === 0) {
     return (
       <div className="text-center py-16">
-        <p className="text-muted-foreground">No notifications yet.</p>
+        <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+        <h2 className="text-lg font-semibold text-foreground mb-2">All caught up!</h2>
+        <p className="text-sm text-muted-foreground">No notifications yet. We&apos;ll let you know when something happens.</p>
       </div>
     );
   }

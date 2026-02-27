@@ -274,8 +274,14 @@ export function UploadForm() {
       <div className="mx-auto max-w-2xl relative">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("upload.title")}</h1>
-          <p className="mt-1 text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Upload className="h-5 w-5 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              投稿 · New Build
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">{t("upload.title")}</h1>
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
             {t("upload.subtitle")}
           </p>
         </div>

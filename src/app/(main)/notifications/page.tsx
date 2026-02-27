@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getNotifications } from "@/lib/data/notifications";
+import { Bell } from "lucide-react";
 import { NotificationsList } from "./notifications-list";
 import type { Metadata } from "next";
 
@@ -17,9 +18,20 @@ export default async function NotificationsPage() {
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-bold text-foreground mb-6">
-          Notifications
-        </h1>
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Bell className="h-5 w-5 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              通知 · Alerts
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            Notifications
+          </h1>
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
+            Stay updated on likes, comments, and community activity.
+          </p>
+        </div>
         <NotificationsList notifications={notifications} />
       </div>
     </div>

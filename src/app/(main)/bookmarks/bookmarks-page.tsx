@@ -28,15 +28,18 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
 
       <div className="relative z-10 mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3">
-            <Bookmark className="h-6 w-6 text-gx-red" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              {t("nav.bookmarks")}
-            </h1>
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Bookmark className="h-5 w-5 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              保存 · Saved Builds
+            </span>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Projects you&apos;ve saved for later. {builds.length > 0 && `${builds.length} saved`}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            {t("nav.bookmarks")}
+          </h1>
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
+            Projects you&apos;ve saved for later.{builds.length > 0 ? ` ${builds.length} saved` : ""}
           </p>
         </div>
 
