@@ -18,38 +18,39 @@ const STEPS: GuideStep[] = [
   {
     selector: '[data-dock-item="add-image"]',
     title: "Add Images",
-    description: "Upload and add photos to your showcase",
+    description: "Upload and add photos of your build to the showcase.",
   },
   {
     selector: '[data-dock-item="add-text"]',
     title: "Add Text",
-    description: "Add text labels, titles, and descriptions",
+    description: "Add text labels, titles, and descriptions to your page.",
   },
   {
     selector: '[data-dock-item="draw"]',
     title: "Draw",
-    description: "Draw directly on your showcase with the pencil tool",
+    description: "Draw directly on your showcase with the pencil tool.",
   },
   {
     selector: '[data-dock-item="layers"]',
     title: "Layers",
-    description: "Manage element ordering and layers",
+    description: "Manage element ordering and visibility.",
   },
   {
     selector: '[data-dock-item="save"]',
     title: "Save",
-    description: "Don't forget to save your work!",
+    description: "Don't forget to save your work when you're done!",
   },
 ];
 
-const PADDING = 8;
+const SPOTLIGHT_PAD = 10;
+const BUBBLE_GAP = 20;
 
 export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
-  // Find the first valid step index starting from a given index, searching forward.
+  // Find the next valid step index in a direction.
   const findValidStep = useCallback(
     (startIndex: number, direction: "forward" | "backward"): number | null => {
       const step = direction === "forward" ? 1 : -1;
@@ -73,12 +74,10 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
       setTargetRect(el.getBoundingClientRect());
     } else {
       setTargetRect(null);
-      // Auto-skip to next valid step
       const nextValid = findValidStep(currentStep + 1, "forward");
       if (nextValid !== null) {
         setCurrentStep(nextValid);
       } else {
-        // No more valid steps, dismiss
         onDismiss();
       }
     }
@@ -87,16 +86,12 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   // Measure on step change and on resize/scroll
   useEffect(() => {
     measureTarget();
-
-    const handleResizeOrScroll = () => {
-      measureTarget();
-    };
-
-    window.addEventListener("resize", handleResizeOrScroll);
-    window.addEventListener("scroll", handleResizeOrScroll, true);
+    const handleChange = () => measureTarget();
+    window.addEventListener("resize", handleChange);
+    window.addEventListener("scroll", handleChange, true);
     return () => {
-      window.removeEventListener("resize", handleResizeOrScroll);
-      window.removeEventListener("scroll", handleResizeOrScroll, true);
+      window.removeEventListener("resize", handleChange);
+      window.removeEventListener("scroll", handleChange, true);
     };
   }, [measureTarget]);
 
@@ -139,30 +134,22 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
     }
   }, [currentStep, findValidStep]);
 
-  // Compute spotlight cutout coordinates with padding
-  const left = targetRect ? targetRect.left - PADDING : 0;
-  const top = targetRect ? targetRect.top - PADDING : 0;
-  const right = targetRect ? targetRect.right + PADDING : 0;
-  const bottom = targetRect ? targetRect.bottom + PADDING : 0;
+  // Spotlight cutout coordinates
+  const spotLeft = targetRect ? targetRect.left - SPOTLIGHT_PAD : 0;
+  const spotTop = targetRect ? targetRect.top - SPOTLIGHT_PAD : 0;
+  const spotRight = targetRect ? targetRect.right + SPOTLIGHT_PAD : 0;
+  const spotBottom = targetRect ? targetRect.bottom + SPOTLIGHT_PAD : 0;
+  const spotCenterX = (spotLeft + spotRight) / 2;
 
   const clipPath = targetRect
-    ? `polygon(evenodd, 0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%, ${left}px ${top}px, ${left}px ${bottom}px, ${right}px ${bottom}px, ${right}px ${top}px, ${left}px ${top}px)`
+    ? `polygon(evenodd, 0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%, ${spotLeft}px ${spotTop}px, ${spotLeft}px ${spotBottom}px, ${spotRight}px ${spotBottom}px, ${spotRight}px ${spotTop}px, ${spotLeft}px ${spotTop}px)`
     : undefined;
 
-  // Position the speech bubble above the target, centered horizontally
-  const bubbleStyle: React.CSSProperties = targetRect
-    ? {
-        position: "absolute",
-        top: `${top - 16}px`,
-        left: `${left + (right - left) / 2}px`,
-        transform: "translateX(-50%) translateY(-100%)",
-      }
-    : {
-        position: "absolute",
-        bottom: "30%",
-        left: "50%",
-        transform: "translateX(-50%)",
-      };
+  // Bubble positioning: sits above the spotlight with a gap.
+  // Uses `bottom` so the bubble naturally extends upward.
+  const bubbleBottom = targetRect
+    ? window.innerHeight - spotTop + BUBBLE_GAP
+    : undefined;
 
   const isLastStep = currentStep === STEPS.length - 1;
   const isFirstStep = currentStep === 0;
@@ -170,7 +157,6 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
 
   return (
     <div
-      ref={overlayRef}
       className="fixed inset-0 z-[700]"
       role="dialog"
       aria-modal="true"
@@ -190,127 +176,157 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
         />
       </AnimatePresence>
 
-      {/* Transparent click-blocker over the cutout area (prevents interacting with the highlighted element) */}
+      {/* Glowing ring around the spotlight cutout */}
       {targetRect && (
-        <div
-          className="absolute"
+        <motion.div
+          key={`ring-${currentStep}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute pointer-events-none"
           style={{
-            left: `${left}px`,
-            top: `${top}px`,
-            width: `${right - left}px`,
-            height: `${bottom - top}px`,
-            borderRadius: "8px",
-            boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
-            pointerEvents: "none",
+            left: spotLeft,
+            top: spotTop,
+            width: spotRight - spotLeft,
+            height: spotBottom - spotTop,
+            borderRadius: 10,
+            boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.6), 0 0 12px 2px rgba(239, 68, 68, 0.25)",
           }}
         />
       )}
 
-      {/* Speech bubble + character */}
+      {/* Connector line from bubble to spotlight */}
+      {targetRect && bubbleBottom !== undefined && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: spotCenterX,
+            top: spotTop - BUBBLE_GAP,
+            width: 2,
+            height: BUBBLE_GAP,
+            background: "linear-gradient(to bottom, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.5))",
+            borderRadius: 1,
+          }}
+        />
+      )}
+
+      {/* Speech bubble + character — positioned above the spotlight */}
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          style={bubbleStyle}
-          className="z-[710] w-[320px] max-w-[calc(100vw-32px)]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-end gap-3">
-            {/* Character image */}
-            <motion.div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 relative">
-              <motion.div
-                animate={{ y: [0, -4, 0] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 2.5,
-                  ease: "easeInOut",
-                }}
-              >
-                <Image
-                  src="/tutorial/guide-character.webp"
-                  alt="Guide character"
-                  width={80}
-                  height={80}
-                  className="object-contain drop-shadow-lg"
-                  priority
-                  unoptimized
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Card */}
-            <div className="flex-1 rounded-xl border border-border/60 bg-card/95 backdrop-blur-md p-4 shadow-2xl">
-              {/* Step counter */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {currentStep + 1} of {STEPS.length}
-                </span>
-                <button
-                  onClick={onDismiss}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Skip guide"
-                >
-                  Skip
-                </button>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-sm font-semibold text-foreground mb-1">
-                {step.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                {step.description}
-              </p>
-
-              {/* Navigation */}
-              <div className="flex items-center gap-2">
-                {!isFirstStep && (
-                  <button
-                    onClick={handleBack}
-                    className="flex-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-gx-red/50 focus:ring-offset-2 focus:ring-offset-card"
+        {targetRect && (
+          <div
+            key={`pos-${currentStep}`}
+            ref={bubbleRef}
+            className="absolute z-[710] w-[340px] max-w-[calc(100vw-32px)]"
+            style={{
+              bottom: bubbleBottom,
+              left: spotCenterX,
+              transform: "translateX(-50%)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="flex items-end gap-3">
+                {/* Guide character */}
+                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 relative">
+                  <motion.div
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
                   >
-                    Back
-                  </button>
-                )}
-                <button
-                  onClick={handleNext}
-                  className="flex-1 px-3 py-2 rounded-lg bg-gx-red text-white text-sm font-semibold hover:bg-gx-red/90 transition-colors focus:outline-none focus:ring-2 focus:ring-gx-red/50 focus:ring-offset-2 focus:ring-offset-card"
-                >
-                  {isLastStep ? "Done" : "Next"}
-                </button>
+                    <Image
+                      src="/tutorial/guide-character.webp"
+                      alt="Guide character"
+                      width={80}
+                      height={80}
+                      className="object-contain drop-shadow-lg"
+                      priority
+                      unoptimized
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Card */}
+                <div className="flex-1 rounded-xl border border-border/60 bg-card/95 backdrop-blur-md p-4 shadow-2xl">
+                  {/* Step counter */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {currentStep + 1} of {STEPS.length}
+                    </span>
+                    <button
+                      onClick={onDismiss}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Skip guide"
+                    >
+                      Skip
+                    </button>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-sm font-semibold text-foreground mb-1">{step.title}</h3>
+
+                  {/* Description */}
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{step.description}</p>
+
+                  {/* Navigation */}
+                  <div className="flex items-center gap-2">
+                    {!isFirstStep && (
+                      <button
+                        onClick={handleBack}
+                        className="flex-1 px-3 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                      >
+                        Back
+                      </button>
+                    )}
+                    <button
+                      onClick={handleNext}
+                      className="flex-1 px-3 py-2 rounded-lg bg-gx-red text-white text-sm font-semibold hover:bg-gx-red/90 transition-colors"
+                    >
+                      {isLastStep ? "Done" : "Next"}
+                    </button>
+                  </div>
+
+                  {/* Progress dots */}
+                  <div className="flex items-center justify-center gap-1.5 mt-3">
+                    {STEPS.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          i === currentStep
+                            ? "w-4 bg-gx-red"
+                            : i < currentStep
+                              ? "w-1.5 bg-gx-red/40"
+                              : "w-1.5 bg-muted-foreground/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Progress dots */}
-              <div className="flex items-center justify-center gap-1.5 mt-3">
-                {STEPS.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentStep
-                        ? "w-4 bg-gx-red"
-                        : i < currentStep
-                          ? "w-1.5 bg-gx-red/40"
-                          : "w-1.5 bg-muted-foreground/30"
-                    }`}
-                  />
-                ))}
+              {/* Arrow pointing down toward spotlight */}
+              <div className="flex justify-center">
+                <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-card/95 drop-shadow-sm" />
               </div>
-            </div>
+            </motion.div>
           </div>
-
-          {/* Arrow pointing down to the highlighted element */}
-          {targetRect && (
-            <div className="flex justify-center mt-[-1px]">
-              <div className="w-3 h-3 bg-card/95 border-b border-r border-border/60 rotate-45 translate-y-[-6px]" />
-            </div>
-          )}
-        </motion.div>
+        )}
       </AnimatePresence>
+
+      {/* Fallback when no target found */}
+      {!targetRect && (
+        <div className="absolute inset-0 flex items-center justify-center z-[710]">
+          <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-md p-6 text-center max-w-sm">
+            <p className="text-sm text-muted-foreground mb-3">Guide target not found</p>
+            <button onClick={onDismiss} className="px-4 py-2 rounded-lg bg-gx-red text-white text-sm font-semibold">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
