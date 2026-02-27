@@ -96,12 +96,21 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
 
   return (
     <div className="pt-20 pb-16">
-      {/* Combined header: Author + Build info */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
-          {/* Author info */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Link href={`/u/${build.userHandle}`} className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-border/50">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-5">
+        {/* Title — always truly centered */}
+        <div className="text-center mb-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{build.title}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {build.grade} &middot; {build.scale}
+            {build.kitName && <> &middot; {build.kitName}</>}
+          </p>
+        </div>
+
+        {/* Author row + techniques */}
+        <div className="flex items-center justify-between gap-4">
+          <Link href={`/u/${build.userHandle}`} className="flex items-center gap-2.5 min-w-0 group">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-border/50">
               <Image
                 src={build.userAvatar}
                 alt={build.username}
@@ -109,42 +118,28 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
                 className="object-cover"
                 unoptimized
               />
-            </Link>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Link href={`/u/${build.userHandle}`} className="text-sm font-medium text-foreground hover:underline truncate">
-                  {build.username}
-                </Link>
-                <VerificationBadge tier={build.verification} size="sm" />
-              </div>
-              <p className="text-xs text-muted-foreground">Posted {build.createdAt}</p>
             </div>
-          </div>
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors truncate">
+              {build.username}
+            </span>
+            <VerificationBadge tier={build.verification} size="sm" />
+            <span className="text-xs text-muted-foreground/60 hidden sm:inline">&middot; {build.createdAt}</span>
+          </Link>
 
-          {/* Build info — centered */}
-          <div className="text-center min-w-0">
-            <h1 className="text-lg font-bold text-foreground truncate">{build.title}</h1>
-            <p className="text-xs text-muted-foreground">{build.grade} &middot; {build.scale}</p>
-            {build.kitName && <p className="text-xs text-muted-foreground truncate">{build.kitName}</p>}
-          </div>
-
-          {/* Spacer to balance the grid */}
-          <div className="w-10 shrink-0" />
+          {/* Techniques tags */}
+          {build.techniques.length > 0 && !layout.elements.some((el) => el.type === "metadata") && (
+            <div className="flex flex-wrap gap-1.5 justify-end shrink-0">
+              {build.techniques.map((tech) => (
+                <span
+                  key={tech}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Techniques tags */}
-        {build.techniques.length > 0 && !layout.elements.some((el) => el.type === "metadata") && (
-          <div className="mt-2 flex flex-wrap gap-1.5 justify-end">
-            {build.techniques.map((tech) => (
-              <span
-                key={tech}
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Canvas pages (stacked vertically) */}
