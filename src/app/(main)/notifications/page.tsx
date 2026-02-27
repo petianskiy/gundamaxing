@@ -20,7 +20,7 @@ export default async function NotificationsPage() {
     <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-20">
         <Image
-          src="/images/notifications-bg.jpg"
+          src="/images/notifications-bg2.jpg"
           alt=""
           fill
           className="object-cover object-center"
