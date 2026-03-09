@@ -65,59 +65,96 @@ function createAdapter() {
         .replace(/[^a-z0-9_]/g, "")
         .slice(0, 20) || "user";
 
-      let username = prefix;
-      // Check if username is taken; if so, append random suffix
-      const existing = await db.user.findUnique({
-        where: { username },
-        select: { id: true },
-      });
-      if (existing) {
-        const suffix = Math.floor(1000 + Math.random() * 9000); // 4-digit
-        username = `${prefix}_${suffix}`;
-      }
+      // Retry loop: avoids TOCTOU race by directly attempting create
+      // and retrying with a new suffix on username collision
+      const MAX_ATTEMPTS = 5;
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        const username = attempt === 0
+          ? prefix
+          : `${prefix}_${Math.floor(1000 + Math.random() * 9000)}`;
 
-      try {
-        // OAuth users are inherently verified — they authenticated via a trusted provider
-        const user = await db.user.create({
-          data: {
-            displayName: data.name ?? null,
-            email,
-            emailVerified: new Date(),
-            avatar: data.image ?? null,
-            username,
-            verificationTier: "VERIFIED",
-            onboardingComplete: true,
-            onboardingStep: 4,
-          },
-        });
-
-        console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=VERIFIED`);
-
-        // Auto-promote designated admin users on first registration
-        const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
-        if (adminUsernames.includes(username)) {
-          await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
-          user.role = "ADMIN" as any;
-          console.log(`[auth] auto-promoted ${username} to ADMIN`);
-        }
-
-        return toAdapterUser(user);
-      } catch (err: any) {
-        // If user already exists (from a previous failed OAuth attempt where createUser
-        // succeeded but linkAccount failed), reuse the existing user
-        if (err?.code === "P2002") {
-          const existingUser = await db.user.findFirst({
-            where: { OR: [{ email }, { username }] },
-            select: USER_SELECT,
+        try {
+          // OAuth users are inherently verified — they authenticated via a trusted provider
+          const user = await db.user.create({
+            data: {
+              displayName: data.name ?? null,
+              email,
+              emailVerified: new Date(),
+              avatar: data.image ?? null,
+              username,
+              verificationTier: "VERIFIED",
+              onboardingComplete: true,
+              onboardingStep: 4,
+            },
           });
-          if (existingUser) {
-            console.log(`[auth] user_already_exists: reusing id=${existingUser.id}, username=${existingUser.username}`);
-            return toAdapterUser(existingUser);
+
+          console.log(`[auth] created_new_user: id=${user.id}, username=${username}, email=${email.includes("@placeholder.invalid") ? "placeholder" : "provider"}, tier=VERIFIED`);
+
+          // Auto-promote designated admin users on first registration
+          const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
+          if (adminUsernames.includes(username)) {
+            await db.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+            user.role = "ADMIN" as any;
+            console.log(`[auth] auto-promoted ${username} to ADMIN`);
           }
+
+          return toAdapterUser(user);
+        } catch (err: any) {
+          if (err?.code === "P2002") {
+            // Prisma reports constraint target as array or string depending on version
+            const rawTarget = err?.meta?.target;
+            const targetStr = Array.isArray(rawTarget) ? rawTarget.join(",") : String(rawTarget ?? "");
+
+            // Email collision → user already exists from a previous partial OAuth attempt.
+            // Find by email ONLY to avoid matching the wrong user by username.
+            if (targetStr.includes("email")) {
+              const existingUser = await db.user.findUnique({
+                where: { email },
+                select: USER_SELECT,
+              });
+              if (existingUser) {
+                console.log(`[auth] user_already_exists: reusing id=${existingUser.id}, username=${existingUser.username}`);
+                return toAdapterUser(existingUser);
+              }
+            }
+
+            // Username collision → retry with a different suffix
+            if (targetStr.includes("username")) {
+              console.log(`[auth] username_collision: ${username}, retrying (attempt ${attempt + 1}/${MAX_ATTEMPTS})`);
+              continue;
+            }
+
+            // Unknown P2002 target — try email lookup as fallback
+            const existingUser = await db.user.findUnique({
+              where: { email },
+              select: USER_SELECT,
+            });
+            if (existingUser) {
+              console.log(`[auth] user_already_exists (fallback): reusing id=${existingUser.id}`);
+              return toAdapterUser(existingUser);
+            }
+          }
+          console.error("[auth] createUser failed:", err);
+          throw err;
         }
-        console.error("[auth] createUser failed:", err);
-        throw err;
       }
+
+      // Exhausted retries — use a timestamp + random suffix as last resort
+      const fallbackUsername = `${prefix}_${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`;
+      const user = await db.user.create({
+        data: {
+          displayName: data.name ?? null,
+          email,
+          emailVerified: new Date(),
+          avatar: data.image ?? null,
+          username: fallbackUsername,
+          verificationTier: "VERIFIED",
+          onboardingComplete: true,
+          onboardingStep: 4,
+        },
+      });
+      console.log(`[auth] created_new_user (fallback): id=${user.id}, username=${fallbackUsername}`);
+      return toAdapterUser(user);
     },
     async linkAccount(account: any) {
       try {
@@ -326,7 +363,7 @@ const authConfig: NextAuthConfig = {
         // For OAuth sign-ins, the user may be new — ensure DB fields are loaded
         if (account?.provider !== "credentials") {
           try {
-            const dbUser = await db.user.findUnique({
+            let dbUser = await db.user.findUnique({
               where: { id: user.id! },
               select: {
                 role: true,
@@ -336,6 +373,23 @@ const authConfig: NextAuthConfig = {
                 avatar: true,
               },
             });
+
+            // If user was just created by the adapter, the read might be stale.
+            // Retry once after a short delay.
+            if (!dbUser) {
+              await new Promise(r => setTimeout(r, 250));
+              dbUser = await db.user.findUnique({
+                where: { id: user.id! },
+                select: {
+                  role: true,
+                  username: true,
+                  verificationTier: true,
+                  onboardingComplete: true,
+                  avatar: true,
+                },
+              });
+            }
+
             if (dbUser) {
               // Auto-promote designated admin users on login
               const adminUsernames = (process.env.ADMIN_USERNAMES || "petianskiy").split(",").map(s => s.trim());
@@ -353,22 +407,24 @@ const authConfig: NextAuthConfig = {
               token.picture = dbUser.avatar ?? user.image ?? "";
               token.name = user.name ?? "";
             } else {
+              // User not found even after retry — use adapter-returned data
+              console.error(`[auth] jwt: user ${user.id} not found in DB after retry`);
               token.id = user.id!;
-              token.role = "USER";
-              token.username = "";
-              token.verificationTier = "UNVERIFIED";
-              token.onboardingComplete = false;
+              token.role = (user as any).role ?? "USER";
+              token.username = (user as any).username ?? "";
+              token.verificationTier = (user as any).verificationTier ?? "VERIFIED";
+              token.onboardingComplete = (user as any).onboardingComplete ?? true;
               token.picture = user.image ?? "";
               token.name = user.name ?? "";
             }
           } catch (err) {
             console.error("[auth] jwt callback DB error:", err);
-            // Fallback: use whatever data is available from the OAuth profile
+            // Fallback: use adapter-returned user data (includes fields set by createUser)
             token.id = user.id!;
             token.role = (user as any).role ?? "USER";
             token.username = (user as any).username ?? "";
-            token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
-            token.onboardingComplete = (user as any).onboardingComplete ?? false;
+            token.verificationTier = (user as any).verificationTier ?? "VERIFIED";
+            token.onboardingComplete = (user as any).onboardingComplete ?? true;
             token.picture = user.image ?? "";
             token.name = user.name ?? "";
           }
