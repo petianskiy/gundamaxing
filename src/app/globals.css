@@ -15,6 +15,9 @@
   --color-gx-blue: var(--gx-blue);
   --color-gx-surface: var(--gx-surface);
   --color-gx-surface-elevated: var(--gx-surface-elevated);
+  --color-forum-accent: var(--forum-accent);
+  --color-forum-panel: var(--forum-panel);
+  --color-forum-border: var(--forum-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-orbitron: var(--font-orbitron);
@@ -40,6 +43,9 @@
   --gx-blue: #3b82f6;
   --gx-surface: #0f0f12;
   --gx-surface-elevated: #1a1a1f;
+  --forum-accent: #00a8ff;
+  --forum-panel: #0a1520;
+  --forum-border: #1a3a5c;
 }
 
 * {
@@ -226,4 +232,18 @@ body {
   background: white;
   border: none;
   cursor: pointer;
+}
+
+/* Forum hex pattern overlay */
+.forum-hex-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%2300a8ff' fill-opacity='1'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Angled clip-path for mecha-styled buttons */
+.clip-angle {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }

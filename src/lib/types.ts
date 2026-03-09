@@ -461,6 +461,38 @@ export interface UserKitReviewUI {
   createdAt: string;
 }
 
+// ─── Forum Sidebar ──────────────────────────────────────────
+
+export interface ForumActivePilot {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  lastActiveAt: string;
+}
+
+export interface ForumLeaderboardEntry {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  totalLikes: number;
+}
+
+export interface ForumRecentActivity {
+  type: "thread" | "comment";
+  id: string;
+  title: string;
+  username: string;
+  createdAt: string;
+}
+
+export interface ForumStats {
+  totalThreads: number;
+  totalPosts: number;
+  totalPilots: number;
+}
+
 // ─── Achievements & Levels ──────────────────────────────────
 export type AchievementCategory = "BUILDING" | "SOCIAL" | "POPULARITY" | "LINEAGE" | "FORUM" | "COLLECTOR" | "COMMUNITY";
 

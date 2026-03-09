@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ArrowUpDown } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 
 const SORT_OPTIONS = [
@@ -16,27 +15,28 @@ export function SortSelect({ current = "newest" }: { current?: string }) {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
 
-  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+  function handleClick(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", e.target.value);
-    params.delete("page"); // reset to page 1 on sort change
+    params.set("sort", value);
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-      <select
-        value={current}
-        onChange={handleChange}
-        className="bg-card border border-border/50 rounded-lg px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-gx-red/30"
-      >
-        {SORT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {t(opt.key)}
-          </option>
-        ))}
-      </select>
+    <div className="flex items-center gap-1">
+      {SORT_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => handleClick(opt.value)}
+          className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${
+            current === opt.value
+              ? "bg-forum-accent/15 text-forum-accent border border-forum-accent/30"
+              : "text-gray-500 hover:text-gray-300 border border-transparent"
+          }`}
+        >
+          {t(opt.key)}
+        </button>
+      ))}
     </div>
   );
 }

@@ -1,14 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { MessageSquare, Plus } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useTranslation } from "@/lib/i18n/context";
-import { ForumSearch } from "@/components/forum/forum-search";
-import { SortSelect } from "@/components/forum/sort-select";
+import { ForumHero } from "@/components/forum/forum-hero";
+import { ForumCategories } from "@/components/forum/forum-categories";
+import { ForumThreadControls } from "@/components/forum/forum-thread-controls";
 import { ThreadList } from "@/components/forum/thread-list";
 import { ForumPagination } from "@/components/forum/forum-pagination";
+import { ForumSidebar } from "@/components/forum/forum-sidebar";
 import type { ForumCategory, Thread } from "@/lib/types";
+import type {
+  ForumActivePilot,
+  ForumLeaderboardEntry,
+  ForumRecentActivity,
+  ForumStats,
+} from "@/lib/types";
 
 export function ForumFeed({
   categories,
@@ -16,106 +20,51 @@ export function ForumFeed({
   currentPage,
   totalPages,
   sort,
+  activePilots,
+  topContributors,
+  recentActivity,
+  stats,
 }: {
   categories: ForumCategory[];
   threads: Thread[];
   currentPage: number;
   totalPages: number;
   sort: string;
+  activePilots: ForumActivePilot[];
+  topContributors: ForumLeaderboardEntry[];
+  recentActivity: ForumRecentActivity[];
+  stats: ForumStats;
 }) {
-  const { t } = useTranslation();
-  const { data: session } = useSession();
-
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <MessageSquare className="h-5 w-5 text-gx-red" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
-              討論 · Pilot Comms
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-            {t("forum.title")}
-          </h1>
-          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-            {t("forum.subtitle")}
-          </p>
-          {session?.user && (
-            <div className="mt-6">
-              <Link href="/forum/new" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-gx-red text-white text-sm font-medium hover:bg-red-600 transition-colors">
-                <Plus className="h-4 w-4" />
-                {t("forum.newThread")}
-              </Link>
-            </div>
-          )}
-        </div>
+      <div className="mx-auto max-w-[1200px]">
+        <ForumHero />
 
-        {/* Search */}
-        <div className="mb-8 max-w-md mx-auto">
-          <ForumSearch />
-        </div>
+        <div className="flex gap-6 items-start">
+          {/* Main column */}
+          <div className="flex-1 min-w-0">
+            <ForumCategories categories={categories} />
 
-        {/* Categories */}
-        <section className="mb-12">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            {t("forum.categories")}
-          </h2>
-          <div className="grid gap-3">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/forum/category/${cat.id}`}
-                className="group flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card hover:border-border transition-colors"
-                style={{ borderLeftColor: cat.color, borderLeftWidth: "3px" }}
-              >
-                <span className="text-2xl flex-shrink-0">{cat.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground group-hover:text-foreground transition-colors">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{cat.description}</p>
-                </div>
-                <div className="flex items-center gap-3 sm:gap-6 text-xs text-muted-foreground flex-shrink-0">
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">{cat.threadCount.toLocaleString()}</p>
-                    <p className="hidden sm:block">{t("shared.threads")}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">{cat.postCount.toLocaleString()}</p>
-                    <p className="hidden sm:block">{t("shared.posts")}</p>
-                  </div>
-                  {cat.lastActivity && (
-                    <div className="hidden sm:block text-right w-20">
-                      <p className="text-muted-foreground">{cat.lastActivity}</p>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Recent Threads */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("forum.recentThreads")}
-            </h2>
-            <SortSelect current={sort} />
+            <section>
+              <ForumThreadControls sort={sort} />
+              <ThreadList threads={threads} />
+              <ForumPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                basePath="/forum"
+                searchParams={{ sort }}
+              />
+            </section>
           </div>
 
-          <ThreadList threads={threads} />
-
-          <ForumPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            basePath="/forum"
-            searchParams={{ sort }}
+          {/* Sidebar */}
+          <ForumSidebar
+            activePilots={activePilots}
+            topContributors={topContributors}
+            recentActivity={recentActivity}
+            stats={stats}
           />
-        </section>
+        </div>
       </div>
     </div>
   );
