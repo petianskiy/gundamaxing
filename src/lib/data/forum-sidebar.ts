@@ -10,66 +10,22 @@ import type {
 // ─── Active Pilots ──────────────────────────────────────────────
 
 export const getActivePilots = cache(async (limit = 5): Promise<ForumActivePilot[]> => {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-  // Users who created threads or comments in the last 7 days
-  const [threadAuthors, commentAuthors] = await Promise.all([
-    db.thread.findMany({
-      where: { createdAt: { gte: sevenDaysAgo } },
-      select: {
-        userId: true,
-        createdAt: true,
-        user: {
-          select: { id: true, username: true, displayName: true, avatar: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.comment.findMany({
-      where: { createdAt: { gte: sevenDaysAgo } },
-      select: {
-        userId: true,
-        createdAt: true,
-        user: {
-          select: { id: true, username: true, displayName: true, avatar: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const users = await db.user.findMany({
+    where: { lastActiveAt: { gte: fiveMinutesAgo } },
+    select: { id: true, username: true, displayName: true, avatar: true, lastActiveAt: true },
+    orderBy: { lastActiveAt: "desc" },
+    take: limit,
+  });
 
-  // Merge and deduplicate by userId, keeping most recent activity
-  const userMap = new Map<string, ForumActivePilot>();
-
-  for (const t of threadAuthors) {
-    const existing = userMap.get(t.userId);
-    if (!existing || new Date(existing.lastActiveAt) < t.createdAt) {
-      userMap.set(t.userId, {
-        id: t.user.id,
-        username: t.user.username,
-        displayName: t.user.displayName,
-        avatar: t.user.avatar,
-        lastActiveAt: t.createdAt.toISOString(),
-      });
-    }
-  }
-
-  for (const c of commentAuthors) {
-    const existing = userMap.get(c.userId);
-    if (!existing || new Date(existing.lastActiveAt) < c.createdAt) {
-      userMap.set(c.userId, {
-        id: c.user.id,
-        username: c.user.username,
-        displayName: c.user.displayName,
-        avatar: c.user.avatar,
-        lastActiveAt: c.createdAt.toISOString(),
-      });
-    }
-  }
-
-  return Array.from(userMap.values())
-    .sort((a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime())
-    .slice(0, limit);
+  return users.map((u) => ({
+    id: u.id,
+    username: u.username,
+    displayName: u.displayName,
+    avatar: u.avatar,
+    lastActiveAt: u.lastActiveAt!.toISOString(),
+  }));
 });
 
 // ─── Top Contributors (by total build likes) ────────────────────

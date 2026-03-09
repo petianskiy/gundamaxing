@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Pin, Lock, MessageSquare, Eye, Flame } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
@@ -46,19 +47,31 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
             className={`group flex items-start gap-3 p-3.5 rounded-lg border transition-all ${
               thread.isPinned
                 ? "border-yellow-500/30 bg-yellow-500/5 hover:border-yellow-500/50"
-                : "border-forum-border bg-forum-panel/60 hover:border-forum-accent/30"
+                : "border-forum-border bg-forum-panel/60 hover:border-gx-red/30"
             }`}
           >
-            {/* Avatar initials */}
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[11px] font-bold font-share-tech-mono ${
-                thread.isPinned
-                  ? "bg-yellow-500/15 text-yellow-400"
-                  : "bg-forum-border text-forum-accent"
-              }`}
-            >
-              {getInitials(thread.username)}
-            </div>
+            {/* Avatar */}
+            {thread.userAvatar ? (
+              <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 mt-0.5">
+                <Image
+                  src={thread.userAvatar}
+                  alt={thread.username}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[11px] font-bold font-share-tech-mono ${
+                  thread.isPinned
+                    ? "bg-yellow-500/15 text-yellow-400"
+                    : "bg-forum-border text-gx-red"
+                }`}
+              >
+                {getInitials(thread.username)}
+              </div>
+            )}
 
             {/* Content */}
             <div className="flex-1 min-w-0">
@@ -73,7 +86,7 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
                   className={`text-sm font-semibold line-clamp-1 transition-colors ${
                     thread.isPinned
                       ? "text-yellow-200 group-hover:text-yellow-100"
-                      : "text-gray-200 group-hover:text-forum-accent"
+                      : "text-gray-200 group-hover:text-gx-red"
                   }`}
                 >
                   {thread.title}
@@ -98,8 +111,8 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
                 <span
                   className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider"
                   style={{
-                    backgroundColor: "rgba(0, 168, 255, 0.1)",
-                    color: "rgba(0, 168, 255, 0.7)",
+                    backgroundColor: "rgba(220, 38, 38, 0.1)",
+                    color: "rgba(220, 38, 38, 0.7)",
                   }}
                 >
                   {thread.categoryName}

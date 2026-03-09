@@ -17,7 +17,7 @@ export function ForumThreadControls({ sort }: { sort: string }) {
         {session?.user && (
           <Link
             href="/forum/new"
-            className="clip-angle inline-flex items-center gap-1.5 px-4 py-2 bg-forum-accent text-black text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all"
+            className="clip-angle inline-flex items-center gap-1.5 px-4 py-2 bg-gx-red text-white text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all"
           >
             <Plus className="h-3.5 w-3.5" />
             {t("forum.newThread")}

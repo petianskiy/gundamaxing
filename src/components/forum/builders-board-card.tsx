@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SidebarCard } from "./sidebar-card";
 import type { ForumLeaderboardEntry } from "@/lib/types";
@@ -38,10 +39,22 @@ export function BuildersBoardCard({ entries }: { entries: ForumLeaderboardEntry[
                   <span className="text-gray-600 font-share-tech-mono">{i + 1}</span>
                 )}
               </span>
-              <div className="w-6 h-6 rounded-full bg-forum-border flex items-center justify-center text-[9px] font-bold text-gray-400 font-share-tech-mono">
-                {getInitials(entry.displayName, entry.username)}
-              </div>
-              <span className="flex-1 text-xs text-gray-400 group-hover:text-forum-accent transition-colors truncate">
+              {entry.avatar ? (
+                <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                  <Image
+                    src={entry.avatar}
+                    alt={entry.displayName ?? entry.username}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-forum-border flex items-center justify-center text-[9px] font-bold text-gray-400 font-share-tech-mono">
+                  {getInitials(entry.displayName, entry.username)}
+                </div>
+              )}
+              <span className="flex-1 text-xs text-gray-400 group-hover:text-gx-red transition-colors truncate">
                 {entry.displayName ?? entry.username}
               </span>
               <span className="text-[10px] text-gray-600 font-share-tech-mono">

@@ -27,12 +27,12 @@ export function ForumSearch({ initialQuery = "" }: { initialQuery?: string }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("forum.searchPlaceholder")}
-          className="w-full pl-9 pr-3 py-2 rounded-l-lg border border-forum-border bg-forum-panel/80 text-xs text-gray-300 font-share-tech-mono placeholder:text-gray-600 focus:outline-none focus:border-forum-accent/50 transition-colors"
+          className="w-full pl-9 pr-3 py-2 rounded-l-lg border border-forum-border bg-forum-panel/80 text-xs text-gray-300 font-share-tech-mono placeholder:text-gray-600 focus:outline-none focus:border-gx-red/50 transition-colors"
         />
       </div>
       <button
         type="submit"
-        className="px-3 py-2 rounded-r-lg bg-forum-accent/15 border border-l-0 border-forum-border text-[10px] font-bold uppercase tracking-wider text-forum-accent hover:bg-forum-accent/25 transition-colors"
+        className="px-3 py-2 rounded-r-lg bg-gx-red/15 border border-l-0 border-forum-border text-[10px] font-bold uppercase tracking-wider text-gx-red hover:bg-gx-red/25 transition-colors"
       >
         Scan
       </button>

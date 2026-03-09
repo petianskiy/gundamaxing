@@ -165,6 +165,8 @@ model User {
   onboardingComplete Boolean @default(false)
   editorGuideSeen    Boolean @default(false)
 
+  lastActiveAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -194,6 +196,7 @@ model User {
   @@index([email])
   @@index([reputation])
   @@index([createdAt])
+  @@index([lastActiveAt])
 }
 
 // ─── BUILDS ───────────────────────────────────────────────────────

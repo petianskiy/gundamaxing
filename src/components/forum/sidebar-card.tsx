@@ -1,6 +1,6 @@
 export function SidebarCard({
   title,
-  accentColor = "var(--forum-accent)",
+  accentColor = "var(--gx-red)",
   children,
 }: {
   title: string;
@@ -12,7 +12,7 @@ export function SidebarCard({
       {/* Top accent gradient */}
       <div className="h-0.5" style={{ background: `linear-gradient(to right, ${accentColor}, transparent)` }} />
       <div className="p-4">
-        <h3 className="font-orbitron text-[10px] font-bold uppercase tracking-[0.15em] text-forum-accent mb-3">
+        <h3 className="font-orbitron text-[10px] font-bold uppercase tracking-[0.15em] text-gx-red mb-3">
           {title}
         </h3>
         {children}

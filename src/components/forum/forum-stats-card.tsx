@@ -15,7 +15,7 @@ export function ForumStatsCard({ stats }: { stats: ForumStats }) {
           <p className="font-orbitron text-lg font-bold text-white">
             {stats.totalPosts.toLocaleString()}
           </p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Posts</p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Comments</p>
         </div>
         <div>
           <p className="font-orbitron text-lg font-bold text-white">

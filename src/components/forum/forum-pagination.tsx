@@ -34,7 +34,7 @@ export function ForumPagination({ currentPage, totalPages, basePath, searchParam
       {currentPage > 1 ? (
         <Link
           href={buildHref(currentPage - 1)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-gray-500 hover:text-forum-accent hover:bg-forum-panel transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-gray-500 hover:text-gx-red hover:bg-forum-panel transition-colors"
         >
           <ChevronLeft className="h-3 w-3" />
           {t("forum.previous")}
@@ -52,8 +52,8 @@ export function ForumPagination({ currentPage, totalPages, basePath, searchParam
           href={buildHref(page)}
           className={`px-3 py-1.5 text-xs font-bold transition-all ${
             page === currentPage
-              ? "clip-angle bg-forum-accent text-black"
-              : "rounded text-gray-500 hover:text-forum-accent hover:bg-forum-panel"
+              ? "clip-angle bg-gx-red text-white"
+              : "rounded text-gray-500 hover:text-gx-red hover:bg-forum-panel"
           }`}
         >
           {page}
@@ -63,7 +63,7 @@ export function ForumPagination({ currentPage, totalPages, basePath, searchParam
       {currentPage < totalPages ? (
         <Link
           href={buildHref(currentPage + 1)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-gray-500 hover:text-forum-accent hover:bg-forum-panel transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-gray-500 hover:text-gx-red hover:bg-forum-panel transition-colors"
         >
           {t("forum.next")}
           <ChevronRight className="h-3 w-3" />

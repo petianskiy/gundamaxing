@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { HeartbeatProvider } from "@/components/providers/heartbeat-provider";
 
 export default function MainLayout({
   children,
@@ -9,7 +10,9 @@ export default function MainLayout({
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <HeartbeatProvider>
+        <main>{children}</main>
+      </HeartbeatProvider>
       <Footer />
     </>
   );

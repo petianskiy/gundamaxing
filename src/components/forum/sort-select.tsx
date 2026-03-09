@@ -19,7 +19,7 @@ export function SortSelect({ current = "newest" }: { current?: string }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", value);
     params.delete("page");
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (
@@ -30,7 +30,7 @@ export function SortSelect({ current = "newest" }: { current?: string }) {
           onClick={() => handleClick(opt.value)}
           className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${
             current === opt.value
-              ? "bg-forum-accent/15 text-forum-accent border border-forum-accent/30"
+              ? "bg-gx-red/15 text-red-400 border-gx-red/30"
               : "text-gray-500 hover:text-gray-300 border border-transparent"
           }`}
         >

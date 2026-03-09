@@ -27,12 +27,12 @@ export function RecentActivityCard({ activities }: { activities: ForumRecentActi
             className="flex items-start gap-2 group"
           >
             {activity.type === "thread" ? (
-              <FileText className="h-3 w-3 text-forum-accent mt-0.5 flex-shrink-0" />
+              <FileText className="h-3 w-3 text-gx-red mt-0.5 flex-shrink-0" />
             ) : (
               <MessageSquare className="h-3 w-3 text-purple-400 mt-0.5 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-gray-400 group-hover:text-forum-accent transition-colors line-clamp-1">
+              <p className="text-[11px] text-gray-400 group-hover:text-gx-red transition-colors line-clamp-1">
                 {activity.title}
               </p>
               <p className="text-[10px] text-gray-600">
