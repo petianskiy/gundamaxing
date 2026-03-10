@@ -12,12 +12,14 @@ import {
   Tags,
   Settings2,
   Target,
+  MessageSquare,
 } from "lucide-react";
 
 const adminNav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/content", label: "Content", icon: FileText },
+  { href: "/admin/forum", label: "Forum", icon: MessageSquare },
   { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/roles", label: "Roles", icon: Tags },
