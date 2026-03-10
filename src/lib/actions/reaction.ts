@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { reactionSchema } from "@/lib/validations/hangar";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const reactionCounterField: Record<string, string> = {
   RESPECT: "respectCount",
@@ -16,6 +17,9 @@ export async function toggleReaction(data: { buildId: string; type: string }) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = reactionSchema.safeParse(data);
     if (!parsed.success) {

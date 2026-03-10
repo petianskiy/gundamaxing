@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const submitMissionSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
@@ -21,6 +22,9 @@ export async function submitMission(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const raw = {
       title: formData.get("title") as string,

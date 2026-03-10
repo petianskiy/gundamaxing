@@ -14,6 +14,7 @@ import { containsProfanity } from "@/lib/security/profanity";
 import { createNotification } from "@/lib/notifications";
 import { checkAndAwardAchievements } from "@/lib/achievements";
 import { parseGifFromFormData } from "@/lib/validations/gif";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const commentSchema = z.object({
   content: z.string().max(10000),
@@ -47,6 +48,9 @@ export async function createComment(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in to comment." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
@@ -284,6 +288,9 @@ export async function deleteComment(commentId: string) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const comment = await db.comment.findUnique({
       where: { id: commentId },
       select: {
@@ -358,6 +365,9 @@ export async function toggleComments(buildId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const build = await db.build.findUnique({
       where: { id: buildId },

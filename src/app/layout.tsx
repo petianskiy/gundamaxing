@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron, Rajdhani, Exo_2, Share_Tech_Mono, Audiowide, Chakra_Petch } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { BanGuard } from "@/components/providers/ban-guard";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -77,6 +78,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} ${rajdhani.variable} ${exo2.variable} ${shareTechMono.variable} ${audiowide.variable} ${chakraPetch.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         <AuthSessionProvider>
+          <BanGuard>
           <LanguageProvider>
             {children}
             <Toaster
@@ -90,6 +92,7 @@ export default function RootLayout({
               }}
             />
           </LanguageProvider>
+          </BanGuard>
         </AuthSessionProvider>
       </body>
     </html>

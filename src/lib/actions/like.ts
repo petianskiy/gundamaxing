@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { checkBanned } from "@/lib/security/ban-check";
 
 export async function toggleLike(buildId?: string, commentId?: string) {
   try {
@@ -12,6 +13,9 @@ export async function toggleLike(buildId?: string, commentId?: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const userId = session.user.id;
 
@@ -128,6 +132,9 @@ export async function toggleBookmark(buildId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const userId = session.user.id;
 

@@ -9,6 +9,7 @@ declare module "next-auth" {
       username: string;
       verificationTier: "UNVERIFIED" | "VERIFIED" | "FEATURED" | "MASTER";
       onboardingComplete: boolean;
+      isBanned: boolean;
     } & DefaultSession["user"];
   }
 
@@ -27,5 +28,6 @@ declare module "next-auth/jwt" {
     username: string;
     verificationTier: "UNVERIFIED" | "VERIFIED" | "FEATURED" | "MASTER";
     onboardingComplete: boolean;
+    isBanned: boolean;
   }
 }

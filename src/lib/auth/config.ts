@@ -371,6 +371,7 @@ const authConfig: NextAuthConfig = {
                 verificationTier: true,
                 onboardingComplete: true,
                 avatar: true,
+                riskScore: true,
               },
             });
 
@@ -386,6 +387,7 @@ const authConfig: NextAuthConfig = {
                   verificationTier: true,
                   onboardingComplete: true,
                   avatar: true,
+                  riskScore: true,
                 },
               });
             }
@@ -406,6 +408,7 @@ const authConfig: NextAuthConfig = {
               token.onboardingComplete = dbUser.onboardingComplete;
               token.picture = dbUser.avatar ?? user.image ?? "";
               token.name = user.name ?? "";
+              token.isBanned = dbUser.riskScore >= 100;
             } else {
               // User not found even after retry — use adapter-returned data
               console.error(`[auth] jwt: user ${user.id} not found in DB after retry`);
@@ -416,6 +419,7 @@ const authConfig: NextAuthConfig = {
               token.onboardingComplete = (user as any).onboardingComplete ?? true;
               token.picture = user.image ?? "";
               token.name = user.name ?? "";
+              token.isBanned = false;
             }
           } catch (err) {
             console.error("[auth] jwt callback DB error:", err);
@@ -427,6 +431,7 @@ const authConfig: NextAuthConfig = {
             token.onboardingComplete = (user as any).onboardingComplete ?? true;
             token.picture = user.image ?? "";
             token.name = user.name ?? "";
+            token.isBanned = false;
           }
         } else {
           token.id = user.id!;
@@ -436,20 +441,22 @@ const authConfig: NextAuthConfig = {
           token.onboardingComplete = (user as any).onboardingComplete ?? false;
           token.picture = user.image ?? "";
           token.name = user.name ?? "";
+          token.isBanned = false;
         }
       }
 
-      // Periodic refresh (every 5 minutes) to catch admin-side changes + avatar updates
+      // Periodic refresh (every 5 minutes) to catch admin-side changes + avatar updates + bans
       if (!user && trigger !== "update" && token.id) {
         const lastCheck = (token.lastRoleCheck as number) || 0;
         if (Date.now() - lastCheck > 5 * 60 * 1000) {
           const freshUser = await db.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, avatar: true },
+            select: { role: true, avatar: true, riskScore: true },
           });
           if (freshUser) {
             token.role = freshUser.role;
             token.picture = freshUser.avatar ?? token.picture ?? "";
+            token.isBanned = freshUser.riskScore >= 100;
           }
           token.lastRoleCheck = Date.now();
         }
@@ -466,6 +473,7 @@ const authConfig: NextAuthConfig = {
             onboardingComplete: true,
             avatar: true,
             displayName: true,
+            riskScore: true,
           },
         });
         if (dbUser) {
@@ -475,6 +483,7 @@ const authConfig: NextAuthConfig = {
           token.onboardingComplete = dbUser.onboardingComplete;
           token.picture = dbUser.avatar;
           token.name = dbUser.displayName ?? dbUser.username;
+          token.isBanned = dbUser.riskScore >= 100;
         }
       }
 
@@ -488,6 +497,7 @@ const authConfig: NextAuthConfig = {
         session.user.verificationTier = token.verificationTier as any;
         session.user.onboardingComplete = token.onboardingComplete as boolean;
         session.user.image = (token.picture as string) || null;
+        session.user.isBanned = (token.isBanned as boolean) || false;
       }
       return session;
     },

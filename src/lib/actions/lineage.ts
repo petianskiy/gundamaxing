@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { createLineageSchema, updateLineageSchema, saveNodesSchema } from "@/lib/validations/lineage";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { checkBanned } from "@/lib/security/ban-check";
 
 function generateSlug(title: string): string {
   return title
@@ -32,6 +33,9 @@ async function uniqueSlug(base: string): Promise<string> {
 export async function createLineage(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Not authenticated" };
+
+  const banError = await checkBanned(session.user.id);
+  if (banError) return { error: banError };
 
   const raw = {
     title: formData.get("title") as string,
@@ -67,6 +71,9 @@ export async function updateLineage(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Not authenticated" };
 
+  const banError = await checkBanned(session.user.id);
+  if (banError) return { error: banError };
+
   const raw = {
     id: formData.get("id") as string,
     title: formData.get("title") as string,
@@ -98,6 +105,9 @@ export async function deleteLineage(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Not authenticated" };
 
+  const banError = await checkBanned(session.user.id);
+  if (banError) return { error: banError };
+
   const id = formData.get("id") as string;
   if (!id) return { error: "Missing lineage ID" };
 
@@ -114,6 +124,9 @@ export async function deleteLineage(formData: FormData) {
 export async function saveLineageNodes(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Not authenticated" };
+
+  const banError = await checkBanned(session.user.id);
+  if (banError) return { error: banError };
 
   const raw = {
     lineageId: formData.get("lineageId") as string,
@@ -158,6 +171,9 @@ export async function saveLineageNodes(formData: FormData) {
 export async function toggleLineagePublic(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { error: "Not authenticated" };
+
+  const banError = await checkBanned(session.user.id);
+  if (banError) return { error: banError };
 
   const id = formData.get("id") as string;
   if (!id) return { error: "Missing lineage ID" };

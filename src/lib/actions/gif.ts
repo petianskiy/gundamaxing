@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const GIF_NULL_DATA = {
   gifUrl: null,
@@ -17,6 +18,9 @@ export async function removeGifFromComment(commentId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const comment = await db.comment.findUnique({
       where: { id: commentId },
@@ -65,6 +69,9 @@ export async function removeGifFromThread(threadId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const thread = await db.thread.findUnique({
       where: { id: threadId },

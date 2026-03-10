@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword } from "@/lib/security/password";
 import { builderIdentitySchema, privacySettingsSchema, changePasswordSchema, setInitialPasswordSchema, deleteAccountSchema, changeUsernameSchema } from "@/lib/validations/settings";
 import { containsProfanity } from "@/lib/security/profanity";
 import { revalidatePath } from "next/cache";
+import { checkBanned } from "@/lib/security/ban-check";
 
 
 export async function updateBuilderIdentity(data: unknown) {
@@ -14,6 +15,9 @@ export async function updateBuilderIdentity(data: unknown) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = builderIdentitySchema.safeParse(data);
     if (!parsed.success) {
@@ -49,6 +53,9 @@ export async function updatePrivacySettings(data: unknown) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const parsed = privacySettingsSchema.safeParse(data);
     if (!parsed.success) {
       return { error: "Invalid data." };
@@ -78,6 +85,9 @@ export async function changePassword(data: unknown) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = changePasswordSchema.safeParse(data);
     if (!parsed.success) {
@@ -122,6 +132,9 @@ export async function setInitialPassword(data: unknown) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const parsed = setInitialPasswordSchema.safeParse(data);
     if (!parsed.success) {
       const firstError = parsed.error.issues[0]?.message ?? "Invalid data.";
@@ -157,6 +170,9 @@ export async function deleteAccount(data: unknown) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = deleteAccountSchema.safeParse(data);
     if (!parsed.success) {
@@ -196,6 +212,9 @@ export async function unlinkAccount(provider: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     if (!provider || typeof provider !== "string") {
       return { error: "Invalid provider." };
@@ -242,6 +261,9 @@ export async function deleteBuild(buildId: string) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const build = await db.build.findUnique({
       where: { id: buildId },
       select: { userId: true },
@@ -272,6 +294,9 @@ export async function changeUsername(data: unknown) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = changeUsernameSchema.safeParse(data);
     if (!parsed.success) {

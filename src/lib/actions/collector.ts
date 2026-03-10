@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/security/rate-limiter";
 import { addKitSchema, updateKitSchema, removeKitSchema } from "@/lib/validations/collector";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { checkBanned } from "@/lib/security/ban-check";
 
 export async function addToCollection(data: { kitId: string; status: string }) {
   try {
@@ -12,6 +13,9 @@ export async function addToCollection(data: { kitId: string; status: string }) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = addKitSchema.safeParse(data);
     if (!parsed.success) {
@@ -69,6 +73,9 @@ export async function updateCollectionEntry(data: {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const parsed = updateKitSchema.safeParse(data);
     if (!parsed.success) {
       return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -115,6 +122,9 @@ export async function removeFromCollection(data: { userKitId: string }) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const parsed = removeKitSchema.safeParse(data);
     if (!parsed.success) {

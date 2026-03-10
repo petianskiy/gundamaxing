@@ -13,6 +13,7 @@ import { getClientIp } from "@/lib/security/ip-utils";
 import { containsProfanity } from "@/lib/security/profanity";
 import { checkAndAwardAchievements } from "@/lib/achievements";
 import { parseGifFromFormData } from "@/lib/validations/gif";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const threadSchema = z.object({
   title: z.string().min(1).max(200),
@@ -45,6 +46,9 @@ export async function createThread(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in to create a thread." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { logEvent } from "@/lib/data/events";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const reportSchema = z.object({
   reason: z.enum([
@@ -24,6 +25,9 @@ export async function submitReport(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in to submit a report." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const raw = {
       reason: formData.get("reason") as string,

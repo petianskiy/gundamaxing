@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const profileSchema = z.object({
   displayName: z.string().min(1).max(50).optional(),
@@ -22,6 +23,9 @@ export async function updateProfile(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const socialLinksRaw = formData.get("socialLinks") as string | null;
 
@@ -75,6 +79,9 @@ export async function pinBuild(buildId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     // Verify the build belongs to the user
     const build = await db.build.findUnique({
@@ -130,6 +137,9 @@ export async function unpinBuild(buildId: string) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     const user = await db.user.findUnique({
       where: { id: session.user.id },
       select: { pinnedBuildIds: true },
@@ -166,6 +176,9 @@ export async function updateSectionOrder(sectionOrder: string[]) {
       return { error: "You must be signed in." };
     }
 
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
     await db.user.update({
       where: { id: session.user.id },
       data: {
@@ -186,6 +199,9 @@ export async function toggleSectionVisibility(section: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },

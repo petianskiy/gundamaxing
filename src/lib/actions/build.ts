@@ -9,6 +9,7 @@ import type { BuildStatus } from "@prisma/client";
 import { showcaseLayoutSchema } from "@/lib/validations/showcase";
 import { validateCleanContent } from "@/lib/security/profanity";
 import { checkAndAwardAchievements } from "@/lib/achievements";
+import { checkBanned } from "@/lib/security/ban-check";
 
 const buildSchema = z.object({
   title: z.string().min(1).max(200),
@@ -71,6 +72,9 @@ export async function createBuild(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in to create a build." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
@@ -195,6 +199,9 @@ export async function updateBuild(formData: FormData) {
     if (!session?.user?.id) {
       return { error: "You must be signed in." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const buildId = formData.get("buildId") as string;
     if (!buildId) {
@@ -524,6 +531,9 @@ export async function forkBuild(buildId: string) {
     if (!session?.user?.id) {
       return { error: "You must be signed in to fork a build." };
     }
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
