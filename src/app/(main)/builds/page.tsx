@@ -1,4 +1,6 @@
 import { getBuilds } from "@/lib/data/builds";
+import { getUserLikedBuildIds, getUserBookmarkedBuildIds } from "@/lib/data/likes";
+import { auth } from "@/lib/auth";
 import { BuildsFeed } from "./builds-feed";
 
 export const metadata = {
@@ -7,7 +9,16 @@ export const metadata = {
 };
 
 export default async function BuildsPage() {
-  const builds = await getBuilds();
+  const [builds, session] = await Promise.all([getBuilds(), auth()]);
+  const currentUserId = session?.user?.id;
+
+  const [likedIds, bookmarkedIds] = currentUserId
+    ? await Promise.all([
+        getUserLikedBuildIds(currentUserId),
+        getUserBookmarkedBuildIds(currentUserId),
+      ])
+    : [new Set<string>(), new Set<string>()];
+
   return (
     <div className="relative min-h-screen">
       <div
@@ -15,7 +26,12 @@ export default async function BuildsPage() {
         style={{ backgroundImage: "url('/images/builds-bg.jpg')" }}
       />
       <div className="fixed inset-0 -z-10 bg-black/60" />
-      <BuildsFeed builds={builds} />
+      <BuildsFeed
+        builds={builds}
+        currentUserId={currentUserId}
+        likedBuildIds={Array.from(likedIds)}
+        bookmarkedBuildIds={Array.from(bookmarkedIds)}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -12,7 +12,7 @@ import {
   Heart,
   MessageCircle,
   Bookmark,
-  Camera,
+  Share2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +21,8 @@ import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
 import { BuildCard } from "@/components/build/build-card";
 import { GradeBadge } from "@/components/ui/grade-badge";
+import { toggleLike, toggleBookmark } from "@/lib/actions/like";
+import { toast } from "sonner";
 import type { Build, Grade, Timeline, Scale, Technique, VerificationTier, BuildStatus } from "@/lib/types";
 
 type Filters = {
@@ -67,12 +69,26 @@ function FilterChip({
   );
 }
 
-export function BuildsFeed({ builds }: { builds: Build[] }) {
+interface BuildsFeedProps {
+  builds: Build[];
+  currentUserId?: string;
+  likedBuildIds?: string[];
+  bookmarkedBuildIds?: string[];
+}
+
+export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmarkedBuildIds = [] }: BuildsFeedProps) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "wall">("grid");
   const [timeRange, setTimeRange] = useState<"all" | "week" | "month" | "year">("all");
+  const [likedSet, setLikedSet] = useState<Set<string>>(() => new Set(likedBuildIds));
+  const [bookmarkedSet, setBookmarkedSet] = useState<Set<string>>(() => new Set(bookmarkedBuildIds));
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+    for (const b of builds) counts[b.id] = b.likes;
+    return counts;
+  });
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -355,104 +371,17 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
 
             {/* Instagram-style Wall View */}
             {viewMode === "wall" && (
-              <div className="max-w-[470px] mx-auto space-y-5">
-                {filteredBuilds.map((build, i) => {
-                  const primaryImage = build.images.find(img => img.isPrimary) || build.images[0];
-                  return (
-                    <motion.article
-                      key={build.id}
-                      initial={{ opacity: 0, y: 24 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: Math.min(i, 10) * 0.06 }}
-                      className="rounded-xl border border-border/50 bg-card overflow-hidden"
-                    >
-                      {/* Header — user row */}
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <Link href={`/u/${build.userHandle}`} className="shrink-0">
-                          <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-gx-red/30">
-                            <Image src={build.userAvatar} alt={build.username} fill className="object-cover" unoptimized />
-                          </div>
-                        </Link>
-                        <div className="flex-1 min-w-0">
-                          <Link href={`/u/${build.userHandle}`} className="text-sm font-semibold text-foreground hover:text-gx-red transition-colors">
-                            {build.username}
-                          </Link>
-                          <p className="text-[11px] text-muted-foreground leading-tight">{build.kitName}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <GradeBadge grade={build.grade} />
-                          <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{build.scale}</span>
-                        </div>
-                      </div>
-
-                      {/* Image */}
-                      <Link href={`/builds/${build.slug}`} className="block">
-                        <div className="relative aspect-square overflow-hidden bg-muted">
-                          <Image
-                            src={primaryImage.url}
-                            alt={primaryImage.alt}
-                            fill
-                            className="object-cover"
-                            style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
-                            unoptimized
-                          />
-                          {build.images.length > 1 && (
-                            <div className="absolute top-3 right-3">
-                              <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-black/60 text-white backdrop-blur-sm">
-                                <Camera className="h-3 w-3" />
-                                {build.images.length}
-                              </span>
-                            </div>
-                          )}
-                          {build.status === "WIP" && (
-                            <div className="absolute top-3 left-3">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-black">
-                                WIP
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-
-                      {/* Actions row */}
-                      <div className="px-4 pt-3 pb-1">
-                        <div className="flex items-center gap-4">
-                          <span className="flex items-center gap-1.5 text-sm text-foreground">
-                            <Heart className="h-5 w-5" />
-                            <span className="font-semibold">{build.likes}</span>
-                          </span>
-                          <span className="flex items-center gap-1.5 text-sm text-foreground">
-                            <MessageCircle className="h-5 w-5" />
-                            <span className="font-semibold">{build.comments}</span>
-                          </span>
-                          <span className="flex items-center gap-1.5 text-sm text-foreground ml-auto">
-                            <Bookmark className="h-5 w-5" />
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Title & techniques */}
-                      <div className="px-4 pb-4 pt-1">
-                        <Link href={`/builds/${build.slug}`}>
-                          <h3 className="text-sm font-semibold text-foreground hover:text-gx-red transition-colors line-clamp-2">
-                            {build.title}
-                          </h3>
-                        </Link>
-                        {build.techniques.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {build.techniques.slice(0, 4).map(tech => (
-                              <span key={tech} className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">{tech}</span>
-                            ))}
-                            {build.techniques.length > 4 && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">+{build.techniques.length - 4}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </motion.article>
-                  );
-                })}
-              </div>
+              <WallView
+                builds={filteredBuilds}
+                currentUserId={currentUserId}
+                likedSet={likedSet}
+                setLikedSet={setLikedSet}
+                bookmarkedSet={bookmarkedSet}
+                setBookmarkedSet={setBookmarkedSet}
+                likeCounts={likeCounts}
+                setLikeCounts={setLikeCounts}
+                t={t}
+              />
             )}
           </>
         ) : (
@@ -476,6 +405,208 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Wall View (Instagram-style) ──────────────────────────────
+
+interface WallViewProps {
+  builds: Build[];
+  currentUserId?: string;
+  likedSet: Set<string>;
+  setLikedSet: React.Dispatch<React.SetStateAction<Set<string>>>;
+  bookmarkedSet: Set<string>;
+  setBookmarkedSet: React.Dispatch<React.SetStateAction<Set<string>>>;
+  likeCounts: Record<string, number>;
+  setLikeCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  t: (key: string) => string;
+}
+
+function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet, setBookmarkedSet, likeCounts, setLikeCounts, t }: WallViewProps) {
+  const [, startTransition] = useTransition();
+
+  const handleLike = (buildId: string) => {
+    if (!currentUserId) {
+      toast.error(t("builds.toast.signInToLike"));
+      return;
+    }
+    const wasLiked = likedSet.has(buildId);
+    setLikedSet((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(buildId);
+      else next.add(buildId);
+      return next;
+    });
+    setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? -1 : 1) }));
+    startTransition(async () => {
+      const result = await toggleLike(buildId);
+      if ("error" in result) {
+        setLikedSet((prev) => {
+          const next = new Set(prev);
+          if (wasLiked) next.add(buildId);
+          else next.delete(buildId);
+          return next;
+        });
+        setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? 1 : -1) }));
+        toast.error(result.error);
+      }
+    });
+  };
+
+  const handleBookmark = (buildId: string) => {
+    if (!currentUserId) {
+      toast.error(t("builds.toast.signInToBookmark"));
+      return;
+    }
+    const wasBookmarked = bookmarkedSet.has(buildId);
+    setBookmarkedSet((prev) => {
+      const next = new Set(prev);
+      if (wasBookmarked) next.delete(buildId);
+      else next.add(buildId);
+      return next;
+    });
+    startTransition(async () => {
+      const result = await toggleBookmark(buildId);
+      if ("error" in result) {
+        setBookmarkedSet((prev) => {
+          const next = new Set(prev);
+          if (wasBookmarked) next.add(buildId);
+          else next.delete(buildId);
+          return next;
+        });
+        toast.error(result.error);
+      }
+    });
+  };
+
+  const handleShare = async (build: Build) => {
+    const url = `${window.location.origin}/builds/${build.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: build.title, url });
+      } catch {
+        await navigator.clipboard.writeText(url);
+        toast.success(t("builds.toast.linkCopied"));
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("builds.toast.linkCopied"));
+    }
+  };
+
+  return (
+    <div className="max-w-[470px] mx-auto space-y-5">
+      {builds.map((build, i) => {
+        const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
+        const isLiked = likedSet.has(build.id);
+        const isBookmarked = bookmarkedSet.has(build.id);
+
+        return (
+          <motion.article
+            key={build.id}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: Math.min(i, 10) * 0.06 }}
+            className="rounded-xl border border-border/50 bg-card overflow-hidden"
+          >
+            {/* Header — user row */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Link href={`/u/${build.userHandle}`} className="shrink-0">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-gx-red/30">
+                  <Image src={build.userAvatar} alt={build.username} fill className="object-cover" unoptimized />
+                </div>
+              </Link>
+              <div className="flex-1 min-w-0">
+                <Link href={`/u/${build.userHandle}`} className="text-sm font-semibold text-foreground hover:text-gx-red transition-colors">
+                  {build.username}
+                </Link>
+                <p className="text-[11px] text-muted-foreground leading-tight">{build.kitName}</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <GradeBadge grade={build.grade} />
+                <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{build.scale}</span>
+              </div>
+            </div>
+
+            {/* Image */}
+            <Link href={`/builds/${build.slug}`} className="block">
+              <div className="relative aspect-square overflow-hidden bg-muted">
+                <Image
+                  src={primaryImage.url}
+                  alt={primaryImage.alt}
+                  fill
+                  className="object-cover"
+                  style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
+                  unoptimized
+                />
+                {build.status === "WIP" && (
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-black">
+                      WIP
+                    </span>
+                  </div>
+                )}
+              </div>
+            </Link>
+
+            {/* Actions row */}
+            <div className="px-4 pt-3 pb-1">
+              <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => handleLike(build.id)} className="group flex items-center gap-1.5">
+                    <Heart
+                      className={cn(
+                        "h-6 w-6 transition-colors",
+                        isLiked ? "fill-red-500 text-red-500" : "text-foreground group-hover:text-red-400"
+                      )}
+                    />
+                    <span className="text-sm font-semibold text-foreground">{likeCounts[build.id] ?? build.likes}</span>
+                  </button>
+                  <Link href={`/builds/${build.slug}#comments`} className="group flex items-center gap-1.5">
+                    <MessageCircle className="h-6 w-6 text-foreground group-hover:text-blue-400 transition-colors" />
+                    <span className="text-sm font-semibold text-foreground">{build.comments}</span>
+                  </Link>
+                  <button onClick={() => handleShare(build)} className="group">
+                    <Share2 className="h-5 w-5 text-foreground group-hover:text-green-400 transition-colors" />
+                  </button>
+                </div>
+                <button onClick={() => handleBookmark(build.id)} className="ml-auto group">
+                  <Bookmark
+                    className={cn(
+                      "h-6 w-6 transition-colors",
+                      isBookmarked ? "fill-foreground text-foreground" : "text-foreground group-hover:text-yellow-400"
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Username + caption */}
+            <div className="px-4 pb-4 pt-1">
+              <p className="text-sm">
+                <Link href={`/u/${build.userHandle}`} className="font-semibold text-foreground hover:text-gx-red transition-colors">
+                  {build.username}
+                </Link>
+                {" "}
+                <Link href={`/builds/${build.slug}`} className="text-muted-foreground hover:text-foreground transition-colors">
+                  {build.title}
+                </Link>
+              </p>
+              {build.techniques.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {build.techniques.slice(0, 4).map((tech) => (
+                    <span key={tech} className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">{tech}</span>
+                  ))}
+                  {build.techniques.length > 4 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground">+{build.techniques.length - 4}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.article>
+        );
+      })}
     </div>
   );
 }

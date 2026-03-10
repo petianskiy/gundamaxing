@@ -21,6 +21,26 @@ export const getUserBookmarkForBuild = cache(
   }
 );
 
+export const getUserLikedBuildIds = cache(
+  async (userId: string): Promise<Set<string>> => {
+    const likes = await db.like.findMany({
+      where: { userId, buildId: { not: null } },
+      select: { buildId: true },
+    });
+    return new Set(likes.map((l) => l.buildId).filter((id): id is string => id !== null));
+  }
+);
+
+export const getUserBookmarkedBuildIds = cache(
+  async (userId: string): Promise<Set<string>> => {
+    const bookmarks = await db.bookmark.findMany({
+      where: { userId },
+      select: { buildId: true },
+    });
+    return new Set(bookmarks.map((b) => b.buildId).filter((id): id is string => id !== null));
+  }
+);
+
 export const getUserCommentLikes = cache(
   async (userId: string, buildId: string): Promise<string[]> => {
     const likes = await db.like.findMany({
