@@ -14,7 +14,7 @@ import { ShowcaseEditor } from "./showcase-editor";
 import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
-import type { Build, Comment, ShowcaseLayout, ShowcasePage as ShowcasePageType } from "@/lib/types";
+import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType } from "@/lib/types";
 
 const DEFAULT_LAYOUT: ShowcaseLayout = {
   version: 1,
@@ -31,6 +31,47 @@ const DEFAULT_LAYOUT: ShowcaseLayout = {
 function normalizePages(layout: ShowcaseLayout): ShowcasePageType[] {
   if (layout.pages && layout.pages.length > 0) return layout.pages;
   return [{ id: "page-1", elements: layout.elements }];
+}
+
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+function generateInitialLayout(images: BuildImage[]): ShowcaseLayout {
+  const maxAutoLoad = Math.min(images.length, 4);
+  const elements: ShowcaseImageElement[] = [];
+
+  const positions = [
+    [{ x: 5, y: 5, w: 90, h: 90 }],
+    [{ x: 2, y: 10, w: 47, h: 80 }, { x: 51, y: 10, w: 47, h: 80 }],
+    [{ x: 2, y: 5, w: 55, h: 90 }, { x: 59, y: 5, w: 39, h: 44 }, { x: 59, y: 51, w: 39, h: 44 }],
+    [{ x: 2, y: 2, w: 47, h: 47 }, { x: 51, y: 2, w: 47, h: 47 }, { x: 2, y: 51, w: 47, h: 47 }, { x: 51, y: 51, w: 47, h: 47 }],
+  ];
+
+  const grid = positions[maxAutoLoad - 1] || positions[0];
+
+  for (let i = 0; i < maxAutoLoad; i++) {
+    const img = images[i];
+    const pos = grid[i];
+    elements.push({
+      id: generateId(),
+      type: "image",
+      x: pos.x,
+      y: pos.y,
+      width: pos.w,
+      height: pos.h,
+      zIndex: i + 1,
+      rotation: 0,
+      imageId: img.id || generateId(),
+      imageUrl: img.url,
+      objectFit: "cover",
+      borderRadius: 8,
+      shadow: true,
+      caption: null,
+    });
+  }
+
+  return { ...DEFAULT_LAYOUT, elements };
 }
 
 interface ShowcasePageProps {
@@ -51,7 +92,12 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(!!startEditing);
   const isOwner = currentUserId === build.userId;
-  const layout = (build.showcaseLayout as ShowcaseLayout) || DEFAULT_LAYOUT;
+  const hasExistingLayout = !!build.showcaseLayout;
+  const layout = hasExistingLayout
+    ? (build.showcaseLayout as ShowcaseLayout)
+    : build.images.length > 0
+      ? generateInitialLayout(build.images)
+      : DEFAULT_LAYOUT;
   const pages = normalizePages(layout);
 
   // Editor guide state: show only if server says to AND localStorage hasn't dismissed it

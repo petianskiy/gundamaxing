@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Ban, Undo2, Trash2, Info, Heart, MessageCircle, AtSign, Reply, Bell } from "lucide-react";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notification";
@@ -44,6 +44,14 @@ export function NotificationsList({ notifications }: { notifications: Notificati
   const { t } = useTranslation();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const hoverTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    const timers = hoverTimers.current;
+    return () => {
+      Object.values(timers).forEach(clearTimeout);
+    };
+  }, []);
 
   const handleMarkAllRead = () => {
     startTransition(async () => {
@@ -98,6 +106,22 @@ export function NotificationsList({ notifications }: { notifications: Notificati
           <button
             key={notification.id}
             onClick={() => handleClick(notification)}
+            onMouseEnter={() => {
+              if (!notification.read) {
+                hoverTimers.current[notification.id] = setTimeout(() => {
+                  startTransition(async () => {
+                    await markNotificationRead(notification.id);
+                    router.refresh();
+                  });
+                }, 700);
+              }
+            }}
+            onMouseLeave={() => {
+              if (hoverTimers.current[notification.id]) {
+                clearTimeout(hoverTimers.current[notification.id]);
+                delete hoverTimers.current[notification.id];
+              }
+            }}
             className={cn(
               "w-full text-left flex items-start gap-3 p-4 rounded-xl border transition-colors",
               notification.read

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Orbitron, Rajdhani, Exo_2, Share_Tech_Mono, Audiowid
 import { LanguageProvider } from "@/lib/i18n/context";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { BanGuard } from "@/components/providers/ban-guard";
+import { ImageProtection } from "@/components/providers/image-protection";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -79,6 +80,7 @@ export default function RootLayout({
       >
         <AuthSessionProvider>
           <BanGuard>
+          <ImageProtection>
           <LanguageProvider>
             {children}
             <Toaster
@@ -92,6 +94,7 @@ export default function RootLayout({
               }}
             />
           </LanguageProvider>
+          </ImageProtection>
           </BanGuard>
         </AuthSessionProvider>
       </body>

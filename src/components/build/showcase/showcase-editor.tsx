@@ -870,6 +870,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     // If drawing overlay is open, flush it first (triggers drawing save via onComplete)
     if (showDrawing && drawingRef.current) {
       await drawingRef.current.flush();
+      setShowDrawing(false);
     }
 
     setIsSaving(true);
@@ -893,6 +894,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       toast.error(result.error);
     } else {
       toast.success("Showcase saved!");
+      setActivePanel(null);
+      setSelectedIds([]);
       onExit();
     }
   }, [build.id, layout, pagesState, currentPageIndex, onExit, showDrawing, currentPageBg]);
