@@ -149,7 +149,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="animate-page-header text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Grid3X3 className="h-5 w-5 text-gx-red" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
@@ -165,7 +165,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
         </div>
 
         {/* Trending time range filter */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="animate-page-content flex items-center gap-2 mb-4 flex-wrap">
           <Flame className="h-4 w-4 text-gx-red shrink-0" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Trending</span>
           {timeRangeOptions.map((opt) => (
@@ -185,7 +185,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
         </div>
 
         {/* Search + Filter toggle */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="animate-page-grid flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -221,7 +221,7 @@ export function BuildsFeed({ builds }: { builds: Build[] }) {
         </div>
 
         {/* View Switcher */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="animate-page-grid flex items-center justify-between mb-5">
           <div className="flex items-center gap-1 p-1 rounded-lg bg-card border border-border/50">
             {viewOptions.map((opt) => {
               const Icon = opt.icon;

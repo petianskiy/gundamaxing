@@ -69,4 +69,7 @@ export const forum = {
   // Empty states
   "forum.noThreads": "No threads yet. Start the conversation!",
   "forum.noReplies": "No replies yet. Be the first to respond!",
+
+  // Badge
+  "forum.hot": "HOT",
 } as const;

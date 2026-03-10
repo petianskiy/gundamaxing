@@ -3,23 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
+import { GradeBadge } from "@/components/ui/grade-badge";
 import { CollectionStatusBadge } from "./collection-status-badge";
-import type { GunplaKitUI, KitStatus } from "@/lib/types";
-
-const gradeColors: Record<string, string> = {
-  HG: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  RG: "bg-green-500/20 text-green-400 border-green-500/30",
-  MG: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  PG: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  SD: "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  "RE/100": "bg-teal-500/20 text-teal-400 border-teal-500/30",
-  FM: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  EG: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-  MGEX: "bg-violet-500/20 text-violet-400 border-violet-500/30",
-  HiRM: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-};
+import type { GunplaKitUI, KitStatus, Grade } from "@/lib/types";
 
 export function KitCard({
   kit,
@@ -29,7 +16,6 @@ export function KitCard({
   userStatus?: KitStatus | null;
 }) {
   const { t } = useTranslation();
-  const gradeClass = gradeColors[kit.grade] ?? "bg-zinc-500/20 text-zinc-400 border-zinc-500/30";
 
   return (
     <Link
@@ -66,14 +52,7 @@ export function KitCard({
       <div className="flex flex-col gap-2 p-4">
         {/* Grade badge */}
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border",
-              gradeClass
-            )}
-          >
-            {kit.grade}
-          </span>
+          <GradeBadge grade={kit.grade as Grade} size="sm" />
           {kit.scale && (
             <span className="text-[10px] text-muted-foreground">{kit.scale}</span>
           )}

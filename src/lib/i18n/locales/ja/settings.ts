@@ -124,6 +124,35 @@ export const settings: Record<string, string> = {
   "portfolio.pinned": "ピン留め",
   "portfolio.deleteConfirm": "このビルドを削除してもよろしいですか？この操作は取り消せません。",
 
+  // Security - linked accounts
+  "settings.security.linkedAccounts": "連携アカウント",
+  "settings.security.linkedAccountsDesc": "GoogleまたはDiscordでログインするためにアカウントを連携します。他のログイン方法がある限り、連携解除できます。",
+  "settings.security.linked": "連携済み",
+  "settings.security.link": "連携",
+  "settings.security.unlink": "連携解除",
+  "settings.security.password": "パスワード",
+  "settings.security.passwordSet": "設定済み",
+  "settings.security.noPasswordSet": "パスワード未設定",
+  "settings.security.setPassword": "パスワードを設定",
+  "settings.security.passwordSetSuccess": "パスワードを設定しました！",
+  "settings.security.oauthHint": "OAuthで登録しました。ハンドル＋パスワードでもログインできるようにパスワードを設定しましょう。",
+  "settings.security.change": "変更",
+  "settings.security.sendVerification": "認証コードを送信",
+  "settings.security.emailChangeHint": "新しいアドレスに認証コードが送信されます。認証するまでメールアドレスは変更されません。",
+  "settings.security.verificationSent": "新しいアドレスに認証コードを送信しました。",
+  "settings.security.currentEmail": "現在のメールアドレス",
+  "settings.security.newEmail": "新しいメールアドレス",
+  "settings.security.passwordsDontMatch": "パスワードが一致しません",
+  "settings.security.confirmPasswordLabel": "パスワード（確認）",
+  "settings.security.newPasswordLabel": "新しいパスワード",
+
+  // Profile - username change
+  "settings.profile.usernameChangeHint": "ユーザー名は3ヶ月に1回変更できます。慎重に選んでください。",
+  "settings.profile.usernameNextChange": "{{date}}以降にユーザー名を変更できます。",
+  "settings.profile.urlChangeWarning": "プロフィールURLが変更されます。",
+  "settings.profile.changeUsername": "ユーザー名を変更",
+  "settings.profile.usernameChanged": "ユーザー名を変更しました。",
+
   // Shared
   "settings.save": "変更を保存",
   "settings.saving": "保存中...",

@@ -7,17 +7,9 @@ import { ArrowLeft, Star, Users, Package, Wrench, Award, MessageSquare, Trash2 }
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { addToCollection, updateCollectionEntry, removeFromCollection } from "@/lib/actions/collector";
+import { GradeBadge } from "@/components/ui/grade-badge";
 import { CollectionStatusBadge } from "./collection-status-badge";
-import type { GunplaKitUI, KitStatus, UserKitReviewUI } from "@/lib/types";
-
-const gradeColors: Record<string, string> = {
-  HG: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  RG: "bg-green-500/20 text-green-400 border-green-500/30",
-  MG: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  PG: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  SD: "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  FM: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-};
+import type { GunplaKitUI, KitStatus, UserKitReviewUI, Grade } from "@/lib/types";
 
 const statuses: KitStatus[] = ["OWNED", "BUILT", "WISHLIST", "BACKLOG"];
 
@@ -90,8 +82,6 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
   const [reviewText, setReviewText] = useState(userEntry?.review ?? "");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const gradeClass = gradeColors[kit.grade] ?? "bg-zinc-500/20 text-zinc-400 border-zinc-500/30";
 
   // Compute average stats from reviews
   const reviewsWithDifficulty = reviews.filter((r) => r.buildDifficulty !== null);
@@ -196,9 +186,7 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
           {/* Info */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <span className={cn("px-2.5 py-1 rounded text-xs font-bold border", gradeClass)}>
-                {kit.grade}
-              </span>
+              <GradeBadge grade={kit.grade as Grade} size="lg" />
               {kit.scale && (
                 <span className="text-sm text-muted-foreground">{kit.scale}</span>
               )}

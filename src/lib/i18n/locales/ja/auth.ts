@@ -89,4 +89,54 @@ export const auth: Record<string, string> = {
   "auth.settings": "設定",
   "auth.dashboard": "ダッシュボード",
   "auth.adminPanel": "管理パネル",
+
+  // Registration toasts
+  "register.toast.accountCreated": "アカウントを作成しました！メールを確認して認証してください。",
+  "register.toast.deployFailed": "配備に失敗しました。もう一度お試しください。",
+
+  // Complete profile
+  "completeProfile.title": "プロフィールを完成",
+  "completeProfile.subtitle": "コールサインを選択",
+  "completeProfile.handle": "ログインハンドル",
+  "completeProfile.handleRequired": "必須",
+  "completeProfile.handleAvailable": "ハンドルは使用可能です",
+  "completeProfile.handleTaken": "ハンドルは既に使用されています",
+  "completeProfile.handleInappropriate": "そのハンドルには不適切な言葉が含まれています",
+  "completeProfile.handleMinLength": "ハンドルは3文字以上必要です",
+  "completeProfile.handleChars": "英数字とアンダースコアのみ使用可能",
+  "completeProfile.handleHint": "ログインとプロフィールURLに使用される一意の@ハンドルです。3-20文字、英数字/アンダースコアのみ。",
+  "completeProfile.displayName": "表示名",
+  "completeProfile.displayNameOptional": "任意",
+  "completeProfile.displayNameHint": "プロフィールとコメントに公開表示されます。いつでも変更可能。",
+  "completeProfile.setPassword": "パスワードを設定",
+  "completeProfile.passwordOptional": "任意",
+  "completeProfile.passwordHint": "ハンドル＋パスワードでもログインできるようにパスワードを設定。設定は後からでも可能です。",
+  "completeProfile.submit": "プロフィールを公開",
+  "completeProfile.saving": "保存中...",
+  "completeProfile.success": "プロフィール完成！",
+  "completeProfile.autoHandle": "現在の自動生成ハンドル：",
+
+  // Report
+  "report.title": "コンテンツを報告",
+  "report.submitted": "報告を送信しました。ありがとうございます。",
+  "report.reason": "理由",
+  "report.details": "詳細（任意）",
+  "report.detailsPlaceholder": "追加の情報を入力...",
+  "report.submit": "報告を送信",
+  "report.cancel": "キャンセル",
+  "report.button": "報告",
+  "report.spam": "スパム",
+  "report.harassment": "ハラスメント",
+  "report.inappropriate": "不適切なコンテンツ",
+  "report.misinformation": "誤情報",
+  "report.other": "その他",
+
+  // Bookmarks
+  "bookmarks.subtitle": "後で見るために保存したプロジェクト。",
+  "bookmarks.saved": "件保存",
+  "bookmarks.empty.title": "ブックマークはまだありません",
+  "bookmarks.empty.subtitle": "気に入ったビルドをブックマークして、ここで簡単に見つけましょう。",
+
+  // Notifications
+  "notifications.markAllRead": "すべて既読にする",
 };

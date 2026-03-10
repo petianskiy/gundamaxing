@@ -4,7 +4,7 @@ import type {
   ForumActivePilot,
   ForumLeaderboardEntry,
   ForumRecentActivity,
-  ForumStats,
+  MonthlyMissionUI,
 } from "@/lib/types";
 
 // ─── Active Pilots ──────────────────────────────────────────────
@@ -112,14 +112,33 @@ export const getRecentActivity = cache(async (limit = 8): Promise<ForumRecentAct
     .slice(0, limit);
 });
 
-// ─── Forum Stats ────────────────────────────────────────────────
+// ─── Active Mission ─────────────────────────────────────────────
 
-export const getForumStats = cache(async (): Promise<ForumStats> => {
-  const [totalThreads, totalPosts, totalPilots] = await Promise.all([
-    db.thread.count(),
-    db.comment.count(),
-    db.user.count(),
-  ]);
+export const getActiveMission = cache(async (): Promise<MonthlyMissionUI | null> => {
+  const mission = await db.monthlyMission.findFirst({
+    where: { isActive: true },
+    include: {
+      _count: { select: { submissions: true } },
+      winner: {
+        include: { user: { select: { username: true } } },
+      },
+    },
+  });
 
-  return { totalThreads, totalPosts, totalPilots };
+  if (!mission) return null;
+
+  return {
+    id: mission.id,
+    title: mission.title,
+    description: mission.description,
+    rules: mission.rules,
+    prizes: mission.prizes,
+    startDate: mission.startDate.toISOString(),
+    endDate: mission.endDate.toISOString(),
+    isActive: mission.isActive,
+    submissionCount: mission._count.submissions,
+    winnerId: mission.winnerId,
+    winnerUsername: mission.winner?.user.username ?? null,
+    winnerSubmissionTitle: mission.winner?.title ?? null,
+  };
 });

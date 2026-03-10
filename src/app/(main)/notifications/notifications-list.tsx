@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Ban, Undo2, Trash2, Info, Heart, MessageCircle, AtSign, Reply, Bell } from "lucide-react";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notification";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/context";
 
 type Notification = {
   id: string;
@@ -40,6 +41,7 @@ function timeAgo(date: Date): string {
 }
 
 export function NotificationsList({ notifications }: { notifications: Notification[] }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -66,8 +68,8 @@ export function NotificationsList({ notifications }: { notifications: Notificati
     return (
       <div className="text-center py-16">
         <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-        <h2 className="text-lg font-semibold text-foreground mb-2">All caught up!</h2>
-        <p className="text-sm text-muted-foreground">No notifications yet. We&apos;ll let you know when something happens.</p>
+        <h2 className="text-lg font-semibold text-foreground mb-2">{t("empty.allCaughtUp")}</h2>
+        <p className="text-sm text-muted-foreground">{t("empty.noNotifications")}</p>
       </div>
     );
   }
@@ -83,7 +85,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
             disabled={isPending}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
-            Mark all as read
+            {t("notifications.markAllRead")}
           </button>
         </div>
       )}

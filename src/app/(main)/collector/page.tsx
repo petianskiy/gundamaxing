@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { getKitCatalog, getDistinctGrades, getDistinctSeries, getUserCollection } from "@/lib/data/collector";
 import { KitCatalog } from "./components/kit-catalog";
@@ -28,16 +27,10 @@ export default async function CollectorPage() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="fixed inset-0 -z-20">
-        <Image
-          src="/images/collector-bg.jpg"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-          unoptimized
-        />
-      </div>
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/collector-bg.jpg')" }}
+      />
       <div className="fixed inset-0 -z-10 bg-black/60" />
       <KitCatalog
         kits={kits}

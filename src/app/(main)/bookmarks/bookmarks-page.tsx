@@ -41,7 +41,7 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
             {t("nav.bookmarks")}
           </h1>
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-            Projects you&apos;ve saved for later.{builds.length > 0 ? ` ${builds.length} saved` : ""}
+            {t("bookmarks.subtitle")}{builds.length > 0 ? ` ${builds.length} ${t("bookmarks.saved")}` : ""}
           </p>
         </div>
 
@@ -55,9 +55,9 @@ export function BookmarksPage({ builds }: BookmarksPageProps) {
         ) : (
           <div className="rounded-xl border border-border/50 bg-card p-12 text-center">
             <Bookmark className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-foreground mb-2">No bookmarks yet</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">{t("bookmarks.empty.title")}</h2>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              When you find builds you love, bookmark them to easily find them here later.
+              {t("bookmarks.empty.subtitle")}
             </p>
           </div>
         )}

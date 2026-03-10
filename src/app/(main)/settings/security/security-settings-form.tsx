@@ -81,7 +81,7 @@ export function SecuritySettingsForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!passwordsMatch) {
-      toast.error("Passwords don't match");
+      toast.error(t("settings.security.passwordsDontMatch"));
       return;
     }
 
@@ -115,7 +115,7 @@ export function SecuritySettingsForm({
     if ("error" in result) {
       toast.error(result.error);
     } else {
-      toast.success(`${provider.charAt(0).toUpperCase() + provider.slice(1)} unlinked.`);
+      toast.success(`${provider.charAt(0).toUpperCase() + provider.slice(1)} ${t("settings.security.unlink").toLowerCase()}ed.`);
       router.refresh();
     }
   }
@@ -131,7 +131,7 @@ export function SecuritySettingsForm({
     if ("error" in result) {
       toast.error(result.error);
     } else {
-      toast.success("Verification code sent to your new address.");
+      toast.success(t("settings.security.verificationSent"));
       router.push(`/verify-email-change?email=${encodeURIComponent(newEmail)}`);
     }
   }
@@ -158,23 +158,23 @@ export function SecuritySettingsForm({
                 onClick={() => setShowEmailChange(true)}
               >
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Change
+                {t("settings.security.change")}
               </Button>
             )}
           </div>
           {showEmailChange ? (
             <form onSubmit={handleEmailChange} className="space-y-3">
-              <Input value={email} disabled hint="Current email" />
+              <Input value={email} disabled hint={t("settings.security.currentEmail")} />
               <Input
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="New email address"
+                placeholder={t("settings.security.newEmail")}
                 type="email"
                 required
                 autoComplete="email"
               />
               <p className="text-xs text-muted-foreground">
-                A verification code will be sent to the new address. Your email won&apos;t change until you verify it.
+                {t("settings.security.emailChangeHint")}
               </p>
               <div className="flex gap-2 justify-end">
                 <Button
@@ -186,7 +186,7 @@ export function SecuritySettingsForm({
                     setNewEmail("");
                   }}
                 >
-                  Cancel
+                  {t("settings.cancel")}
                 </Button>
                 <Button
                   type="submit"
@@ -195,7 +195,7 @@ export function SecuritySettingsForm({
                   loading={emailChangeSaving}
                   disabled={!newEmail}
                 >
-                  Send Verification
+                  {t("settings.security.sendVerification")}
                 </Button>
               </div>
             </form>
@@ -208,10 +208,10 @@ export function SecuritySettingsForm({
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <Link2 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Linked Accounts</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("settings.security.linkedAccounts")}</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            Link your accounts to sign in with Google or Discord. You can unlink a provider as long as you have another way to log in.
+            {t("settings.security.linkedAccountsDesc")}
           </p>
           <div className="space-y-3">
             {PROVIDERS.map((provider) => {
@@ -227,7 +227,7 @@ export function SecuritySettingsForm({
                     <span className="text-sm font-medium text-foreground">{provider.name}</span>
                     {isLinked && (
                       <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-green-400">
-                        Linked
+                        {t("settings.security.linked")}
                       </span>
                     )}
                   </div>
@@ -241,7 +241,7 @@ export function SecuritySettingsForm({
                       title={!canUnlink ? "Cannot unlink your only login method" : undefined}
                     >
                       <Unlink className="h-3.5 w-3.5 mr-1.5" />
-                      Unlink
+                      {t("settings.security.unlink")}
                     </Button>
                   ) : (
                     <Button
@@ -250,7 +250,7 @@ export function SecuritySettingsForm({
                       onClick={() => handleLink(provider.id)}
                     >
                       <Link2 className="h-3.5 w-3.5 mr-1.5" />
-                      Link
+                      {t("settings.security.link")}
                     </Button>
                   )}
                 </div>
@@ -261,15 +261,15 @@ export function SecuritySettingsForm({
             <div className="flex items-center justify-between rounded-lg border border-border/30 bg-muted/20 px-4 py-3">
               <div className="flex items-center gap-3">
                 <Lock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Password</span>
+                <span className="text-sm font-medium text-foreground">{t("settings.security.password")}</span>
                 {hasPassword && (
                   <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-green-400">
-                    Set
+                    {t("settings.security.passwordSet")}
                   </span>
                 )}
               </div>
               {!hasPassword && (
-                <span className="text-xs text-muted-foreground">No password set</span>
+                <span className="text-xs text-muted-foreground">{t("settings.security.noPasswordSet")}</span>
               )}
             </div>
           </div>
@@ -287,7 +287,7 @@ export function SecuritySettingsForm({
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!passwordsMatch) {
-                  toast.error("Passwords don't match");
+                  toast.error(t("settings.security.passwordsDontMatch"));
                   return;
                 }
                 setSaving(true);
@@ -299,7 +299,7 @@ export function SecuritySettingsForm({
                 if ("error" in result) {
                   toast.error(result.error);
                 } else {
-                  toast.success("Password set successfully!");
+                  toast.success(t("settings.security.passwordSetSuccess"));
                   setNewPassword("");
                   setConfirmPassword("");
                   router.refresh();
@@ -308,11 +308,11 @@ export function SecuritySettingsForm({
               className="space-y-4"
             >
               <p className="text-xs text-muted-foreground mb-3">
-                You signed up via OAuth. Set a password to also log in with your handle + password.
+                {t("settings.security.oauthHint")}
               </p>
               <div className="space-y-2">
                 <PasswordInput
-                  label="New Password"
+                  label={t("settings.security.newPasswordLabel")}
                   id="new-password-set"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -336,12 +336,12 @@ export function SecuritySettingsForm({
                 )}
               </div>
               <PasswordInput
-                label="Confirm Password"
+                label={t("settings.security.confirmPasswordLabel")}
                 id="confirm-password-set"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
-                error={confirmPassword && !passwordsMatch ? "Passwords don't match" : undefined}
+                error={confirmPassword && !passwordsMatch ? t("settings.security.passwordsDontMatch") : undefined}
               />
               <div className="flex justify-end pt-2">
                 <Button
@@ -350,7 +350,7 @@ export function SecuritySettingsForm({
                   loading={saving}
                   disabled={!newPassword || !confirmPassword || !passwordsMatch}
                 >
-                  Set Password
+                  {t("settings.security.setPassword")}
                 </Button>
               </div>
             </form>
@@ -396,7 +396,7 @@ export function SecuritySettingsForm({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
-                error={confirmPassword && !passwordsMatch ? "Passwords don't match" : undefined}
+                error={confirmPassword && !passwordsMatch ? t("settings.security.passwordsDontMatch") : undefined}
               />
 
               <div className="flex justify-end pt-2">

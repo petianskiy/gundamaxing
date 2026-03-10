@@ -6,12 +6,11 @@ import { ForumThreadControls } from "@/components/forum/forum-thread-controls";
 import { ThreadList } from "@/components/forum/thread-list";
 import { ForumPagination } from "@/components/forum/forum-pagination";
 import { ForumSidebar } from "@/components/forum/forum-sidebar";
-import type { ForumCategory, Thread } from "@/lib/types";
+import type { ForumCategory, Thread, MonthlyMissionUI } from "@/lib/types";
 import type {
   ForumActivePilot,
   ForumLeaderboardEntry,
   ForumRecentActivity,
-  ForumStats,
 } from "@/lib/types";
 
 export function ForumFeed({
@@ -23,7 +22,7 @@ export function ForumFeed({
   activePilots,
   topContributors,
   recentActivity,
-  stats,
+  mission,
 }: {
   categories: ForumCategory[];
   threads: Thread[];
@@ -33,18 +32,23 @@ export function ForumFeed({
   activePilots: ForumActivePilot[];
   topContributors: ForumLeaderboardEntry[];
   recentActivity: ForumRecentActivity[];
-  stats: ForumStats;
+  mission: MonthlyMissionUI | null;
 }) {
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1200px]">
-        <ForumHero />
+        <div className="animate-page-header">
+          <ForumHero />
+        </div>
 
-        <div className="flex gap-6 items-start">
-          {/* Main column */}
+        {/* Categories — full width above sidebar layout */}
+        <div className="animate-page-content">
+          <ForumCategories categories={categories} />
+        </div>
+
+        {/* Main + Sidebar */}
+        <div className="animate-page-grid flex gap-6 items-start">
           <div className="flex-1 min-w-0">
-            <ForumCategories categories={categories} />
-
             <section>
               <ForumThreadControls sort={sort} />
               <ThreadList threads={threads} />
@@ -57,12 +61,11 @@ export function ForumFeed({
             </section>
           </div>
 
-          {/* Sidebar */}
           <ForumSidebar
             activePilots={activePilots}
             topContributors={topContributors}
             recentActivity={recentActivity}
-            stats={stats}
+            mission={mission}
           />
         </div>
       </div>

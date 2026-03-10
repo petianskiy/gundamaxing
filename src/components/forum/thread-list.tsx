@@ -94,7 +94,7 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
                 {isHot && (
                   <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-500/15 text-[9px] font-bold text-red-400 uppercase tracking-wider">
                     <Flame className="h-2.5 w-2.5" />
-                    HOT
+                    {t("forum.hot")}
                   </span>
                 )}
               </div>
@@ -124,7 +124,7 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-shrink-0 mt-1 font-share-tech-mono">
+            <div className="hidden sm:flex items-center gap-3 text-[11px] text-gray-500 flex-shrink-0 mt-1 font-share-tech-mono">
               <span className="flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" />
                 {thread.replies}

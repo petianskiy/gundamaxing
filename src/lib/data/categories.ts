@@ -21,9 +21,11 @@ function toUICategory(cat: any, postCount: number): ForumCategory {
     description: cat.description,
     icon: cat.icon,
     color: cat.color,
+    image: cat.image ?? null,
     threadCount: cat._count?.threads ?? 0,
     postCount,
     lastActivity,
+    childCount: cat._count?.children ?? 0,
   };
 }
 
@@ -31,9 +33,10 @@ function toUICategory(cat: any, postCount: number): ForumCategory {
 
 export const getCategories = cache(async (): Promise<ForumCategory[]> => {
   const categories = await db.forumCategory.findMany({
+    where: { parentId: null },
     orderBy: { order: "asc" },
     include: {
-      _count: { select: { threads: true } },
+      _count: { select: { threads: true, children: true } },
       threads: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -42,25 +45,42 @@ export const getCategories = cache(async (): Promise<ForumCategory[]> => {
     },
   });
 
-  // Compute real comment counts per category
+  // Compute real comment counts per category (including child categories)
   const postCounts = await Promise.all(
-    categories.map((cat) =>
-      db.comment.count({ where: { thread: { categoryId: cat.id } } })
-    )
+    categories.map(async (cat) => {
+      // Get IDs of this category and all its children
+      const children = await db.forumCategory.findMany({
+        where: { parentId: cat.id },
+        select: { id: true },
+      });
+      const categoryIds = [cat.id, ...children.map((c) => c.id)];
+      return db.comment.count({ where: { thread: { categoryId: { in: categoryIds } } } });
+    })
   );
 
   return categories.map((cat, i) => toUICategory(cat, postCounts[i]));
 });
 
-export const getCategoryById = cache(async (id: string): Promise<ForumCategory | null> => {
+export const getCategoryById = cache(async (id: string): Promise<(ForumCategory & { children?: ForumCategory[] }) | null> => {
   const cat = await db.forumCategory.findUnique({
     where: { id },
     include: {
-      _count: { select: { threads: true } },
+      _count: { select: { threads: true, children: true } },
       threads: {
         orderBy: { createdAt: "desc" },
         take: 1,
         select: { createdAt: true },
+      },
+      children: {
+        orderBy: { order: "asc" },
+        include: {
+          _count: { select: { threads: true, children: true } },
+          threads: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { createdAt: true },
+          },
+        },
       },
     },
   });
@@ -71,5 +91,39 @@ export const getCategoryById = cache(async (id: string): Promise<ForumCategory |
     where: { thread: { categoryId: id } },
   });
 
-  return toUICategory(cat, postCount);
+  const result = toUICategory(cat, postCount);
+
+  if (cat.children.length > 0) {
+    const childPostCounts = await Promise.all(
+      cat.children.map((child) =>
+        db.comment.count({ where: { thread: { categoryId: child.id } } })
+      )
+    );
+    result.children = cat.children.map((child, i) => toUICategory(child, childPostCounts[i]));
+  }
+
+  return result;
+});
+
+export const getLeafCategories = cache(async (): Promise<ForumCategory[]> => {
+  const categories = await db.forumCategory.findMany({
+    where: { children: { none: {} } },
+    orderBy: { order: "asc" },
+    include: {
+      _count: { select: { threads: true, children: true } },
+      threads: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { createdAt: true },
+      },
+    },
+  });
+
+  const postCounts = await Promise.all(
+    categories.map((cat) =>
+      db.comment.count({ where: { thread: { categoryId: cat.id } } })
+    )
+  );
+
+  return categories.map((cat, i) => toUICategory(cat, postCounts[i]));
 });

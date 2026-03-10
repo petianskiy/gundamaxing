@@ -87,6 +87,7 @@ function CommentItem({
   onReply: (commentId: string | null) => void;
   replyingTo: string | null;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isLiked, setIsLiked] = useState(likedCommentIds.includes(comment.id));
@@ -107,7 +108,7 @@ function CommentItem({
 
   const handleLikeComment = () => {
     if (!currentUserId) {
-      toast.error("Sign in to like comments");
+      toast.error(t("builds.toast.signInToLikeComment"));
       return;
     }
     setIsLiked(!isLiked);
@@ -123,13 +124,13 @@ function CommentItem({
   };
 
   const handleDelete = () => {
-    if (!confirm("Delete this comment?")) return;
+    if (!confirm(t("confirm.deleteComment"))) return;
     startTransition(async () => {
       const result = await deleteComment(comment.id);
       if ("error" in result) {
         toast.error(result.error);
       } else {
-        toast.success("Comment deleted");
+        toast.success(t("builds.toast.commentDeleted"));
         router.refresh();
       }
     });
@@ -206,7 +207,7 @@ function CommentItem({
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Reply className="h-3 w-3" />
-              Reply
+              {t("builds.comments.reply")}
             </button>
           )}
 
@@ -217,7 +218,7 @@ function CommentItem({
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors disabled:opacity-50"
             >
               <Trash2 className="h-3 w-3" />
-              Delete
+              {t("builds.comments.delete")}
             </button>
           )}
         </div>
@@ -229,7 +230,7 @@ function CommentItem({
               ref={replyRef}
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Write a reply..."
+              placeholder={t("builds.comments.replyPlaceholder")}
               className="flex-1 bg-muted/50 border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -288,7 +289,7 @@ export function CommentSection({
   const handleSubmit = async () => {
     if (!content.trim()) return;
     if (!currentUserId) {
-      toast.error("Sign in to comment");
+      toast.error(t("builds.toast.signInToComment"));
       return;
     }
     setIsSubmitting(true);
@@ -340,7 +341,7 @@ export function CommentSection({
             ) : (
               <ToggleLeft className="h-5 w-5 text-zinc-500" />
             )}
-            <span className="hidden sm:inline">{enabled ? "Comments on" : "Comments off"}</span>
+            <span className="hidden sm:inline">{enabled ? t("builds.comments.on") : t("builds.comments.off")}</span>
           </button>
         )}
       </div>
@@ -371,7 +372,7 @@ export function CommentSection({
                     : "bg-gx-red/50 text-white/50 cursor-not-allowed"
                 )}
               >
-                {isSubmitting ? "Posting..." : t("builds.postComment")}
+                {isSubmitting ? t("builds.comments.posting") : t("builds.postComment")}
               </button>
             </div>
           </div>
@@ -379,15 +380,15 @@ export function CommentSection({
           <div className="mb-6 rounded-xl border border-border/50 bg-card p-4 text-center">
             <p className="text-sm text-muted-foreground">
               <Link href="/login" className="text-gx-red hover:text-red-400 transition-colors">
-                Sign in
+                {t("builds.comments.signInToComment")}
               </Link>{" "}
-              to leave a comment
+              {t("builds.comments.toLeaveComment")}
             </p>
           </div>
         )
       ) : (
         <div className="mb-6 rounded-xl border border-border/50 bg-card p-4 text-center">
-          <p className="text-sm text-muted-foreground">Comments are turned off for this build.</p>
+          <p className="text-sm text-muted-foreground">{t("builds.comments.disabled")}</p>
         </div>
       )}
 
@@ -407,7 +408,7 @@ export function CommentSection({
         ))}
         {comments.length === 0 && enabled && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No comments yet. Be the first to share your thoughts!
+            {t("builds.comments.empty")}
           </p>
         )}
       </div>

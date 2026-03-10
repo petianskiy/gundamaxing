@@ -1,11 +1,11 @@
-import { getCategories } from "@/lib/data/categories";
+import { getLeafCategories } from "@/lib/data/categories";
 import { ThreadForm } from "@/components/forum/thread-form";
 
 type Props = { searchParams: Promise<{ category?: string }> };
 
 export default async function NewThreadPage({ searchParams }: Props) {
   const { category } = await searchParams;
-  const categories = await getCategories();
+  const categories = await getLeafCategories();
 
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">

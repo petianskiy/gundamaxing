@@ -42,7 +42,7 @@ export function WorkshopsSection() {
               transition={{ duration: 0.4, delay: i * 0.06 }}
             >
               <Link
-                href={`/builds?technique=${encodeURIComponent(workshop.name)}`}
+                href={`/forum/category/sub-${workshop.name.toLowerCase()}`}
                 className="group flex flex-col rounded-xl border border-border/50 bg-card hover:border-gx-red/30 hover:bg-gx-surface-elevated transition-all relative overflow-hidden"
               >
                 {/* Corner accents on hover */}

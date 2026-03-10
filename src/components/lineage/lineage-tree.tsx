@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GitFork, ChevronRight, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
-import type { LineageNodeUI } from "@/lib/types";
+import { GradeBadge } from "@/components/ui/grade-badge";
+import type { LineageNodeUI, Grade } from "@/lib/types";
 
 interface LineageTreeProps {
   nodes: LineageNodeUI[];
@@ -54,7 +55,7 @@ function TreeNodeCard({
         <p className="text-xs font-semibold text-foreground truncate">{node.build.title}</p>
         <p className="text-[10px] text-muted-foreground truncate">{node.build.kitName}</p>
         <div className="flex items-center gap-1 mt-0.5">
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">{node.build.grade}</span>
+          <GradeBadge grade={node.build.grade as Grade} size="sm" />
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">{node.build.scale}</span>
         </div>
       </div>

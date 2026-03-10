@@ -98,4 +98,54 @@ export const auth: Record<string, string> = {
   "auth.settings": "Settings",
   "auth.dashboard": "Dashboard",
   "auth.adminPanel": "Admin Panel",
+
+  // Registration toasts
+  "register.toast.accountCreated": "Account created! Check your email to verify.",
+  "register.toast.deployFailed": "Deployment failed. Please try again.",
+
+  // Complete profile
+  "completeProfile.title": "COMPLETE YOUR PROFILE",
+  "completeProfile.subtitle": "CHOOSE YOUR CALLSIGN",
+  "completeProfile.handle": "Login Handle",
+  "completeProfile.handleRequired": "required",
+  "completeProfile.handleAvailable": "Handle is available",
+  "completeProfile.handleTaken": "Handle is already taken",
+  "completeProfile.handleInappropriate": "That handle contains inappropriate language",
+  "completeProfile.handleMinLength": "Handle must be at least 3 characters",
+  "completeProfile.handleChars": "Only letters, numbers, and underscores",
+  "completeProfile.handleHint": "This is your unique @handle used for login and profile URL. 3-20 characters, letters/numbers/underscores only.",
+  "completeProfile.displayName": "Display Name",
+  "completeProfile.displayNameOptional": "optional",
+  "completeProfile.displayNameHint": "Shown publicly on your profile and comments. Can be changed anytime.",
+  "completeProfile.setPassword": "Set Password",
+  "completeProfile.passwordOptional": "optional",
+  "completeProfile.passwordHint": "Set a password to also log in with your handle + password. You can always set one later in Settings.",
+  "completeProfile.submit": "LAUNCH PROFILE",
+  "completeProfile.saving": "SAVING...",
+  "completeProfile.success": "Profile complete!",
+  "completeProfile.autoHandle": "Your current auto-generated handle is",
+
+  // Report
+  "report.title": "Report Content",
+  "report.submitted": "Report submitted. Thank you.",
+  "report.reason": "Reason",
+  "report.details": "Details (optional)",
+  "report.detailsPlaceholder": "Provide additional context...",
+  "report.submit": "Submit Report",
+  "report.cancel": "Cancel",
+  "report.button": "Report",
+  "report.spam": "Spam",
+  "report.harassment": "Harassment",
+  "report.inappropriate": "Inappropriate content",
+  "report.misinformation": "Misinformation",
+  "report.other": "Other",
+
+  // Bookmarks
+  "bookmarks.subtitle": "Projects you've saved for later.",
+  "bookmarks.saved": "saved",
+  "bookmarks.empty.title": "No bookmarks yet",
+  "bookmarks.empty.subtitle": "When you find builds you love, bookmark them to easily find them here later.",
+
+  // Notifications
+  "notifications.markAllRead": "Mark all as read",
 };

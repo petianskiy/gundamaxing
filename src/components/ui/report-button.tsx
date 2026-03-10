@@ -7,6 +7,7 @@ import { Dialog } from "./dialog";
 import { Button } from "./button";
 import { Textarea } from "./textarea";
 import { submitReport } from "@/lib/actions/report";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface ReportButtonProps {
   targetType: "build" | "comment" | "thread" | "user";
@@ -15,15 +16,16 @@ interface ReportButtonProps {
   className?: string;
 }
 
-const REASONS = [
-  { value: "SPAM", label: "Spam" },
-  { value: "HARASSMENT", label: "Harassment" },
-  { value: "INAPPROPRIATE", label: "Inappropriate content" },
-  { value: "MISINFORMATION", label: "Misinformation" },
-  { value: "OTHER", label: "Other" },
+const REASON_KEYS = [
+  { value: "SPAM", key: "report.spam" },
+  { value: "HARASSMENT", key: "report.harassment" },
+  { value: "INAPPROPRIATE", key: "report.inappropriate" },
+  { value: "MISINFORMATION", key: "report.misinformation" },
+  { value: "OTHER", key: "report.other" },
 ] as const;
 
 export function ReportButton({ targetType, targetId, ownerId, className }: ReportButtonProps) {
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>("");
@@ -39,7 +41,7 @@ export function ReportButton({ targetType, targetId, ownerId, className }: Repor
         className={className || "flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors"}
       >
         <Flag className="h-3 w-3" />
-        Report
+        {t("report.button")}
       </button>
     );
   }
@@ -78,13 +80,13 @@ export function ReportButton({ targetType, targetId, ownerId, className }: Repor
         className={className || "flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors"}
       >
         <Flag className="h-3 w-3" />
-        Report
+        {t("report.button")}
       </button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} title="Report Content">
+      <Dialog open={open} onClose={() => setOpen(false)} title={t("report.title")}>
         {submitted ? (
           <div className="text-center py-4">
-            <p className="text-sm text-foreground">Report submitted. Thank you.</p>
+            <p className="text-sm text-foreground">{t("report.submitted")}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -93,10 +95,10 @@ export function ReportButton({ targetType, targetId, ownerId, className }: Repor
             )}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Reason
+                {t("report.reason")}
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {REASONS.map((r) => (
+                {REASON_KEYS.map((r) => (
                   <button
                     key={r.value}
                     onClick={() => setReason(r.value)}
@@ -106,26 +108,26 @@ export function ReportButton({ targetType, targetId, ownerId, className }: Repor
                         : "border-border/50 text-muted-foreground hover:border-border"
                     }`}
                   >
-                    {r.label}
+                    {t(r.key)}
                   </button>
                 ))}
               </div>
             </div>
 
             <Textarea
-              label="Details (optional)"
+              label={t("report.details")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide additional context..."
+              placeholder={t("report.detailsPlaceholder")}
               rows={3}
             />
 
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>
-                Cancel
+                {t("report.cancel")}
               </Button>
               <Button variant="danger" size="sm" onClick={handleSubmit} loading={loading} disabled={!reason}>
-                Submit Report
+                {t("report.submit")}
               </Button>
             </div>
           </div>

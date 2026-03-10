@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { GitFork, Plus } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -18,21 +17,15 @@ export default async function LineagesPage() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="fixed inset-0 -z-20">
-        <Image
-          src="/images/lineages-bg.png"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-          unoptimized
-        />
-      </div>
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/lineages-bg.png')" }}
+      />
       <div className="fixed inset-0 -z-10 bg-black/60" />
       <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 animate-page-header">
           <div className="flex items-center justify-center gap-2 mb-3">
             <GitFork className="h-5 w-5 text-gx-red" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
@@ -66,6 +59,7 @@ export default async function LineagesPage() {
         </div>
 
         {/* Grid */}
+        <div className="animate-page-grid">
         {lineages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <GitFork className="h-16 w-16 mb-6 opacity-20" />
@@ -87,6 +81,7 @@ export default async function LineagesPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
       </div>
     </div>

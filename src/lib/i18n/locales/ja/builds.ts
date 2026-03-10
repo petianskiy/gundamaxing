@@ -90,4 +90,47 @@ export const builds = {
   "builds.showcase.comingSoon": "近日公開",
   "builds.showcase.uploadingVideo": "動画をアップロード中...",
   "builds.showcase.uploadingDrawing": "描画をアップロード中...",
+
+  // Toasts
+  "builds.toast.linkCopied": "リンクをコピーしました！",
+  "builds.toast.buildForked": "ビルドをフォークしました！",
+  "builds.toast.buildDeleted": "ビルドを削除しました",
+  "builds.toast.signInToLike": "いいねするにはログインしてください",
+  "builds.toast.signInToBookmark": "ブックマークするにはログインしてください",
+  "builds.toast.signInToFork": "フォークするにはログインしてください",
+  "builds.toast.signInToComment": "コメントするにはログインしてください",
+  "builds.toast.signInToLikeComment": "いいねするにはログインしてください",
+  "builds.toast.commentDeleted": "コメントを削除しました",
+  "builds.confirm.deleteBuild": "このビルドを削除してもよろしいですか？この操作は取り消せません。",
+
+  // Sort (profile gallery)
+  "builds.sort.newest": "新しい順",
+  "builds.sort.popular": "人気順",
+  "builds.sort.mostLiked": "いいね順",
+
+  // Gallery
+  "builds.gallery.title": "ビルドギャラリー",
+  "builds.gallery.empty": "ビルドはまだありません。ハンガーは空です。",
+  "builds.gallery.noMatch": "フィルターに一致するビルドがありません。",
+  "builds.gallery.clearFilters": "フィルターをクリア",
+
+  // Comments
+  "builds.comments.on": "コメント有効",
+  "builds.comments.off": "コメント無効",
+  "builds.comments.posting": "投稿中...",
+  "builds.comments.signInToComment": "ログイン",
+  "builds.comments.toLeaveComment": "してコメントする",
+  "builds.comments.disabled": "このビルドのコメントは無効です。",
+  "builds.comments.empty": "まだコメントはありません。最初に感想を共有しましょう！",
+  "builds.comments.replyPlaceholder": "返信を書く...",
+  "builds.comments.reply": "返信",
+  "builds.comments.delete": "削除",
+
+  // Showcase
+  "builds.showcase.comingSoonLabel": "近日公開",
+  "builds.showcase.createLabel": "ショーケース作成",
+  "builds.showcase.creating": "作成中...",
+  "builds.showcase.editLabel": "編集",
+  "builds.showcase.deleteLabel": "削除",
+  "builds.showcase.deleting": "削除中...",
 } as const;

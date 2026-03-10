@@ -69,4 +69,7 @@ export const forum = {
   // 空の状態
   "forum.noThreads": "まだスレッドがありません。会話を始めましょう！",
   "forum.noReplies": "まだ返信がありません。最初に返信しましょう！",
+
+  // Badge
+  "forum.hot": "HOT",
 } as const;

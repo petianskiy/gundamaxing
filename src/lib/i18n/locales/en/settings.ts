@@ -124,6 +124,35 @@ export const settings: Record<string, string> = {
   "portfolio.pinned": "Pinned",
   "portfolio.deleteConfirm": "Are you sure you want to delete this build? This cannot be undone.",
 
+  // Security - linked accounts
+  "settings.security.linkedAccounts": "Linked Accounts",
+  "settings.security.linkedAccountsDesc": "Link your accounts to sign in with Google or Discord. You can unlink a provider as long as you have another way to log in.",
+  "settings.security.linked": "Linked",
+  "settings.security.link": "Link",
+  "settings.security.unlink": "Unlink",
+  "settings.security.password": "Password",
+  "settings.security.passwordSet": "Set",
+  "settings.security.noPasswordSet": "No password set",
+  "settings.security.setPassword": "Set Password",
+  "settings.security.passwordSetSuccess": "Password set successfully!",
+  "settings.security.oauthHint": "You signed up via OAuth. Set a password to also log in with your handle + password.",
+  "settings.security.change": "Change",
+  "settings.security.sendVerification": "Send Verification",
+  "settings.security.emailChangeHint": "A verification code will be sent to the new address. Your email won't change until you verify it.",
+  "settings.security.verificationSent": "Verification code sent to your new address.",
+  "settings.security.currentEmail": "Current email",
+  "settings.security.newEmail": "New email address",
+  "settings.security.passwordsDontMatch": "Passwords don't match",
+  "settings.security.confirmPasswordLabel": "Confirm Password",
+  "settings.security.newPasswordLabel": "New Password",
+
+  // Profile - username change
+  "settings.profile.usernameChangeHint": "You can change your username once every 3 months. Choose carefully.",
+  "settings.profile.usernameNextChange": "You can change your username again on {{date}}.",
+  "settings.profile.urlChangeWarning": "This will change your profile URL.",
+  "settings.profile.changeUsername": "Change Username",
+  "settings.profile.usernameChanged": "Username changed successfully.",
+
   // Shared
   "settings.save": "Save Changes",
   "settings.saving": "Saving...",

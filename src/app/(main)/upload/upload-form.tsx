@@ -259,21 +259,15 @@ export function UploadForm() {
   return (
     <div className="relative pt-24 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen">
       {/* Background image */}
-      <div className="fixed inset-0 -z-10 bg-[#09090b]">
-        <Image
-          src="/upload-bg.jpg"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-          unoptimized
-        />
-      </div>
+      <div
+        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/upload-bg.jpg')" }}
+      />
       <div className="fixed inset-0 bg-black/75 -z-10" />
 
       <div className="mx-auto max-w-2xl relative">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="animate-page-header mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Upload className="h-5 w-5 text-gx-red" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
@@ -286,7 +280,7 @@ export function UploadForm() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="animate-page-content space-y-4">
           {/* Section 1: Essentials */}
           <CollapsibleSection
             title={t("upload.essentials")}
@@ -383,7 +377,7 @@ export function UploadForm() {
                   onDragLeave={handleDragLeave}
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
-                    "border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer",
+                    "border-2 border-dashed rounded-xl p-4 sm:p-8 text-center transition-colors cursor-pointer",
                     dragging
                       ? "border-gx-red bg-gx-red/5"
                       : "border-border/50 hover:border-border"

@@ -33,4 +33,22 @@ export const common = {
   "shared.posted": "Posted",
   "shared.joined": "Joined",
   "lang.toggle": "日本語",
+
+  // Toast
+  "toast.linkCopied": "Link copied!",
+  "toast.deleted": "Deleted",
+  "toast.saved": "Saved",
+  "toast.signInRequired": "Sign in required",
+  "toast.somethingWentWrong": "Something went wrong",
+
+  // Confirmations
+  "confirm.deleteCannotUndo": "Are you sure? This cannot be undone.",
+  "confirm.deleteComment": "Delete this comment?",
+
+  // Empty states
+  "empty.noBookmarks": "No bookmarks yet",
+  "empty.allCaughtUp": "All caught up!",
+  "empty.noNotifications": "No notifications yet. We'll let you know when something happens.",
+  "empty.privateProfile": "This profile is private.",
+  "empty.privateHangar": "This builder's hangar is set to private.",
 } as const;

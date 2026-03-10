@@ -192,6 +192,7 @@ model User {
   lineages          Lineage[]
   achievements      UserAchievement[]
   kits              UserKit[]
+  missionSubmissions MissionSubmission[]
 
   @@index([email])
   @@index([reputation])
@@ -315,17 +316,22 @@ model BuildLogEntry {
 // ─── FORUM ────────────────────────────────────────────────────────
 
 model ForumCategory {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   description String
   icon        String
   color       String
-  order       Int      @default(0)
-  threadCount Int      @default(0)
-  postCount   Int      @default(0)
+  image       String?
+  order       Int             @default(0)
+  threadCount Int             @default(0)
+  postCount   Int             @default(0)
+  parentId    String?
+  parent      ForumCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    ForumCategory[] @relation("CategoryHierarchy")
   threads     Thread[]
 
   @@index([order])
+  @@index([parentId])
 }
 
 model Thread {
@@ -354,6 +360,43 @@ model Thread {
   @@index([userId])
   @@index([isPinned, createdAt])
   @@index([lastReplyAt])
+}
+
+// ─── MONTHLY MISSIONS ─────────────────────────────────────────────
+
+model MonthlyMission {
+  id          String              @id @default(cuid())
+  title       String
+  description String              @db.Text
+  rules       String?             @db.Text
+  prizes      String?             @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean             @default(false)
+  winnerId    String?             @unique
+  winner      MissionSubmission?  @relation("MissionWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  submissions MissionSubmission[] @relation("MissionSubmissions")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model MissionSubmission {
+  id          String          @id @default(cuid())
+  missionId   String
+  mission     MonthlyMission  @relation("MissionSubmissions", fields: [missionId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String          @db.Text
+  images      String[]        @default([])
+  videoUrl    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  wonMission  MonthlyMission? @relation("MissionWinner")
+
+  @@unique([missionId, userId])
+  @@index([missionId])
+  @@index([userId])
 }
 
 // ─── COMMENTS ─────────────────────────────────────────────────────

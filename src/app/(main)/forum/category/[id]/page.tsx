@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCategoryById } from "@/lib/data/categories";
 import { getThreadsByCategory, getThreadCountByCategory, type ThreadSort } from "@/lib/data/threads";
 import { CategoryView } from "./category-view";
+import { SubCategoryGrid } from "./sub-category-grid";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -15,6 +16,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const category = await getCategoryById(id);
   if (!category) notFound();
 
+  // If category has children, show sub-category grid
+  if (category.children && category.children.length > 0) {
+    return <SubCategoryGrid category={category} />;
+  }
+
+  // Otherwise show threads
   const page = Math.max(1, parseInt(pageStr || "1", 10) || 1);
   const sort = (["newest", "most-replies", "most-views"].includes(sortStr ?? "")
     ? sortStr

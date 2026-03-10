@@ -90,4 +90,47 @@ export const builds = {
   "builds.showcase.comingSoon": "Coming Soon",
   "builds.showcase.uploadingVideo": "Uploading video...",
   "builds.showcase.uploadingDrawing": "Uploading drawing...",
+
+  // Toasts
+  "builds.toast.linkCopied": "Link copied!",
+  "builds.toast.buildForked": "Build forked!",
+  "builds.toast.buildDeleted": "Build deleted",
+  "builds.toast.signInToLike": "Sign in to like builds",
+  "builds.toast.signInToBookmark": "Sign in to bookmark builds",
+  "builds.toast.signInToFork": "Sign in to fork builds",
+  "builds.toast.signInToComment": "Sign in to comment",
+  "builds.toast.signInToLikeComment": "Sign in to like comments",
+  "builds.toast.commentDeleted": "Comment deleted",
+  "builds.confirm.deleteBuild": "Are you sure you want to delete this build? This cannot be undone.",
+
+  // Sort (profile gallery)
+  "builds.sort.newest": "Newest",
+  "builds.sort.popular": "Popular",
+  "builds.sort.mostLiked": "Most Liked",
+
+  // Gallery
+  "builds.gallery.title": "Build Gallery",
+  "builds.gallery.empty": "No builds yet. The hangar is empty.",
+  "builds.gallery.noMatch": "No builds match the current filters.",
+  "builds.gallery.clearFilters": "Clear filters",
+
+  // Comments
+  "builds.comments.on": "Comments on",
+  "builds.comments.off": "Comments off",
+  "builds.comments.posting": "Posting...",
+  "builds.comments.signInToComment": "Sign in",
+  "builds.comments.toLeaveComment": "to leave a comment",
+  "builds.comments.disabled": "Comments are turned off for this build.",
+  "builds.comments.empty": "No comments yet. Be the first to share your thoughts!",
+  "builds.comments.replyPlaceholder": "Write a reply...",
+  "builds.comments.reply": "Reply",
+  "builds.comments.delete": "Delete",
+
+  // Showcase
+  "builds.showcase.comingSoonLabel": "Coming Soon",
+  "builds.showcase.createLabel": "Create Showcase",
+  "builds.showcase.creating": "Creating...",
+  "builds.showcase.editLabel": "Edit",
+  "builds.showcase.deleteLabel": "Delete",
+  "builds.showcase.deleting": "Deleting...",
 } as const;

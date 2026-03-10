@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pin, Lock, MessageSquare, Eye, ThumbsUp, Reply, Trash2 } from "lucide-react";
+import {
+  Pin, Lock, MessageSquare, Eye, ThumbsUp, Reply, Trash2,
+  ChevronRight, Shield,
+} from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import { CommentForm } from "@/components/comments/comment-form";
 import { GifDisplay } from "@/components/gifs/gif-display";
@@ -13,7 +16,7 @@ import { deleteComment } from "@/lib/actions/comment";
 import { togglePinThread, toggleLockThread, deleteThread } from "@/lib/actions/thread";
 import type { Thread, Comment } from "@/lib/types";
 
-// URL detection regex — matches http(s)://, www., and bare domains ending in common TLDs
+// URL detection regex
 const URL_PATTERN = /(?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
 function renderCommentContent(text: string) {
@@ -29,7 +32,7 @@ function renderCommentContent(text: string) {
     parts.push(
       <span
         key={match.index}
-        className="inline-block bg-zinc-700 text-zinc-700 rounded px-1 select-none cursor-not-allowed"
+        className="inline-block bg-white/5 text-white/20 rounded px-1 select-none cursor-not-allowed text-[11px]"
         title="Link removed for security"
         aria-label="Redacted link"
       >
@@ -45,6 +48,8 @@ function renderCommentContent(text: string) {
 
   return parts.length > 0 ? parts : text;
 }
+
+/* ─── Comment ─────────────────────────────────────────────────── */
 
 function CommentItem({
   comment,
@@ -77,13 +82,11 @@ function CommentItem({
 
   function handleLike() {
     if (!currentUserId) return;
-    // Optimistic update
     setLiked(!liked);
     setLikeCount((c) => (liked ? c - 1 : c + 1));
     startTransition(async () => {
       const result = await toggleLike(undefined, comment.id);
       if (result.error) {
-        // Revert
         setLiked(liked);
         setLikeCount(comment.likes);
       }
@@ -94,52 +97,77 @@ function CommentItem({
     if (!confirm(t("forum.deleteCommentConfirm"))) return;
     startTransition(async () => {
       const result = await deleteComment(comment.id);
-      if (!result.error) {
-        router.refresh();
-      }
+      if (!result.error) router.refresh();
     });
   }
 
+  const depthColors = ["border-white/[0.06]", "border-white/[0.04]", "border-white/[0.03]"];
+  const borderColor = depthColors[Math.min(depth, 2)];
+
   return (
-    <div className={depth > 0 ? "ml-4 sm:ml-8 mt-4" : ""}>
-      <div className="flex gap-3">
-        <div
-          className="relative rounded-full overflow-hidden flex-shrink-0"
-          style={{ width: depth > 0 ? 28 : 32, height: depth > 0 ? 28 : 32 }}
-        >
-          <Image
-            src={comment.userAvatar}
-            alt={comment.username}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Link href={`/u/${comment.userHandle}`} className="text-sm font-medium text-foreground hover:underline">
-              {comment.username}
+    <div>
+      <div
+        className={`relative ${
+          depth > 0
+            ? `ml-5 sm:ml-10 pl-4 border-l-2 ${borderColor}`
+            : ""
+        }`}
+      >
+        <div className="py-5">
+          {/* Author row */}
+          <div className="flex items-center gap-3 mb-3">
+            <Link
+              href={`/u/${comment.userHandle}`}
+              className="relative flex-shrink-0 group/avatar"
+            >
+              <div
+                className="relative rounded-full overflow-hidden ring-1 ring-white/10 group-hover/avatar:ring-white/25 transition-all"
+                style={{ width: depth > 0 ? 28 : 34, height: depth > 0 ? 28 : 34 }}
+              >
+                <Image
+                  src={comment.userAvatar}
+                  alt={comment.username}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
             </Link>
-            <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
+
+            <div className="flex items-center gap-2 min-w-0">
+              <Link
+                href={`/u/${comment.userHandle}`}
+                className="text-[13px] font-semibold text-white hover:text-gx-red transition-colors truncate"
+              >
+                {comment.username}
+              </Link>
+              <span className="text-[10px] font-share-tech-mono text-white/25 uppercase tracking-wider flex-shrink-0">
+                {comment.createdAt}
+              </span>
+            </div>
           </div>
-          <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content)}</p>
+
+          {/* Content */}
+          <div className="text-[13px] text-white/70 leading-[1.8] whitespace-pre-wrap break-words">
+            {renderCommentContent(comment.content)}
+          </div>
 
           {comment.gif && (
-            <div className="mt-2">
+            <div className="mt-3">
               <GifDisplay gif={comment.gif} />
             </div>
           )}
 
           {/* Action bar */}
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-4 mt-3">
             <button
               onClick={handleLike}
               disabled={!currentUserId || isPending}
-              className={`flex items-center gap-1 text-xs transition-colors ${
+              className={`flex items-center gap-1.5 text-[11px] font-share-tech-mono uppercase tracking-wider transition-colors ${
                 liked
                   ? "text-gx-red"
-                  : "text-muted-foreground hover:text-foreground"
-              } disabled:opacity-50`}
+                  : "text-white/25 hover:text-white/50"
+              } disabled:opacity-30`}
             >
               <ThumbsUp className="h-3 w-3" />
               {likeCount}
@@ -148,7 +176,7 @@ function CommentItem({
             {canReply && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 text-[11px] font-share-tech-mono uppercase tracking-wider text-white/25 hover:text-white/50 transition-colors"
               >
                 <Reply className="h-3 w-3" />
                 {t("forum.reply")}
@@ -159,17 +187,16 @@ function CommentItem({
               <button
                 onClick={handleDelete}
                 disabled={isPending}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 text-[11px] font-share-tech-mono uppercase tracking-wider text-white/25 hover:text-red-400 transition-colors disabled:opacity-30 ml-auto"
               >
                 <Trash2 className="h-3 w-3" />
-                {t("forum.deleteComment")}
               </button>
             )}
           </div>
 
           {/* Inline reply form */}
           {showReplyForm && (
-            <div className="mt-3">
+            <div className="mt-4">
               <CommentForm
                 threadId={threadId}
                 parentId={comment.id}
@@ -184,6 +211,7 @@ function CommentItem({
           )}
         </div>
       </div>
+
       {comment.children?.map((child) => (
         <CommentItem
           key={child.id}
@@ -199,6 +227,8 @@ function CommentItem({
     </div>
   );
 }
+
+/* ─── Thread View ─────────────────────────────────────────────── */
 
 export function ThreadView({
   thread,
@@ -238,174 +268,226 @@ export function ThreadView({
     if (!confirm(t("forum.deleteThreadConfirm"))) return;
     startTransition(async () => {
       const result = await deleteThread(thread.id);
-      if (!result.error) {
-        router.push("/forum");
-      }
+      if (!result.error) router.push("/forum");
     });
   }
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-          <Link href="/forum" className="hover:text-foreground transition-colors">{t("forum.title")}</Link>
-          <span>/</span>
-          <Link
-            href={`/forum/category/${thread.categoryId}`}
-            className="hover:text-foreground transition-colors"
-          >
-            {thread.categoryName}
-          </Link>
-        </div>
+    <div className="relative min-h-screen">
+      {/* Forum background */}
+      <div className="fixed inset-0 -z-20">
+        <Image
+          src="/images/forum-bg.jpg"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          unoptimized
+        />
+      </div>
+      <div className="fixed inset-0 -z-10 bg-black/65" />
 
-        {/* Mod controls */}
-        {(isMod || isOwner) && (
-          <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-muted/50 border border-border/50">
-            {isMod && (
-              <>
-                <button
-                  onClick={handlePin}
-                  disabled={isPending}
-                  className="px-2.5 py-1 rounded text-xs font-medium border border-border/50 hover:bg-muted transition-colors disabled:opacity-50"
-                >
-                  {thread.isPinned ? t("forum.unpin") : t("forum.pin")}
-                </button>
-                <button
-                  onClick={handleLock}
-                  disabled={isPending}
-                  className="px-2.5 py-1 rounded text-xs font-medium border border-border/50 hover:bg-muted transition-colors disabled:opacity-50"
-                >
-                  {thread.isLocked ? t("forum.unlock") : t("forum.lock")}
-                </button>
-              </>
-            )}
-            <button
-              onClick={handleDeleteThread}
-              disabled={isPending}
-              className="px-2.5 py-1 rounded text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 ml-auto"
-            >
-              {t("forum.deleteThread")}
-            </button>
-          </div>
-        )}
+      <div className="pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[860px]">
 
-        {/* Locked banner */}
-        {thread.isLocked && (
-          <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs">
-            <Lock className="h-3.5 w-3.5 flex-shrink-0" />
-            {t("forum.threadLocked")}
-          </div>
-        )}
-
-        {/* Thread header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            {thread.isPinned && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
-                <Pin className="h-2.5 w-2.5" />
-                {t("forum.pinned")}
-              </span>
-            )}
-            {thread.isLocked && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                <Lock className="h-2.5 w-2.5" />
-                {t("forum.locked")}
-              </span>
-            )}
+          {/* ── Breadcrumb ── */}
+          <div className="flex items-center gap-1.5 text-[11px] font-share-tech-mono text-white/30 mb-8">
+            <Link href="/forum" className="hover:text-white/60 transition-colors uppercase tracking-wider">
+              Forum
+            </Link>
+            <ChevronRight className="h-3 w-3" />
             <Link
               href={`/forum/category/${thread.categoryId}`}
-              className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-medium hover:text-foreground transition-colors"
+              className="hover:text-white/60 transition-colors uppercase tracking-wider"
             >
               {thread.categoryName}
             </Link>
+            <ChevronRight className="h-3 w-3" />
+            <span className="text-white/50 truncate max-w-[200px]">{thread.title}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-            {thread.title}
-          </h1>
-        </div>
 
-        {/* Thread content */}
-        <article className="rounded-xl border border-border/50 bg-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-              <Image
-                src={thread.userAvatar}
-                alt={thread.username}
-                fill
-                className="object-cover"
-                unoptimized
-              />
+          {/* ── Mod controls ── */}
+          {(isMod || isOwner) && (
+            <div className="flex items-center gap-2 mb-5 p-3 bg-white/[0.03] border border-white/[0.06]">
+              <Shield className="h-3.5 w-3.5 text-white/30 mr-1" />
+              {isMod && (
+                <>
+                  <button
+                    onClick={handlePin}
+                    disabled={isPending}
+                    className="px-2.5 py-1 text-[10px] font-share-tech-mono uppercase tracking-wider text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/80 transition-all disabled:opacity-30"
+                  >
+                    {thread.isPinned ? t("forum.unpin") : t("forum.pin")}
+                  </button>
+                  <button
+                    onClick={handleLock}
+                    disabled={isPending}
+                    className="px-2.5 py-1 text-[10px] font-share-tech-mono uppercase tracking-wider text-white/50 border border-white/10 hover:bg-white/5 hover:text-white/80 transition-all disabled:opacity-30"
+                  >
+                    {thread.isLocked ? t("forum.unlock") : t("forum.lock")}
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleDeleteThread}
+                disabled={isPending}
+                className="px-2.5 py-1 text-[10px] font-share-tech-mono uppercase tracking-wider text-red-400/70 border border-red-500/20 hover:bg-red-500/10 hover:text-red-400 transition-all disabled:opacity-30 ml-auto"
+              >
+                {t("forum.deleteThread")}
+              </button>
             </div>
-            <div>
-              <Link href={`/u/${thread.userHandle}`} className="text-sm font-semibold text-foreground hover:underline">
-                {thread.username}
+          )}
+
+          {/* ── Locked banner ── */}
+          {thread.isLocked && (
+            <div className="flex items-center gap-2 mb-5 p-3 bg-orange-500/5 border border-orange-500/15 text-[11px] font-share-tech-mono uppercase tracking-wider text-orange-400/80">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+              {t("forum.threadLocked")}
+            </div>
+          )}
+
+          {/* ── Thread Header ── */}
+          <header className="mb-8">
+            {/* Badges */}
+            <div className="flex items-center gap-2 mb-3">
+              {thread.isPinned && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-share-tech-mono font-bold uppercase tracking-[0.15em] bg-yellow-500/10 text-yellow-500/80 border border-yellow-500/15">
+                  <Pin className="h-2.5 w-2.5" />
+                  Pinned
+                </span>
+              )}
+              {thread.isLocked && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-share-tech-mono font-bold uppercase tracking-[0.15em] bg-orange-500/10 text-orange-400/80 border border-orange-500/15">
+                  <Lock className="h-2.5 w-2.5" />
+                  Locked
+                </span>
+              )}
+              <Link
+                href={`/forum/category/${thread.categoryId}`}
+                className="px-2 py-0.5 text-[9px] font-share-tech-mono font-bold uppercase tracking-[0.15em] bg-gx-red/10 text-gx-red/70 border border-gx-red/15 hover:text-gx-red hover:border-gx-red/30 transition-colors"
+              >
+                {thread.categoryName}
               </Link>
-              <p className="text-xs text-muted-foreground">{thread.createdAt}</p>
             </div>
-          </div>
 
-          <div className="prose prose-invert prose-sm max-w-none">
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words">
-              {renderCommentContent(thread.content)}
-            </p>
-          </div>
+            {/* Title */}
+            <h1 className="font-orbitron text-xl sm:text-2xl lg:text-[28px] font-bold text-white tracking-tight leading-tight">
+              {thread.title}
+            </h1>
+          </header>
 
-          {thread.gif && (
-            <div className="mt-4">
-              <GifDisplay gif={thread.gif} />
+          {/* ── Original Post ── */}
+          <article className="relative border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm overflow-hidden">
+            {/* Top accent bar */}
+            <div className="h-[2px] bg-gradient-to-r from-gx-red via-gx-red/40 to-transparent" />
+
+            <div className="p-5 sm:p-7">
+              {/* Author row */}
+              <div className="flex items-center gap-3 mb-6">
+                <Link href={`/u/${thread.userHandle}`} className="group/avatar flex-shrink-0">
+                  <div className="relative w-11 h-11 rounded-full overflow-hidden ring-2 ring-white/10 group-hover/avatar:ring-gx-red/40 transition-all">
+                    <Image
+                      src={thread.userAvatar}
+                      alt={thread.username}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                </Link>
+                <div>
+                  <Link
+                    href={`/u/${thread.userHandle}`}
+                    className="text-[13px] font-semibold text-white hover:text-gx-red transition-colors"
+                  >
+                    {thread.username}
+                  </Link>
+                  <div className="flex items-center gap-2 text-[10px] font-share-tech-mono text-white/25 uppercase tracking-wider mt-0.5">
+                    <span>{thread.createdAt}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="text-[14px] text-white/75 leading-[1.9] whitespace-pre-wrap break-words">
+                {renderCommentContent(thread.content)}
+              </div>
+
+              {thread.gif && (
+                <div className="mt-5">
+                  <GifDisplay gif={thread.gif} />
+                </div>
+              )}
+
+              {/* Stats footer */}
+              <div className="flex items-center gap-5 mt-8 pt-5 border-t border-white/[0.06]">
+                <div className="flex items-center gap-1.5 text-[11px] font-share-tech-mono text-white/30">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span className="text-white/50">{thread.replies}</span>
+                  <span className="uppercase tracking-wider">{t("shared.replies")}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-share-tech-mono text-white/30">
+                  <Eye className="h-3.5 w-3.5" />
+                  <span className="text-white/50">{thread.views.toLocaleString()}</span>
+                  <span className="uppercase tracking-wider">{t("shared.views")}</span>
+                </div>
+              </div>
             </div>
-          )}
+          </article>
 
-          <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <MessageSquare className="h-3 w-3" />
-              {thread.replies} {t("shared.replies")}
-            </span>
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {thread.views.toLocaleString()} {t("shared.views")}
-            </span>
-          </div>
-        </article>
+          {/* ── Comments Section ── */}
+          <section className="mt-10">
+            {/* Section divider */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-gx-red/40 to-transparent" />
+              <h2 className="font-orbitron text-[10px] font-bold uppercase tracking-[0.25em] text-white/40">
+                {t("forum.repliesSection")}
+                <span className="text-gx-red/60 ml-2">{thread.replies}</span>
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-l from-gx-red/40 to-transparent" />
+            </div>
 
-        {/* Comments */}
-        <section className="mt-8">
-          <h2 className="text-lg font-bold text-foreground mb-6">
-            {t("forum.repliesSection")} ({thread.replies})
-          </h2>
+            {comments.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-[12px] font-share-tech-mono text-white/20 uppercase tracking-wider">
+                  {t("forum.noReplies")}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/[0.04]">
+                {comments.map((comment) => (
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    threadId={thread.id}
+                    isLocked={thread.isLocked}
+                    currentUserId={currentUserId}
+                    userRole={userRole}
+                    likedCommentIds={likedCommentIds}
+                  />
+                ))}
+              </div>
+            )}
 
-          {comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              {t("forum.noReplies")}
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
+            {/* Reply form */}
+            {!thread.isLocked && (
+              <div className="mt-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                  <span className="font-orbitron text-[9px] font-bold uppercase tracking-[0.25em] text-white/25">
+                    Post Reply
+                  </span>
+                  <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
+                </div>
+                <CommentForm
                   threadId={thread.id}
-                  isLocked={thread.isLocked}
-                  currentUserId={currentUserId}
-                  userRole={userRole}
-                  likedCommentIds={likedCommentIds}
+                  placeholder={t("forum.replyPlaceholder")}
+                  onSuccess={() => router.refresh()}
                 />
-              ))}
-            </div>
-          )}
-
-          {/* Reply form */}
-          {!thread.isLocked && (
-            <div className="mt-8">
-              <CommentForm
-                threadId={thread.id}
-                placeholder={t("forum.replyPlaceholder")}
-                onSuccess={() => router.refresh()}
-              />
-            </div>
-          )}
-        </section>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

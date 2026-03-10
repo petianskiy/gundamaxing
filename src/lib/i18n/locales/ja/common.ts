@@ -32,4 +32,25 @@ export const common = {
   "shared.posted": "投稿日",
   "shared.joined": "参加日",
   "lang.toggle": "English",
+
+  // Toast
+  "toast.linkCopied": "リンクをコピーしました！",
+  "toast.deleted": "削除しました",
+  "toast.saved": "保存しました",
+  "toast.signInRequired": "ログインが必要です",
+  "toast.somethingWentWrong": "エラーが発生しました",
+
+  // Confirmations
+  "confirm.deleteCannotUndo": "本当に削除しますか？この操作は取り消せません。",
+  "confirm.deleteComment": "このコメントを削除しますか？",
+
+  // Empty states
+  "empty.noBookmarks": "ブックマークはまだありません",
+  "empty.allCaughtUp": "すべて確認済みです！",
+  "empty.noNotifications": "通知はまだありません。何かあればお知らせします。",
+  "empty.privateProfile": "このプロフィールは非公開です。",
+  "empty.privateHangar": "このビルダーのハンガーは非公開です。",
+
+  // Portfolio
+  "nav.portfolio": "マイポートフォリオ",
 } as const;

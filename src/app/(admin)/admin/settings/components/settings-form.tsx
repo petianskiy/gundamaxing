@@ -1,11 +1,25 @@
 "use client";
 
-import { useTransition, useState, useRef } from "react";
-import { updateSetting, addProfanityWord, removeProfanityWord } from "@/lib/actions/admin-settings";
+import { useTransition, useState } from "react";
+import { updateSetting, addProfanityWord, removeProfanityWord, createOrUpdateMission } from "@/lib/actions/admin-settings";
 import { X } from "lucide-react";
+import Link from "next/link";
+
+interface MissionData {
+  id: string;
+  title: string;
+  description: string;
+  rules: string | null;
+  prizes: string | null;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  submissionCount: number;
+}
 
 interface SettingsFormProps {
   initialSettings: Record<string, string>;
+  mission: MissionData | null;
 }
 
 function SuccessFlash({ show }: { show: boolean }) {
@@ -17,7 +31,7 @@ function SuccessFlash({ show }: { show: boolean }) {
   );
 }
 
-export function SettingsForm({ initialSettings }: SettingsFormProps) {
+export function SettingsForm({ initialSettings, mission }: SettingsFormProps) {
   const [isPending, startTransition] = useTransition();
   const [flash, setFlash] = useState<string | null>(null);
   const [newWord, setNewWord] = useState("");
@@ -28,6 +42,15 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
       return [];
     }
   });
+
+  // Mission state
+  const [mTitle, setMTitle] = useState(mission?.title ?? "");
+  const [mDesc, setMDesc] = useState(mission?.description ?? "");
+  const [mRules, setMRules] = useState(mission?.rules ?? "");
+  const [mPrizes, setMPrizes] = useState(mission?.prizes ?? "");
+  const [mStart, setMStart] = useState(mission?.startDate ?? "");
+  const [mEnd, setMEnd] = useState(mission?.endDate ?? "");
+  const [mActive, setMActive] = useState(mission?.isActive ?? false);
 
   const showFlash = (key: string) => {
     setFlash(key);
@@ -69,6 +92,23 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
         setWords((prev) => prev.filter((w) => w !== word));
         showFlash("profanity_custom_words");
       }
+    });
+  };
+
+  const handleSaveMission = () => {
+    const formData = new FormData();
+    if (mission?.id) formData.set("missionId", mission.id);
+    formData.set("missionTitle", mTitle);
+    formData.set("missionDescription", mDesc);
+    formData.set("missionRules", mRules);
+    formData.set("missionPrizes", mPrizes);
+    formData.set("missionStartDate", mStart);
+    formData.set("missionEndDate", mEnd);
+    formData.set("missionActive", mActive ? "true" : "false");
+
+    startTransition(async () => {
+      const result = await createOrUpdateMission(formData);
+      if (result.success) showFlash("mission");
     });
   };
 
@@ -150,6 +190,114 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
               <SuccessFlash show={flash === "maintenance_mode"} />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Monthly Mission */}
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <h2 className="text-lg font-bold text-foreground tracking-wide mb-4">
+          Monthly Mission
+          <SuccessFlash show={flash === "mission"} />
+        </h2>
+        {mission && (
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+            <span>{mission.submissionCount} submissions</span>
+            <Link
+              href="/admin/missions"
+              className="text-gx-gold hover:underline"
+            >
+              Manage Submissions & Winner →
+            </Link>
+          </div>
+        )}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Title</label>
+            <input
+              type="text"
+              value={mTitle}
+              onChange={(e) => setMTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50"
+              placeholder="e.g. Weathering Challenge"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+            <textarea
+              value={mDesc}
+              onChange={(e) => setMDesc(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50 resize-none"
+              placeholder="Describe the mission challenge"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Rules & Criteria</label>
+            <textarea
+              value={mRules}
+              onChange={(e) => setMRules(e.target.value)}
+              rows={5}
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50 resize-none"
+              placeholder="Detailed rules, criteria, and requirements"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Prizes</label>
+            <textarea
+              value={mPrizes}
+              onChange={(e) => setMPrizes(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50 resize-none"
+              placeholder="Prize description for winners"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Start Date</label>
+              <input
+                type="datetime-local"
+                value={mStart}
+                onChange={(e) => setMStart(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">End Date</label>
+              <input
+                type="datetime-local"
+                value={mEnd}
+                onChange={(e) => setMEnd(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border/50 bg-card text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-gx-gold/50"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Active</p>
+              <p className="text-xs text-muted-foreground">Make this mission visible on the forum</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMActive(!mActive)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                mActive ? "bg-green-500" : "bg-zinc-600"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  mActive ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={isPending || !mTitle || !mStart || !mEnd}
+            onClick={handleSaveMission}
+            className="px-4 py-2 rounded-lg bg-gx-gold/15 text-gx-gold text-sm font-medium hover:bg-gx-gold/25 transition-colors disabled:opacity-50"
+          >
+            {mission ? "Update Mission" : "Create Mission"}
+          </button>
         </div>
       </div>
 

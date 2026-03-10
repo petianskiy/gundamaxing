@@ -1,22 +1,19 @@
-import Image from "next/image";
 import { getBuilds } from "@/lib/data/builds";
 import { BuildsFeed } from "./builds-feed";
+
+export const metadata = {
+  title: "Builds | Gundamaxing",
+  description: "Browse custom Gunpla builds from the community — filter by grade, technique, and more.",
+};
 
 export default async function BuildsPage() {
   const builds = await getBuilds();
   return (
     <div className="relative min-h-screen">
-      {/* Fixed background — wrapper handles position so Image stays stable */}
-      <div className="fixed inset-0 -z-20">
-        <Image
-          src="/images/builds-bg.jpg"
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-          unoptimized
-        />
-      </div>
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/builds-bg.jpg')" }}
+      />
       <div className="fixed inset-0 -z-10 bg-black/60" />
       <BuildsFeed builds={builds} />
     </div>

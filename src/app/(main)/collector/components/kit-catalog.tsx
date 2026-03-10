@@ -85,7 +85,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Hero */}
-        <div className="text-center mb-10">
+        <div className="animate-page-header text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-3">
             <BookOpen className="h-5 w-5 text-gx-red" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
@@ -101,7 +101,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
         </div>
 
         {/* Filters */}
-        <div className="space-y-3 md:space-y-0 md:flex md:gap-3 mb-8">
+        <div className="animate-page-content space-y-3 md:space-y-0 md:flex md:gap-3 mb-8">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -115,7 +115,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
           </div>
 
           {/* Dropdowns row — side by side on mobile, inline on md+ */}
-          <div className="grid grid-cols-3 gap-2 md:contents">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:contents">
             {/* Grade filter */}
             <select
               value={gradeFilter}
@@ -159,6 +159,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
         </div>
 
         {/* Grid */}
+        <div className="animate-page-grid">
         {paginatedKits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <BookOpen className="h-16 w-16 mb-6 opacity-20" />
@@ -214,6 +215,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

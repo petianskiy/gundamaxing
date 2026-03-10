@@ -1,9 +1,27 @@
 import { getAllSettings } from "@/lib/data/settings";
+import { getAdminMission } from "@/lib/data/missions";
 import { Settings2 } from "lucide-react";
 import { SettingsForm } from "./components/settings-form";
 
 export default async function AdminSettingsPage() {
-  const settings = await getAllSettings();
+  const [settings, mission] = await Promise.all([
+    getAllSettings(),
+    getAdminMission(),
+  ]);
+
+  const missionData = mission
+    ? {
+        id: mission.id,
+        title: mission.title,
+        description: mission.description,
+        rules: mission.rules ?? null,
+        prizes: mission.prizes ?? null,
+        startDate: mission.startDate.toISOString().slice(0, 16),
+        endDate: mission.endDate.toISOString().slice(0, 16),
+        isActive: mission.isActive,
+        submissionCount: mission._count.submissions,
+      }
+    : null;
 
   return (
     <div className="space-y-8">
@@ -20,7 +38,7 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      <SettingsForm initialSettings={settings} />
+      <SettingsForm initialSettings={settings} mission={missionData} />
     </div>
   );
 }

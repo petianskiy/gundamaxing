@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, MessageCircle, GitFork, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/context";
 import { GradeBadge } from "@/components/ui/grade-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
 import type { Grade } from "@/lib/types";
@@ -49,6 +50,7 @@ export function BuildGallery({
   builds: Build[];
   userHandle: string;
 }) {
+  const { t } = useTranslation();
   const [gradeFilter, setGradeFilter] = useState<string | null>(null);
   const [techniqueFilter, setTechniqueFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>("newest");
@@ -92,11 +94,11 @@ export function BuildGallery({
     return (
       <section className="rounded-xl border border-border/50 bg-card p-8 text-center">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">
-          Build Gallery
+          {t("builds.gallery.title")}
         </h2>
         <div className="py-8">
           <p className="text-muted-foreground">
-            No builds yet. The hangar is empty.
+            {t("builds.gallery.empty")}
           </p>
         </div>
       </section>
@@ -107,7 +109,7 @@ export function BuildGallery({
     <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-          Build Gallery
+          {t("builds.gallery.title")}
         </h2>
         <div className="flex items-center gap-2">
           <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -116,9 +118,9 @@ export function BuildGallery({
             onChange={(e) => setSort(e.target.value as SortOption)}
             className="px-2 py-1 rounded-lg border border-border/50 bg-muted/30 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-gx-red/50"
           >
-            <option value="newest">Newest</option>
-            <option value="popular">Popular</option>
-            <option value="most-liked">Most Liked</option>
+            <option value="newest">{t("builds.sort.newest")}</option>
+            <option value="popular">{t("builds.sort.popular")}</option>
+            <option value="most-liked">{t("builds.sort.mostLiked")}</option>
           </select>
         </div>
       </div>
@@ -247,7 +249,7 @@ export function BuildGallery({
       {filtered.length === 0 && builds.length > 0 && (
         <div className="rounded-xl border border-border/50 bg-card p-8 text-center mt-4">
           <p className="text-sm text-muted-foreground">
-            No builds match the current filters.
+            {t("builds.gallery.noMatch")}
           </p>
           <button
             onClick={() => {
@@ -256,7 +258,7 @@ export function BuildGallery({
             }}
             className="mt-2 text-xs text-gx-red hover:text-red-400 transition-colors"
           >
-            Clear filters
+            {t("builds.gallery.clearFilters")}
           </button>
         </div>
       )}

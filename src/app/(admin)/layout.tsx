@@ -11,6 +11,7 @@ import {
   FileText,
   Tags,
   Settings2,
+  Target,
 } from "lucide-react";
 
 const adminNav = [
@@ -21,6 +22,7 @@ const adminNav = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/roles", label: "Roles", icon: Tags },
   { href: "/admin/events", label: "Events", icon: Activity },
+  { href: "/admin/missions", label: "Missions", icon: Target },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ];
 

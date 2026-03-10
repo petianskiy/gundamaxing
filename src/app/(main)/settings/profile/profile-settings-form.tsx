@@ -287,8 +287,8 @@ export function ProfileSettingsForm({
             maxLength={24}
             hint={
               canChangeUsername
-                ? "You can change your username once every 3 months. Choose carefully."
-                : `You can change your username again on ${nextChangeDate?.toLocaleDateString()}.`
+                ? t("settings.profile.usernameChangeHint")
+                : t("settings.profile.usernameNextChange").replace("{{date}}", nextChangeDate?.toLocaleDateString() ?? "")
             }
           />
           {usernameError && (
@@ -298,7 +298,7 @@ export function ProfileSettingsForm({
             <div className="flex items-start gap-3">
               <div className="flex items-center gap-1.5 text-amber-400 text-xs shrink-0 mt-0.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                <span>This will change your profile URL.</span>
+                <span>{t("settings.profile.urlChangeWarning")}</span>
               </div>
               <Button
                 type="button"
@@ -314,12 +314,12 @@ export function ProfileSettingsForm({
                     setUsernameError(result.error);
                   } else {
                     setForm((prev) => ({ ...prev, username: newUsername }));
-                    toast.success("Username changed successfully.");
+                    toast.success(t("settings.profile.usernameChanged"));
                     await updateSession();
                   }
                 }}
               >
-                {usernameLoading ? "Saving..." : "Change Username"}
+                {usernameLoading ? t("settings.saving") : t("settings.profile.changeUsername")}
               </Button>
             </div>
           )}

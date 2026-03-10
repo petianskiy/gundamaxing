@@ -135,6 +135,9 @@ export interface ForumCategory {
   postCount: number;
   lastActivity: string;
   color: string;
+  image: string | null;
+  childCount: number;
+  children?: ForumCategory[];
 }
 
 export interface GifAttachment {
@@ -487,10 +490,49 @@ export interface ForumRecentActivity {
   createdAt: string;
 }
 
-export interface ForumStats {
-  totalThreads: number;
-  totalPosts: number;
-  totalPilots: number;
+export interface MonthlyMissionUI {
+  id: string;
+  title: string;
+  description: string;
+  rules: string | null;
+  prizes: string | null;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  submissionCount: number;
+  winnerId: string | null;
+  winnerUsername: string | null;
+  winnerSubmissionTitle: string | null;
+}
+
+export interface MissionSubmissionUI {
+  id: string;
+  missionId: string;
+  userId: string;
+  username: string;
+  userAvatar: string | null;
+  title: string;
+  description: string;
+  images: string[];
+  videoUrl: string | null;
+  isWinner: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminMissionSubmissionUI {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatar: string | null;
+  userEmail: string;
+  title: string;
+  description: string;
+  images: string[];
+  videoUrl: string | null;
+  isWinner: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Achievements & Levels ──────────────────────────────────

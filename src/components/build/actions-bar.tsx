@@ -66,7 +66,7 @@ export function ActionsBar({
 
   const handleLike = () => {
     if (!currentUserId) {
-      toast.error("Sign in to like builds");
+      toast.error(t("builds.toast.signInToLike"));
       return;
     }
     // Optimistic update
@@ -85,7 +85,7 @@ export function ActionsBar({
 
   const handleBookmark = () => {
     if (!currentUserId) {
-      toast.error("Sign in to bookmark builds");
+      toast.error(t("builds.toast.signInToBookmark"));
       return;
     }
     // Optimistic update
@@ -110,17 +110,17 @@ export function ActionsBar({
       } catch {
         // User cancelled or share failed, try clipboard
         await navigator.clipboard.writeText(url);
-        toast.success("Link copied!");
+        toast.success(t("builds.toast.linkCopied"));
       }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success("Link copied!");
+      toast.success(t("builds.toast.linkCopied"));
     }
   };
 
   const handleFork = () => {
     if (!currentUserId) {
-      toast.error("Sign in to fork builds");
+      toast.error(t("builds.toast.signInToFork"));
       return;
     }
     setIsForking(true);
@@ -130,14 +130,14 @@ export function ActionsBar({
       if ("error" in result) {
         toast.error(result.error);
       } else if (result.slug) {
-        toast.success("Build forked!");
+        toast.success(t("builds.toast.buildForked"));
         router.push(`/builds/${result.slug}/edit`);
       }
     });
   };
 
   const handleDelete = () => {
-    if (!confirm("Are you sure you want to delete this build? This cannot be undone.")) return;
+    if (!confirm(t("builds.confirm.deleteBuild"))) return;
     setIsDeleting(true);
     startTransition(async () => {
       const result = await deleteBuild(buildId);
@@ -145,7 +145,7 @@ export function ActionsBar({
       if ("error" in result) {
         toast.error(result.error);
       } else {
-        toast.success("Build deleted");
+        toast.success(t("builds.toast.buildDeleted"));
         router.push("/builds");
       }
     });
@@ -190,7 +190,7 @@ export function ActionsBar({
         className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground opacity-50 cursor-not-allowed"
       >
         <GitFork className="h-4 w-4" />
-        <span className="hidden sm:inline">Coming Soon</span>
+        <span className="hidden sm:inline">{t("builds.showcase.comingSoonLabel")}</span>
         <span className="text-xs">{formatCount(forkCount)}</span>
       </button>
 
@@ -224,7 +224,7 @@ export function ActionsBar({
             >
               <LayoutDashboard className={cn("h-4 w-4", isCreatingShowcase && "animate-spin")} />
               <span className="hidden sm:inline">
-                {isCreatingShowcase ? "Creating..." : "Create Showcase"}
+                {isCreatingShowcase ? t("builds.showcase.creating") : t("builds.showcase.createLabel")}
               </span>
             </button>
           )}
@@ -233,7 +233,7 @@ export function ActionsBar({
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <Pencil className="h-4 w-4" />
-            <span className="hidden sm:inline">Edit</span>
+            <span className="hidden sm:inline">{t("builds.showcase.editLabel")}</span>
           </Link>
           <button
             onClick={handleDelete}
@@ -241,7 +241,7 @@ export function ActionsBar({
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
           >
             <Trash2 className={cn("h-4 w-4", isDeleting && "animate-spin")} />
-            <span className="hidden sm:inline">{isDeleting ? "Deleting..." : "Delete"}</span>
+            <span className="hidden sm:inline">{isDeleting ? t("builds.showcase.deleting") : t("builds.showcase.deleteLabel")}</span>
           </button>
         </div>
       )}
