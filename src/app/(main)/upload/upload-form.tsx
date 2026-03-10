@@ -28,12 +28,14 @@ function CollapsibleSection({
   description,
   icon: Icon,
   defaultOpen = false,
+  badge,
   children,
 }: {
   title: string;
   description: string;
   icon: React.ElementType;
   defaultOpen?: boolean;
+  badge?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -47,7 +49,14 @@ function CollapsibleSection({
         <div className="flex items-center gap-3">
           <Icon className="h-5 w-5 text-muted-foreground" />
           <div>
-            <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+              {badge && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground/60">
+                  {badge}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
           </div>
         </div>
@@ -79,16 +88,23 @@ function CollapsibleSection({
 function FormField({
   label,
   helper,
+  required,
   children,
 }: {
   label: string;
   helper?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
         {label}
+        {required ? (
+          <span className="text-gx-red ml-1">*</span>
+        ) : (
+          <span className="ml-1.5 text-[10px] font-normal normal-case tracking-normal text-muted-foreground/40">optional</span>
+        )}
       </label>
       {helper && <p className="text-[11px] text-muted-foreground/60 mb-2">{helper}</p>}
       {children}
@@ -289,7 +305,7 @@ export function UploadForm() {
             defaultOpen={true}
           >
             <div className="space-y-4">
-              <FormField label={t("upload.buildTitle")}>
+              <FormField label={t("upload.buildTitle")} required>
                 <input
                   type="text"
                   placeholder={t("upload.buildTitlePlaceholder")}
@@ -299,7 +315,7 @@ export function UploadForm() {
                 />
               </FormField>
 
-              <FormField label={t("upload.kitName")}>
+              <FormField label={t("upload.kitName")} required>
                 <input
                   type="text"
                   placeholder={t("upload.kitNamePlaceholder")}
@@ -310,7 +326,7 @@ export function UploadForm() {
               </FormField>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label={t("upload.grade")}>
+                <FormField label={t("upload.grade")} required>
                   <select
                     className={selectClass}
                     value={grade}
@@ -369,7 +385,7 @@ export function UploadForm() {
                 </div>
               </FormField>
 
-              <FormField label={t("upload.photos")}>
+              <FormField label={t("upload.photos")} required>
                 {/* Drop zone */}
                 <div
                   onDrop={handleDrop}
@@ -467,6 +483,7 @@ export function UploadForm() {
             title={t("upload.techniquesMaterials")}
             description={t("upload.techniquesMaterialsDesc")}
             icon={Paintbrush}
+            badge="Optional"
           >
             <div className="space-y-4">
               <FormField label={t("upload.techniques")} helper={t("upload.techniquesHelper")}>
@@ -515,6 +532,7 @@ export function UploadForm() {
             title={t("upload.advancedDetailing")}
             description={t("upload.advancedDetailingDesc")}
             icon={Wrench}
+            badge="Optional"
           >
             <div className="space-y-4">
               <FormField label={t("upload.scribing")} helper={t("upload.scribingHelper")}>
@@ -544,6 +562,7 @@ export function UploadForm() {
             title={t("upload.buildContext")}
             description={t("upload.buildContextDesc")}
             icon={FileText}
+            badge="Optional"
           >
             <div className="space-y-4">
               <FormField label={t("upload.toolsUsed")} helper={t("upload.toolsHelper")}>

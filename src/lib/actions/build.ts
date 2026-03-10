@@ -23,7 +23,7 @@ const buildSchema = z.object({
   timeInvested: z.string().optional(),
   tools: z.array(z.string()).optional(),
   intentStatement: z.string().max(1000).optional(),
-  imageUrls: z.array(z.string().url()).min(1).max(25),
+  imageUrls: z.array(z.string().min(1)).min(1).max(25),
   primaryIndex: z.number().int().min(0).optional(),
 });
 
@@ -112,6 +112,17 @@ export async function createBuild(formData: FormData) {
     const parsed = buildSchema.safeParse(raw);
     if (!parsed.success) {
       console.error("Build validation errors:", parsed.error.issues);
+      const missing: string[] = [];
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (field === "title") missing.push("Title");
+        else if (field === "kitName") missing.push("Kit Name");
+        else if (field === "grade") missing.push("Grade");
+        else if (field === "imageUrls") missing.push("Photos");
+      }
+      if (missing.length > 0) {
+        return { error: `Please fill in the required fields: ${missing.join(", ")}` };
+      }
       return { error: "Invalid build data. Please check all required fields." };
     }
 
