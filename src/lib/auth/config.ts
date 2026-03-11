@@ -12,6 +12,24 @@ import { logEvent } from "@/lib/data/events";
 // Custom adapter: wraps PrismaAdapter to handle OAuth user creation
 // ---------------------------------------------------------------------------
 
+// Retry helper for Neon serverless cold starts and transient DB errors
+async function withRetry<T>(fn: () => Promise<T>, label: string, retries = 2): Promise<T> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt < retries) {
+        const delay = 250 * (attempt + 1);
+        console.warn(`[auth] ${label} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms:`, (err as Error).message);
+        await new Promise(r => setTimeout(r, delay));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error("unreachable");
+}
+
 function createAdapter() {
   const base = PrismaAdapter(db);
 
@@ -53,6 +71,32 @@ function createAdapter() {
 
   return {
     ...base,
+
+    // Override all user-returning methods so auth.js always gets correct
+    // field names (name/image instead of displayName/avatar) and DB queries
+    // are retried on transient Neon cold-start failures.
+    async getUser(id: string) {
+      return withRetry(async () => {
+        const user = await db.user.findUnique({ where: { id }, select: USER_SELECT });
+        return user ? toAdapterUser(user) : null;
+      }, "getUser");
+    },
+    async getUserByEmail(email: string) {
+      return withRetry(async () => {
+        const user = await db.user.findUnique({ where: { email }, select: USER_SELECT });
+        return user ? toAdapterUser(user) : null;
+      }, "getUserByEmail");
+    },
+    async getUserByAccount({ provider, providerAccountId }: { provider: string; providerAccountId: string }) {
+      return withRetry(async () => {
+        const account = await db.account.findUnique({
+          where: { provider_providerAccountId: { provider, providerAccountId } },
+          select: { user: { select: USER_SELECT } },
+        });
+        return account?.user ? toAdapterUser(account.user) : null;
+      }, "getUserByAccount");
+    },
+
     async createUser(data: { name?: string | null; email: string; emailVerified?: Date | null; image?: string | null }) {
       // For Discord users without verified email, generate a unique placeholder
       // to avoid unique constraint violations on the email column
@@ -157,20 +201,21 @@ function createAdapter() {
       return toAdapterUser(user);
     },
     async linkAccount(account: any) {
-      try {
-        const result = await base.linkAccount!(account);
-        console.log(`[auth] linked_account: provider=${account.provider}, userId=${account.userId}`);
-        return result;
-      } catch (err: any) {
-        // If this provider account is already linked (from a previous partial attempt),
-        // treat it as success rather than failing the entire sign-in flow
-        if (err?.code === "P2002") {
-          console.log(`[auth] account_already_linked: provider=${account.provider}, userId=${account.userId}`);
-          return;
+      return withRetry(async () => {
+        try {
+          const result = await base.linkAccount!(account);
+          console.log(`[auth] linked_account: provider=${account.provider}, userId=${account.userId}`);
+          return result;
+        } catch (err: any) {
+          // If this provider account is already linked (from a previous partial attempt),
+          // treat it as success rather than failing the entire sign-in flow
+          if (err?.code === "P2002") {
+            console.log(`[auth] account_already_linked: provider=${account.provider}, userId=${account.userId}`);
+            return;
+          }
+          throw err;
         }
-        console.error(`[auth] linkAccount failed: provider=${account.provider}, userId=${account.userId}`, err);
-        throw err;
-      }
+      }, `linkAccount(${account.provider})`);
     },
   } as NextAuthConfig["adapter"];
 }
@@ -311,6 +356,15 @@ const authConfig: NextAuthConfig = {
   },
   trustHost: true,
   providers,
+  logger: {
+    error(error) {
+      // Log actual error details to Vercel function logs for debugging OAuth issues
+      console.error("[auth] AUTH_ERROR:", error.name, error.message, error.cause ? `cause=${JSON.stringify(error.cause)}` : "");
+    },
+    warn(code) {
+      console.warn("[auth] AUTH_WARN:", code);
+    },
+  },
   callbacks: {
     async signIn({ user, account }) {
       if (user.id) {

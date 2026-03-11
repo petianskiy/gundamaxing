@@ -17,7 +17,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   OAuthCallback: "Sign-in was interrupted. Please try again.",
   Callback: "An error occurred during sign-in. Please try again.",
   Default: "An error occurred during sign-in. Please try again.",
-  Configuration: "There is a server configuration issue. Please try again later.",
+  Configuration: "Sign-in didn't go through. Please try again — it usually works on the next attempt.",
   Verification: "The sign-in link has expired. Please request a new one.",
   CredentialsSignin: "Invalid credentials. Check your email/username and password.",
   SessionRequired: "Please sign in to access this page.",
@@ -54,6 +54,8 @@ function LoginForm() {
       router.replace(`/hangar/${session.user.username}`);
     }
   }, [status, session, router]);
+
+  const isTransientError = searchParams.get("error") === "Configuration" || searchParams.get("error") === "OAuthCallback";
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -140,6 +142,28 @@ function LoginForm() {
                   >
                     Resend verification email
                   </Link>
+                )}
+                {isTransientError && (
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOAuth("google")}
+                      className="text-xs"
+                    >
+                      Retry with Google
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOAuth("discord")}
+                      className="text-xs"
+                    >
+                      Retry with Discord
+                    </Button>
+                  </div>
                 )}
               </>
             )}
