@@ -31,7 +31,7 @@ interface DomeGalleryProps {
 }
 
 const DEFAULTS = {
-  maxVerticalRotationDeg: 5,
+  maxVerticalRotationDeg: 80,
   dragSensitivity: 20,
   enlargeTransitionMs: 300,
   segments: 35,
@@ -61,8 +61,9 @@ interface ItemCoord {
 
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
   const xCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
-  const evenYs = [-4, -2, 0, 2, 4];
-  const oddYs = [-3, -1, 1, 3, 5];
+  // Full sphere coverage: Y from -18 to +18 in steps of 2 (covers top to bottom)
+  const evenYs = Array.from({ length: 19 }, (_, i) => -18 + i * 2);
+  const oddYs = Array.from({ length: 19 }, (_, i) => -17 + i * 2);
 
   const coords = xCols.flatMap((x, c) => {
     const ys = c % 2 === 0 ? evenYs : oddYs;
@@ -554,11 +555,6 @@ export default function DomeGallery({
             ))}
           </div>
         </div>
-
-        <div className="overlay" />
-        <div className="overlay overlay--blur" />
-        <div className="edge-fade edge-fade--top" />
-        <div className="edge-fade edge-fade--bottom" />
 
         <div className="viewer" ref={viewerRef}>
           <div ref={scrimRef} className="scrim" />
