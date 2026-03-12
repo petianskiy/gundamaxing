@@ -24,6 +24,7 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
   const [rotationInput, setRotationInput] = useState(String(element.rotation));
   const [showCrop, setShowCrop] = useState(false);
   const [showBgRemoval, setShowBgRemoval] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const { upload } = useR2Upload({ type: "image" });
 
   const handleRotationSlider = useCallback((rawVal: number) => {
@@ -56,19 +57,40 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
   }, [onUpdate]);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-4 sm:left-4 z-[500] w-full sm:w-64 bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
-        <h3 className="text-sm font-semibold text-white capitalize">{element.type} Properties</h3>
+    <div className={cn(
+      "fixed z-[500] bg-zinc-900 shadow-2xl overflow-hidden transition-all duration-200",
+      // Desktop: sidebar
+      "sm:inset-auto sm:top-4 sm:left-4 sm:w-64 sm:border sm:border-zinc-700 sm:rounded-xl",
+      // Mobile: bottom sheet, collapsed = thin tab, expanded = half screen
+      "inset-x-0 bottom-16 sm:bottom-auto border-t border-zinc-700 rounded-t-xl",
+      !mobileExpanded && "sm:max-h-none max-h-12"
+    )}>
+      {/* Mobile: collapsed tab bar — always visible, tap to expand/collapse */}
+      <div
+        className={cn(
+          "flex items-center justify-between px-4 py-3 border-b border-zinc-700",
+          "sm:cursor-default cursor-pointer"
+        )}
+        onClick={() => setMobileExpanded((v) => !v)}
+      >
+        <div className="flex items-center gap-2">
+          {/* Mobile drag indicator */}
+          <div className="sm:hidden w-8 h-1 rounded-full bg-zinc-600 mx-auto absolute left-1/2 -translate-x-1/2 -top-0.5" />
+          <h3 className="text-sm font-semibold text-white capitalize">{element.type} Properties</h3>
+        </div>
         <div className="flex items-center gap-1.5">
-          <button onClick={onDelete} className="text-zinc-400 hover:text-red-400 transition-colors" title="Delete element">
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-zinc-400 hover:text-red-400 transition-colors" title="Delete element">
             <Trash2 className="h-4 w-4" />
           </button>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-zinc-400 hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
-      <div className="p-4 space-y-3 max-h-[50vh] sm:max-h-[80vh] overflow-y-auto">
+      <div className={cn(
+        "p-4 space-y-3 sm:max-h-[80vh] overflow-y-auto",
+        mobileExpanded ? "max-h-[45vh]" : "max-h-0 sm:max-h-[80vh] p-0 sm:p-4"
+      )}>
         {/* Common: Rotation — full 360° with snap */}
         <div>
           <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">

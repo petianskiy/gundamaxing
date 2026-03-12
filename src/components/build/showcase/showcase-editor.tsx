@@ -451,6 +451,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
       dispatch({ type: "BEGIN_BATCH" });
       setIsInteracting(true);
+      setActivePanel(null); // Close side panels during drag
       dragRef.current = {
         elementIds: dragIds,
         startX: e.clientX,
@@ -472,6 +473,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       if (!el) return;
       dispatch({ type: "BEGIN_BATCH" });
       setIsInteracting(true);
+      setActivePanel(null); // Close side panels during resize
       resizeRef.current = {
         elementId,
         handle,
@@ -1518,7 +1520,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         )}
       </div>
 
-      {/* Element properties panel — hidden on mobile during drag/resize */}
+      {/* Element properties panel — fully hidden during drag/resize */}
       {selectedElement && !isInteracting && (
         <ElementPropsPanel
           element={selectedElement}
@@ -1530,8 +1532,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         />
       )}
 
-      {/* Group / Ungroup toolbar — shown when multiple items selected */}
-      {selectedIds.length > 1 && (
+      {/* Group / Ungroup toolbar — shown when multiple items selected, hidden during drag */}
+      {selectedIds.length > 1 && !isInteracting && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl">
           <span className="text-xs text-zinc-400">
             {selectedIds.length} selected
@@ -1638,7 +1640,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         className="hidden"
       />
 
-      {/* Dock */}
+      {/* Dock — hidden during active drag/resize on mobile to prevent obstruction */}
+      <div className={isInteracting ? "pointer-events-none opacity-0 transition-opacity sm:pointer-events-auto sm:opacity-100" : "transition-opacity"}>
       <ShowcaseDock
         onAddImage={() => setActivePanel(activePanel === "images" ? null : "images")}
         onAddText={addText}
@@ -1669,6 +1672,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         videoCount={videoCount}
         maxVideos={MAX_VIDEOS}
       />
+      </div>
 
       {/* Editor guide overlay (manual trigger) */}
       {showEditorGuide && (
