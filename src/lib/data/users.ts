@@ -62,6 +62,7 @@ export const getUserSettingsData = cache(async (userId: string) => {
       hangarTheme: true,
       hangarLayout: true,
       manifesto: true,
+      domeSettings: true,
       xp: true,
       level: true,
       isProfilePrivate: true,

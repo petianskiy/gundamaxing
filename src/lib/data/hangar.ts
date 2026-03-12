@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { buildInclude, toUIBuild } from "@/lib/data/builds";
-import type { HangarData, HangarUser, BuildEra, HangarTheme, HangarLayout } from "@/lib/types";
+import type { HangarData, HangarUser, BuildEra, HangarTheme, HangarLayout, DomeGallerySettings } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -92,6 +92,7 @@ export const getHangarByUsername = cache(async (username: string): Promise<Hanga
     hangarTheme: user.hangarTheme as HangarTheme,
     hangarLayout: user.hangarLayout as HangarLayout,
     manifesto: user.manifesto,
+    domeSettings: (user.domeSettings as DomeGallerySettings) ?? null,
     socialLinks: (user.socialLinks as Record<string, string>) ?? {},
     isProfilePrivate: user.isProfilePrivate,
     skillLevel: user.skillLevel,

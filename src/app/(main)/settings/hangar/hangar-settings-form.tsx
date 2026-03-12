@@ -29,6 +29,13 @@ interface BuildItem {
   thumbnail: string | null;
 }
 
+interface DomeSettings {
+  density: "low" | "medium" | "high";
+  autoSpin: boolean;
+  spinSpeed: number;
+  grayscale: boolean;
+}
+
 interface HangarFormData {
   hangarTheme: string;
   hangarLayout: string;
@@ -36,6 +43,7 @@ interface HangarFormData {
   accentColor: string;
   pinnedBuildIds: string[];
   featuredBuildId: string | null;
+  domeSettings: DomeSettings;
 }
 
 interface HangarSettingsFormProps {
@@ -261,6 +269,125 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
             })}
           </div>
         </section>
+
+        {/* ── Section: Dome Gallery Settings ────────────────────────── */}
+        {form.hangarLayout === "DOME_GALLERY" && (
+          <section className="space-y-3">
+            <div className="flex items-center gap-2">
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                Dome Gallery Settings
+              </label>
+              <SavingIndicator field="domeSettings" />
+            </div>
+            <p className="text-xs text-muted-foreground/60">
+              Customize how your 3D sphere gallery looks and behaves
+            </p>
+
+            {/* Density */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Tile Density</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["low", "medium", "high"] as const).map((d) => {
+                  const isActive = form.domeSettings.density === d;
+                  const labels = { low: "Sparse", medium: "Balanced", high: "Dense" };
+                  const descs = { low: "~80 tiles", medium: "~160 tiles", high: "~250 tiles" };
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        const next = { ...form.domeSettings, density: d };
+                        setForm((prev) => ({ ...prev, domeSettings: next }));
+                        autoSave({ domeSettings: next }, "domeSettings");
+                      }}
+                      className={cn(
+                        "p-2.5 rounded-lg border text-center transition-colors",
+                        isActive
+                          ? "border-gx-red bg-gx-red/5"
+                          : "border-border/50 bg-gx-surface hover:border-border"
+                      )}
+                    >
+                      <p className="text-sm font-medium text-foreground">{labels[d]}</p>
+                      <p className="text-[10px] text-muted-foreground">{descs[d]}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Auto-spin */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">Auto-spin</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = { ...form.domeSettings, autoSpin: !form.domeSettings.autoSpin };
+                    setForm((prev) => ({ ...prev, domeSettings: next }));
+                    autoSave({ domeSettings: next }, "domeSettings");
+                  }}
+                  className={cn(
+                    "relative w-9 h-5 rounded-full transition-colors",
+                    form.domeSettings.autoSpin ? "bg-gx-red" : "bg-border"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                      form.domeSettings.autoSpin ? "translate-x-4" : "translate-x-0.5"
+                    )}
+                  />
+                </button>
+              </div>
+              {form.domeSettings.autoSpin && (
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted-foreground w-8">Slow</span>
+                  <input
+                    type="range"
+                    min={0.2}
+                    max={3}
+                    step={0.1}
+                    value={form.domeSettings.spinSpeed}
+                    onChange={(e) => {
+                      const next = { ...form.domeSettings, spinSpeed: parseFloat(e.target.value) };
+                      setForm((prev) => ({ ...prev, domeSettings: next }));
+                      debouncedSave({ domeSettings: next }, "domeSettings");
+                    }}
+                    className="flex-1 accent-gx-red h-1"
+                  />
+                  <span className="text-[10px] text-muted-foreground w-8 text-right">Fast</span>
+                </div>
+              )}
+            </div>
+
+            {/* Grayscale */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Grayscale</label>
+                <p className="text-[10px] text-muted-foreground/60">Desaturate images on the sphere</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = { ...form.domeSettings, grayscale: !form.domeSettings.grayscale };
+                  setForm((prev) => ({ ...prev, domeSettings: next }));
+                  autoSave({ domeSettings: next }, "domeSettings");
+                }}
+                className={cn(
+                  "relative w-9 h-5 rounded-full transition-colors",
+                  form.domeSettings.grayscale ? "bg-gx-red" : "bg-border"
+                )}
+              >
+                <div
+                  className={cn(
+                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                    form.domeSettings.grayscale ? "translate-x-4" : "translate-x-0.5"
+                  )}
+                />
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* ── Section: Accent Color ────────────────────────────────── */}
         <section className="space-y-3">

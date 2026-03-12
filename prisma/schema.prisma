@@ -147,6 +147,7 @@ model User {
   hangarTheme  HangarTheme  @default(CYBER_BAY)
   hangarLayout HangarLayout @default(GALLERY)
   manifesto    String?      @db.Text
+  domeSettings Json?
 
   // Reputation & anti-spam
   reputation Int @default(0)

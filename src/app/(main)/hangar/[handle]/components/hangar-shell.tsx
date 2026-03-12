@@ -76,6 +76,7 @@ export function HangarShell({
               pinnedBuildIds={user.pinnedBuildIds}
               layout={user.hangarLayout}
               accentColor={accent}
+              domeSettings={user.domeSettings}
             />
           )}
         </div>

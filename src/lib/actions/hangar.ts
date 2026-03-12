@@ -10,6 +10,7 @@ export async function updateHangarSettings(data: {
   hangarLayout?: string;
   manifesto?: string;
   accentColor?: string;
+  domeSettings?: { density?: string; autoSpin?: boolean; spinSpeed?: number; grayscale?: boolean };
   pinnedBuildIds?: string[];
   featuredBuildId?: string | null;
 }) {
@@ -41,6 +42,9 @@ export async function updateHangarSettings(data: {
     }
     if (parsed.data.accentColor !== undefined) {
       updates.accentColor = parsed.data.accentColor;
+    }
+    if (parsed.data.domeSettings !== undefined) {
+      updates.domeSettings = parsed.data.domeSettings;
     }
     if (parsed.data.pinnedBuildIds !== undefined) {
       // Verify all build IDs belong to this user

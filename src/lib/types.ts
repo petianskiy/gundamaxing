@@ -214,6 +214,13 @@ export interface BuildEra {
   builds: Build[];
 }
 
+export interface DomeGallerySettings {
+  density?: "low" | "medium" | "high";
+  autoSpin?: boolean;
+  spinSpeed?: number;
+  grayscale?: boolean;
+}
+
 export interface HangarUser {
   id: string;
   username: string;
@@ -228,6 +235,7 @@ export interface HangarUser {
   hangarTheme: HangarTheme;
   hangarLayout: HangarLayout;
   manifesto: string | null;
+  domeSettings: DomeGallerySettings | null;
   socialLinks: Record<string, string>;
   isProfilePrivate: boolean;
   skillLevel: string | null;

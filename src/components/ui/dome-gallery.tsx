@@ -28,6 +28,7 @@ interface DomeGalleryProps {
   imageBorderRadius?: string;
   openedImageBorderRadius?: string;
   grayscale?: boolean;
+  autoRotateSpeed?: number;
 }
 
 const DEFAULTS = {
@@ -60,17 +61,28 @@ interface ItemCoord {
 }
 
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
-  const xCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
-  // Full sphere coverage: Y from -18 to +18 in steps of 2 (covers top to bottom)
-  const evenYs = Array.from({ length: 19 }, (_, i) => -18 + i * 2);
-  const oddYs = Array.from({ length: 19 }, (_, i) => -17 + i * 2);
+  const unit = 360 / seg / 2; // degrees per unit offset
+  const allXCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
+  // Y rows covering full sphere (-14 to +14 in steps of 2)
+  const yRows = Array.from({ length: 15 }, (_, i) => -14 + i * 2);
 
-  const coords = xCols.flatMap((x, c) => {
-    const ys = c % 2 === 0 ? evenYs : oddYs;
-    return ys.map((y) => ({ x, y, sizeX: 2, sizeY: 2 }));
-  });
+  const coords: { x: number; y: number; sizeX: number; sizeY: number }[] = [];
 
-  const totalSlots = coords.length;
+  for (const y of yRows) {
+    // Calculate latitude angle and reduce columns proportionally
+    const latDeg = Math.abs(unit * y);
+    const latRad = (latDeg * Math.PI) / 180;
+    const ratio = Math.max(0.1, Math.cos(latRad));
+    const colCount = Math.max(2, Math.round(allXCols.length * ratio));
+
+    // Evenly sample columns for this latitude row
+    const step = allXCols.length / colCount;
+    for (let i = 0; i < colCount; i++) {
+      const idx = Math.floor(i * step);
+      coords.push({ x: allXCols[idx], y, sizeX: 2, sizeY: 2 });
+    }
+  }
+
   if (pool.length === 0) {
     return coords.map((c) => ({ ...c, src: "", alt: "" }));
   }
@@ -81,7 +93,7 @@ function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
     href: img.href,
   }));
 
-  const used = Array.from({ length: totalSlots }, (_, i) => normalized[i % normalized.length]);
+  const used = Array.from({ length: coords.length }, (_, i) => normalized[i % normalized.length]);
 
   // Reduce consecutive duplicates
   for (let i = 1; i < used.length; i++) {
@@ -131,6 +143,7 @@ export default function DomeGallery({
   imageBorderRadius = "30px",
   openedImageBorderRadius = "30px",
   grayscale = true,
+  autoRotateSpeed = 0,
 }: DomeGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -214,6 +227,21 @@ export default function DomeGallery({
   useEffect(() => {
     applyTransform(rotationRef.current.x, rotationRef.current.y);
   }, []);
+
+  // Auto-rotate when idle
+  useEffect(() => {
+    if (!autoRotateSpeed || autoRotateSpeed <= 0) return;
+    let raf: number;
+    const step = () => {
+      if (!draggingRef.current && !focusedElRef.current && !inertiaRAF.current) {
+        rotationRef.current.y = wrapAngleSigned(rotationRef.current.y + autoRotateSpeed * 0.15);
+        applyTransform(rotationRef.current.x, rotationRef.current.y);
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [autoRotateSpeed]);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {

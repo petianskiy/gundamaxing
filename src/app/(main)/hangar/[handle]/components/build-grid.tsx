@@ -11,16 +11,17 @@ import { VerificationBadge } from "@/components/ui/verification-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
 import { BuildGridCard } from "./build-grid-card";
 import DomeGallery from "@/components/ui/dome-gallery";
-import type { Build, HangarLayout } from "@/lib/types";
+import type { Build, HangarLayout, DomeGallerySettings } from "@/lib/types";
 
 interface BuildGridProps {
   builds: Build[];
   pinnedBuildIds?: string[];
   layout?: HangarLayout;
   accentColor?: string;
+  domeSettings?: DomeGallerySettings | null;
 }
 
-export function BuildGrid({ builds, pinnedBuildIds = [], layout = "GALLERY", accentColor = "#dc2626" }: BuildGridProps) {
+export function BuildGrid({ builds, pinnedBuildIds = [], layout = "GALLERY", accentColor = "#dc2626", domeSettings }: BuildGridProps) {
   const { t } = useTranslation();
 
   const sortedBuilds = useMemo(() => {
@@ -48,7 +49,7 @@ export function BuildGrid({ builds, pinnedBuildIds = [], layout = "GALLERY", acc
   }
 
   if (layout === "DOME_GALLERY") {
-    return <DomeGalleryLayout builds={sortedBuilds} accentColor={accentColor} />;
+    return <DomeGalleryLayout builds={sortedBuilds} accentColor={accentColor} domeSettings={domeSettings} />;
   }
 
   if (layout === "STORY") {
@@ -83,7 +84,9 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
 
 /* ─── DOME GALLERY LAYOUT ────────────────────────────────────────── */
 
-function DomeGalleryLayout({ builds, accentColor }: { builds: Build[]; accentColor: string }) {
+const DENSITY_MAP = { low: 12, medium: 20, high: 30 } as const;
+
+function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Build[]; accentColor: string; domeSettings?: DomeGallerySettings | null }) {
   const images = useMemo(() => {
     return builds
       .map((build) => {
@@ -102,18 +105,24 @@ function DomeGalleryLayout({ builds, accentColor }: { builds: Build[]; accentCol
     );
   }
 
+  const density = domeSettings?.density || "medium";
+  const segments = DENSITY_MAP[density];
+  const grayscale = domeSettings?.grayscale ?? false;
+  const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
+
   return (
     <div className="relative w-full" style={{ height: "min(70vh, 600px)" }}>
       <DomeGallery
         images={images}
         overlayBlurColor="var(--background, #060010)"
-        grayscale={false}
-        segments={Math.min(35, Math.max(12, images.length * 3))}
+        grayscale={grayscale}
+        segments={segments}
         minRadius={300}
         fit={0.6}
         imageBorderRadius="12px"
         openedImageBorderRadius="16px"
         dragDampening={2}
+        autoRotateSpeed={autoRotateSpeed}
       />
     </div>
   );
