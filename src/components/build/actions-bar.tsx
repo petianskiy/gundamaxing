@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Heart,
   Bookmark,
   GitFork,
   Share2,
-  Pencil,
   LayoutDashboard,
   Trash2,
 } from "lucide-react";
@@ -228,13 +226,6 @@ export function ActionsBar({
               </span>
             </button>
           )}
-          <Link
-            href={`/builds/${buildSlug}/edit`}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("builds.showcase.editLabel")}</span>
-          </Link>
           <button
             onClick={handleDelete}
             disabled={isDeleting}

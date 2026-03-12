@@ -326,6 +326,57 @@ export async function updateBuild(formData: FormData) {
   }
 }
 
+export async function updateBuildInfo(data: {
+  buildId: string;
+  description?: string;
+  intentStatement?: string;
+  paintSystem?: string;
+  topcoat?: string;
+  timeInvested?: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "You must be signed in." };
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
+    const build = await db.build.findUnique({
+      where: { id: data.buildId },
+      select: { id: true, userId: true, slug: true },
+    });
+    if (!build) return { error: "Build not found." };
+    if (build.userId !== session.user.id) return { error: "Not authorized." };
+
+    // Profanity checks
+    if (data.description) {
+      const check = validateCleanContent(data.description, "Description");
+      if (check) return { error: check };
+    }
+    if (data.intentStatement) {
+      const check = validateCleanContent(data.intentStatement, "Intent statement");
+      if (check) return { error: check };
+    }
+
+    await db.build.update({
+      where: { id: data.buildId },
+      data: {
+        description: data.description ?? null,
+        intentStatement: data.intentStatement ?? null,
+        paintSystem: data.paintSystem ?? null,
+        topcoat: data.topcoat ?? null,
+        timeInvested: data.timeInvested ?? null,
+      },
+    });
+
+    revalidatePath(`/builds/${build.slug}`);
+    return { success: true };
+  } catch (error) {
+    console.error("updateBuildInfo error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
 export async function deleteBuild(buildId: string) {
   try {
     const session = await auth();

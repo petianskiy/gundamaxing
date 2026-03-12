@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, ChevronRight } from "lucide-react";
+import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -16,6 +16,8 @@ import { ShowcaseEditor } from "./showcase-editor";
 import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
+import { updateBuildInfo } from "@/lib/actions/build";
+import { toast } from "sonner";
 import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType } from "@/lib/types";
 
 const DEFAULT_LAYOUT: ShowcaseLayout = {
@@ -290,15 +292,60 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
 /* ─── Build Info Section (below canvas) ──────────────────────────── */
 
 function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [description, setDescription] = useState(build.description || "");
+  const [intentStatement, setIntentStatement] = useState(build.intentStatement || "");
+  const [paintSystem, setPaintSystem] = useState(build.paintSystem || "");
+  const [topcoat, setTopcoat] = useState(build.topcoat || "");
+  const [timeInvested, setTimeInvested] = useState(build.timeInvested || "");
+
   const metaRows = [
     { icon: Package, label: "Kit", value: build.kitName },
-    { icon: Palette, label: "Paint System", value: build.paintSystem },
-    { icon: Layers, label: "Topcoat", value: build.topcoat },
-    { icon: Clock, label: "Time Invested", value: build.timeInvested },
+    { icon: Palette, label: "Paint System", value: isEditing ? undefined : (build.paintSystem || paintSystem) },
+    { icon: Layers, label: "Topcoat", value: isEditing ? undefined : (build.topcoat || topcoat) },
+    { icon: Clock, label: "Time Invested", value: isEditing ? undefined : (build.timeInvested || timeInvested) },
     { icon: Wrench, label: "Tools", value: build.tools?.join(", ") },
   ].filter((row) => row.value);
 
-  const hasInfo = build.description || build.intentStatement || metaRows.length > 0 || build.techniques.length > 0;
+  const displayDescription = isEditing ? undefined : (build.description || description);
+  const displayIntent = isEditing ? undefined : (build.intentStatement || intentStatement);
+
+  const hasInfo = displayDescription || displayIntent || metaRows.length > 0 || build.techniques.length > 0 || isOwner;
+
+  async function handleSave() {
+    setIsSaving(true);
+    const result = await updateBuildInfo({
+      buildId: build.id,
+      description: description || undefined,
+      intentStatement: intentStatement || undefined,
+      paintSystem: paintSystem || undefined,
+      topcoat: topcoat || undefined,
+      timeInvested: timeInvested || undefined,
+    });
+    setIsSaving(false);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Build info updated!");
+      setIsEditing(false);
+      // Update the build object in-place for immediate UI feedback
+      build.description = description || undefined;
+      build.intentStatement = intentStatement || undefined;
+      build.paintSystem = paintSystem || undefined;
+      build.topcoat = topcoat || undefined;
+      build.timeInvested = timeInvested || undefined;
+    }
+  }
+
+  function handleCancel() {
+    setDescription(build.description || "");
+    setIntentStatement(build.intentStatement || "");
+    setPaintSystem(build.paintSystem || "");
+    setTopcoat(build.topcoat || "");
+    setTimeInvested(build.timeInvested || "");
+    setIsEditing(false);
+  }
 
   if (!hasInfo) return null;
 
@@ -321,37 +368,114 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
             {build.status}
           </span>
         </div>
-        {isOwner && (
-          <Link
-            href={`/builds/${build.slug}/edit`}
+        {isOwner && !isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
           >
             <Pencil className="h-3 w-3" />
             Edit Info
-          </Link>
+          </button>
+        )}
+        {isOwner && isEditing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCancel}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted/50"
+            >
+              <X className="h-3 w-3" />
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="text-xs text-white bg-gx-red hover:bg-gx-red/90 transition-colors flex items-center gap-1 px-3 py-1 rounded-md disabled:opacity-50"
+            >
+              <Check className="h-3 w-3" />
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+          </div>
         )}
       </div>
 
       <div className="px-6 pb-6 space-y-5">
         {/* Description */}
-        {build.description && (
+        {isEditing ? (
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">About This Build</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              maxLength={5000}
+              placeholder="Describe your build — the story behind it, what makes it special..."
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50 resize-y"
+            />
+            <p className="text-[10px] text-muted-foreground/50 text-right mt-0.5">{description.length}/5000</p>
+          </div>
+        ) : displayDescription ? (
           <div>
             <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">About This Build</h3>
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">{build.description}</p>
+            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">{displayDescription}</p>
+          </div>
+        ) : null}
+
+        {/* Intent Statement */}
+        {isEditing ? (
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Builder&apos;s Quote</label>
+            <textarea
+              value={intentStatement}
+              onChange={(e) => setIntentStatement(e.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder="A short quote about your intent or philosophy behind this build..."
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground italic placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50 resize-y"
+            />
+          </div>
+        ) : displayIntent ? (
+          <blockquote className="border-l-2 border-gx-red pl-4 py-2">
+            <p className="text-sm text-zinc-300 italic leading-relaxed">
+              &ldquo;{displayIntent}&rdquo;
+            </p>
+          </blockquote>
+        ) : null}
+
+        {/* Editable paint/topcoat/time fields */}
+        {isEditing && (
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Paint System</label>
+              <input
+                value={paintSystem}
+                onChange={(e) => setPaintSystem(e.target.value)}
+                placeholder="e.g. Lacquer, Acrylic, Enamel"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Topcoat</label>
+              <input
+                value={topcoat}
+                onChange={(e) => setTopcoat(e.target.value)}
+                placeholder="e.g. Matte, Gloss, Semi-gloss"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Time Invested</label>
+              <input
+                value={timeInvested}
+                onChange={(e) => setTimeInvested(e.target.value)}
+                placeholder="e.g. 40 hours, 2 weeks"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
+              />
+            </div>
           </div>
         )}
 
-        {/* Intent Statement */}
-        {build.intentStatement && (
-          <blockquote className="border-l-2 border-gx-red pl-4 py-2">
-            <p className="text-sm text-zinc-300 italic leading-relaxed">
-              &ldquo;{build.intentStatement}&rdquo;
-            </p>
-          </blockquote>
-        )}
-
-        {/* Metadata grid */}
-        {metaRows.length > 0 && (
+        {/* Metadata grid (read-only view) */}
+        {!isEditing && metaRows.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5">
             {metaRows.map((row) => (
               <div key={row.label} className="flex items-start gap-3 py-2 border-b border-border/30">
