@@ -178,13 +178,6 @@ export function BuildPassport({
               priority
             />
 
-            {/* Image counter badge */}
-            {build.images.length > 1 && (
-              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white text-xs font-medium">
-                {selectedImageIndex + 1} / {build.images.length}
-              </div>
-            )}
-
             {/* Callout pins */}
             {build.calloutPins?.map((pin) => (
               <div
@@ -272,13 +265,6 @@ export function BuildPassport({
             >
               <X className="h-6 w-6" />
             </button>
-
-            {/* Counter */}
-            {build.images.length > 1 && (
-              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-lg bg-white/10 text-white text-sm font-medium z-10">
-                {selectedImageIndex + 1} / {build.images.length}
-              </div>
-            )}
 
             {/* Main image area */}
             <div className="flex-1 flex items-center justify-center w-full px-12 sm:px-16 py-4" onClick={(e) => e.stopPropagation()}>

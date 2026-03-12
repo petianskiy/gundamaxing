@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, GitFork, Camera, Pin } from "lucide-react";
+import { Heart, MessageCircle, GitFork, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GradeBadge } from "@/components/ui/grade-badge";
 import { VerificationBadge } from "@/components/ui/verification-badge";
@@ -63,16 +63,6 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
         {build.verification !== "unverified" && (
           <div className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/50 backdrop-blur-sm">
             <VerificationBadge tier={build.verification} size="md" />
-          </div>
-        )}
-
-        {/* Bottom-right: Image count */}
-        {build.images.length > 1 && (
-          <div className="absolute bottom-2.5 right-2.5">
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/60 text-zinc-300 backdrop-blur-sm">
-              <Camera className="h-3 w-3" />
-              {build.images.length}
-            </span>
           </div>
         )}
 
