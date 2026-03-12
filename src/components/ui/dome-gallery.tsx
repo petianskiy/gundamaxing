@@ -31,10 +31,10 @@ interface DomeGalleryProps {
 }
 
 const DEFAULTS = {
-  maxVerticalRotationDeg: 20,
+  maxVerticalRotationDeg: 5,
   dragSensitivity: 20,
   enlargeTransitionMs: 300,
-  segments: 18,
+  segments: 35,
 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
@@ -60,48 +60,22 @@ interface ItemCoord {
 }
 
 /**
- * Build sphere tile positions that adapt to image count.
- * - Fewer images → fewer rows (1-3), tiles spaced around equator
- * - More images → more rows (up to 5), denser coverage
- * - Each image repeats at most ~3x to avoid excessive duplication
- * - Poles always empty, cos(lat) column reduction prevents overlap
+ * Build sphere tile positions in an equator band.
+ * Uses the original staggered grid (even/odd Y rows) which creates the
+ * classic dome look. The radial overlay + blur hides edge-on tiles at
+ * the sides, so we fill a wide horizontal band and let CSS do the rest.
  */
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
-  const imgCount = pool.length;
-  if (imgCount === 0) return [];
+  if (pool.length === 0) return [];
 
-  const unit = 360 / seg / 2;
+  const xCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
+  const evenYs = [-4, -2, 0, 2, 4];
+  const oddYs = [-3, -1, 1, 3, 5];
 
-  // Decide row layout based on image count
-  // More images → more rows, always symmetrical around equator
-  let yRows: number[];
-  if (imgCount <= 4) {
-    yRows = [0]; // single equator row
-  } else if (imgCount <= 12) {
-    yRows = [-2, 0, 2]; // 3 rows
-  } else {
-    yRows = [-4, -2, 0, 2, 4]; // 5 rows
-  }
-
-  // Target total tiles: each image appears 2-3 times, capped
-  const targetTotal = Math.min(imgCount * 3, 70);
-  const targetPerRow = Math.max(4, Math.round(targetTotal / yRows.length));
-
-  const coords: { x: number; y: number; sizeX: number; sizeY: number }[] = [];
-
-  for (const y of yRows) {
-    const latDeg = Math.abs(unit * y);
-    const latRad = (latDeg * Math.PI) / 180;
-    const cosLat = Math.cos(latRad);
-    // Scale columns by cos(lat), but don't exceed target
-    const colCount = Math.max(4, Math.min(seg, Math.round(targetPerRow * cosLat)));
-
-    // Evenly distribute columns around full 360°
-    for (let i = 0; i < colCount; i++) {
-      const xOffset = -37 + Math.round((i / colCount) * seg) * 2;
-      coords.push({ x: xOffset, y, sizeX: 2, sizeY: 2 });
-    }
-  }
+  const coords = xCols.flatMap((x, c) => {
+    const ys = c % 2 === 0 ? evenYs : oddYs;
+    return ys.map((y) => ({ x, y, sizeX: 2, sizeY: 2 }));
+  });
 
   const normalized = pool.map((img) => ({
     src: img.src || "",
@@ -109,9 +83,9 @@ function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
     href: img.href,
   }));
 
-  // Shuffle-fill: assign images to slots, minimizing adjacent repeats
   const used = Array.from({ length: coords.length }, (_, i) => normalized[i % normalized.length]);
 
+  // Reduce consecutive duplicates for visual variety
   for (let i = 1; i < used.length; i++) {
     if (used[i].src === used[i - 1].src) {
       for (let j = i + 1; j < used.length; j++) {
@@ -598,6 +572,11 @@ export default function DomeGallery({
             ))}
           </div>
         </div>
+
+        <div className="overlay" />
+        <div className="overlay overlay--blur" />
+        <div className="edge-fade edge-fade--top" />
+        <div className="edge-fade edge-fade--bottom" />
 
         <div className="viewer" ref={viewerRef}>
           <div ref={scrimRef} className="scrim" />

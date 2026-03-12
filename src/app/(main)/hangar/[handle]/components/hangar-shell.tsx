@@ -49,7 +49,7 @@ export function HangarShell({
       className="relative min-h-screen"
       style={{ "--hangar-accent": accent } as React.CSSProperties}
     >
-      <HangarBackground />
+      <HangarBackground layout={user.hangarLayout} />
 
       <div className="relative z-10 min-h-screen">
         {/* Identity bar */}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import type { HangarLayout } from "@/lib/types";
 
 const BACKGROUNDS = [
   "/hangar/backgrounds/bg-01.jpg",
@@ -19,7 +20,11 @@ const BACKGROUNDS = [
 
 const INTERVAL = 8000;
 
-export function HangarBackground() {
+interface HangarBackgroundProps {
+  layout?: HangarLayout;
+}
+
+export function HangarBackground({ layout }: HangarBackgroundProps) {
   const [idx, setIdx] = useState(0);
 
   const advance = useCallback(() => {
@@ -27,10 +32,47 @@ export function HangarBackground() {
   }, []);
 
   useEffect(() => {
+    if (layout === "DOME_GALLERY") return;
     const t = setInterval(advance, INTERVAL);
     return () => clearInterval(t);
-  }, [advance]);
+  }, [advance, layout]);
 
+  // Dome Gallery layout: looping video background
+  if (layout === "DOME_GALLERY") {
+    return (
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 2, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/dome-bg.mp4" type="video/mp4" />
+          </video>
+        </motion.div>
+
+        {/* Overlay stack for readability */}
+        <div className="absolute inset-0 bg-black/50 z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
+        <div
+          className="absolute inset-0 z-[2]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Default: crossfading image carousel
   return (
     <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
       {/* Crossfading images */}
@@ -65,7 +107,6 @@ export function HangarBackground() {
             "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
         }}
       />
-
     </div>
   );
 }

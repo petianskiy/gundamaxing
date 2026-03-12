@@ -116,31 +116,15 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
   const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
 
   return (
-    <div className="relative w-full" style={{ height: "min(70vh, 600px)" }}>
-      {/* Video background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-        style={{ zIndex: 0 }}
-      >
-        <source src="/dome-bg.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 bg-black/30 rounded-2xl" style={{ zIndex: 1 }} />
-      <div className="relative" style={{ zIndex: 2, height: "100%" }}>
-        <DomeGallery
-          images={images}
-          overlayBlurColor="transparent"
-          minRadius={180}
-          fit={0.35}
-          imageBorderRadius="12px"
-          openedImageBorderRadius="16px"
-          dragDampening={2}
-          autoRotateSpeed={autoRotateSpeed}
-        />
-      </div>
+    <div className="relative w-full" style={{ height: "min(75vh, 650px)" }}>
+      <DomeGallery
+        images={images}
+        overlayBlurColor="transparent"
+        imageBorderRadius="12px"
+        openedImageBorderRadius="16px"
+        dragDampening={2}
+        autoRotateSpeed={autoRotateSpeed}
+      />
     </div>
   );
 }
