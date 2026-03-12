@@ -33,7 +33,6 @@ interface DomeSettings {
   selectedBuildIds: string[];
   autoSpin: boolean;
   spinSpeed: number;
-  grayscale: boolean;
 }
 
 interface HangarFormData {
@@ -288,11 +287,11 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-muted-foreground">Sphere Builds</label>
                 <span className="text-[10px] text-muted-foreground">
-                  {form.domeSettings.selectedBuildIds.length}/12 selected
+                  {form.domeSettings.selectedBuildIds.length}/30 selected
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground/60">
-                Choose up to 12 builds to display on the sphere. If none are selected, your most recent builds are used.
+                Choose up to 30 builds to display on the sphere. If none are selected, your most recent builds are used.
               </p>
               {builds.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No builds yet</p>
@@ -309,8 +308,8 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                           if (isSelected) {
                             nextIds = form.domeSettings.selectedBuildIds.filter((id) => id !== build.id);
                           } else {
-                            if (form.domeSettings.selectedBuildIds.length >= 12) {
-                              toast.error("Maximum 12 builds on the sphere");
+                            if (form.domeSettings.selectedBuildIds.length >= 30) {
+                              toast.error("Maximum 30 builds on the sphere");
                               return;
                             }
                             nextIds = [...form.domeSettings.selectedBuildIds, build.id];
@@ -394,32 +393,6 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
               )}
             </div>
 
-            {/* Grayscale */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Grayscale</label>
-                <p className="text-[10px] text-muted-foreground/60">Desaturate images on the sphere</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = { ...form.domeSettings, grayscale: !form.domeSettings.grayscale };
-                  setForm((prev) => ({ ...prev, domeSettings: next }));
-                  autoSave({ domeSettings: next }, "domeSettings");
-                }}
-                className={cn(
-                  "relative w-9 h-5 rounded-full transition-colors",
-                  form.domeSettings.grayscale ? "bg-gx-red" : "bg-border"
-                )}
-              >
-                <div
-                  className={cn(
-                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
-                    form.domeSettings.grayscale ? "translate-x-4" : "translate-x-0.5"
-                  )}
-                />
-              </button>
-            </div>
           </section>
         )}
 

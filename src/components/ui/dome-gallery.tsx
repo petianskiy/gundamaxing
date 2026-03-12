@@ -27,15 +27,14 @@ interface DomeGalleryProps {
   openedImageHeight?: string;
   imageBorderRadius?: string;
   openedImageBorderRadius?: string;
-  grayscale?: boolean;
   autoRotateSpeed?: number;
 }
 
 const DEFAULTS = {
-  maxVerticalRotationDeg: 25,
+  maxVerticalRotationDeg: 20,
   dragSensitivity: 20,
   enlargeTransitionMs: 300,
-  segments: 14,
+  segments: 18,
 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
@@ -61,34 +60,47 @@ interface ItemCoord {
 }
 
 /**
- * Build sphere tile positions using latitude-aware distribution.
- * - 5 Y rows: -4, -2, 0, 2, 4 (leaves poles empty)
- * - Fewer columns at higher latitudes (cos scaling)
- * - Total tiles capped at ~60 to prevent overlap
+ * Build sphere tile positions that adapt to image count.
+ * - Fewer images → fewer rows (1-3), tiles spaced around equator
+ * - More images → more rows (up to 5), denser coverage
+ * - Each image repeats at most ~3x to avoid excessive duplication
+ * - Poles always empty, cos(lat) column reduction prevents overlap
  */
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
+  const imgCount = pool.length;
+  if (imgCount === 0) return [];
+
   const unit = 360 / seg / 2;
-  const allXCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
-  // Only 5 rows — band around equator, poles stay empty
-  const yRows = [-4, -2, 0, 2, 4];
+
+  // Decide row layout based on image count
+  // More images → more rows, always symmetrical around equator
+  let yRows: number[];
+  if (imgCount <= 4) {
+    yRows = [0]; // single equator row
+  } else if (imgCount <= 12) {
+    yRows = [-2, 0, 2]; // 3 rows
+  } else {
+    yRows = [-4, -2, 0, 2, 4]; // 5 rows
+  }
+
+  // Target total tiles: each image appears 2-3 times, capped
+  const targetTotal = Math.min(imgCount * 3, 70);
+  const targetPerRow = Math.max(4, Math.round(targetTotal / yRows.length));
 
   const coords: { x: number; y: number; sizeX: number; sizeY: number }[] = [];
 
   for (const y of yRows) {
     const latDeg = Math.abs(unit * y);
     const latRad = (latDeg * Math.PI) / 180;
-    const ratio = Math.cos(latRad);
-    const colCount = Math.max(3, Math.round(allXCols.length * ratio));
+    const cosLat = Math.cos(latRad);
+    // Scale columns by cos(lat), but don't exceed target
+    const colCount = Math.max(4, Math.min(seg, Math.round(targetPerRow * cosLat)));
 
-    const step = allXCols.length / colCount;
+    // Evenly distribute columns around full 360°
     for (let i = 0; i < colCount; i++) {
-      const idx = Math.floor(i * step);
-      coords.push({ x: allXCols[idx], y, sizeX: 2, sizeY: 2 });
+      const xOffset = -37 + Math.round((i / colCount) * seg) * 2;
+      coords.push({ x: xOffset, y, sizeX: 2, sizeY: 2 });
     }
-  }
-
-  if (pool.length === 0) {
-    return coords.map((c) => ({ ...c, src: "", alt: "" }));
   }
 
   const normalized = pool.map((img) => ({
@@ -97,9 +109,9 @@ function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
     href: img.href,
   }));
 
+  // Shuffle-fill: assign images to slots, minimizing adjacent repeats
   const used = Array.from({ length: coords.length }, (_, i) => normalized[i % normalized.length]);
 
-  // Reduce consecutive duplicates
   for (let i = 1; i < used.length; i++) {
     if (used[i].src === used[i - 1].src) {
       for (let j = i + 1; j < used.length; j++) {
@@ -146,7 +158,6 @@ export default function DomeGallery({
   openedImageHeight = "350px",
   imageBorderRadius = "30px",
   openedImageBorderRadius = "30px",
-  grayscale = true,
   autoRotateSpeed = 0,
 }: DomeGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -221,12 +232,12 @@ export default function DomeGallery({
       root.style.setProperty("--overlay-blur-color", overlayBlurColor);
       root.style.setProperty("--tile-radius", imageBorderRadius);
       root.style.setProperty("--enlarge-radius", openedImageBorderRadius);
-      root.style.setProperty("--image-filter", grayscale ? "grayscale(1)" : "none");
+      root.style.setProperty("--image-filter", "none");
       applyTransform(rotationRef.current.x, rotationRef.current.y);
     });
     ro.observe(root);
     return () => ro.disconnect();
-  }, [fit, fitBasis, minRadius, maxRadius, padFactor, overlayBlurColor, grayscale, imageBorderRadius, openedImageBorderRadius]);
+  }, [fit, fitBasis, minRadius, maxRadius, padFactor, overlayBlurColor, imageBorderRadius, openedImageBorderRadius]);
 
   useEffect(() => {
     applyTransform(rotationRef.current.x, rotationRef.current.y);
@@ -546,7 +557,7 @@ export default function DomeGallery({
           "--overlay-blur-color": overlayBlurColor,
           "--tile-radius": imageBorderRadius,
           "--enlarge-radius": openedImageBorderRadius,
-          "--image-filter": grayscale ? "grayscale(1)" : "none",
+          "--image-filter": "none",
         } as React.CSSProperties
       }
     >

@@ -72,7 +72,6 @@ export default async function HangarSettingsPage() {
               ? (user.domeSettings as Record<string, unknown>).selectedBuildIds : []) as string[],
             autoSpin: !!(user.domeSettings as Record<string, unknown>)?.autoSpin,
             spinSpeed: Number((user.domeSettings as Record<string, unknown>)?.spinSpeed) || 1,
-            grayscale: !!(user.domeSettings as Record<string, unknown>)?.grayscale,
           },
         }}
         userLevel={userLevel}

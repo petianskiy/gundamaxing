@@ -218,7 +218,6 @@ export interface DomeGallerySettings {
   selectedBuildIds?: string[];
   autoSpin?: boolean;
   spinSpeed?: number;
-  grayscale?: boolean;
 }
 
 export interface HangarUser {

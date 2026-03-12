@@ -84,11 +84,10 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
 
 /* ─── DOME GALLERY LAYOUT ────────────────────────────────────────── */
 
-const MAX_SPHERE_BUILDS = 12;
+const MAX_SPHERE_BUILDS = 30;
 
 function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Build[]; accentColor: string; domeSettings?: DomeGallerySettings | null }) {
   const images = useMemo(() => {
-    // If user selected specific builds, use only those (in order)
     const selectedIds = domeSettings?.selectedBuildIds;
     const pool = selectedIds && selectedIds.length > 0
       ? selectedIds
@@ -96,7 +95,6 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
           .filter(Boolean) as Build[]
       : builds;
 
-    // Cap at max
     return pool
       .slice(0, MAX_SPHERE_BUILDS)
       .map((build) => {
@@ -115,22 +113,34 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
     );
   }
 
-  const grayscale = domeSettings?.grayscale ?? false;
   const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
 
   return (
-    <div className="relative w-full" style={{ height: "min(65vh, 550px)" }}>
-      <DomeGallery
-        images={images}
-        overlayBlurColor="var(--background, #060010)"
-        grayscale={grayscale}
-        minRadius={180}
-        fit={0.35}
-        imageBorderRadius="12px"
-        openedImageBorderRadius="16px"
-        dragDampening={2}
-        autoRotateSpeed={autoRotateSpeed}
-      />
+    <div className="relative w-full" style={{ height: "min(70vh, 600px)" }}>
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+        style={{ zIndex: 0 }}
+      >
+        <source src="/dome-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/30 rounded-2xl" style={{ zIndex: 1 }} />
+      <div className="relative" style={{ zIndex: 2, height: "100%" }}>
+        <DomeGallery
+          images={images}
+          overlayBlurColor="transparent"
+          minRadius={180}
+          fit={0.35}
+          imageBorderRadius="12px"
+          openedImageBorderRadius="16px"
+          dragDampening={2}
+          autoRotateSpeed={autoRotateSpeed}
+        />
+      </div>
     </div>
   );
 }
