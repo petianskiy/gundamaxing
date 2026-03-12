@@ -11,6 +11,7 @@ import { VerificationBadge } from "@/components/ui/verification-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
 import { BuildGridCard } from "./build-grid-card";
 import DomeGallery from "@/components/ui/dome-gallery";
+import { DomeStars } from "./dome-stars";
 import type { Build, HangarLayout, DomeGallerySettings } from "@/lib/types";
 
 interface BuildGridProps {
@@ -114,17 +115,58 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
   }
 
   const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
+  const sphereSize = domeSettings?.sphereSize ?? "medium";
+  const glowColor = domeSettings?.glowColor ?? accentColor;
+  const showStars = domeSettings?.showStars ?? true;
+  const sphereTitle = domeSettings?.sphereTitle ?? "";
+
+  const sizeMap = {
+    small: { height: "min(55vh, 450px)", fit: 0.35, minRadius: 200 },
+    medium: { height: "min(65vh, 550px)", fit: 0.45, minRadius: 280 },
+    large: { height: "min(75vh, 650px)", fit: 0.55, minRadius: 350 },
+  };
+  const sz = sizeMap[sphereSize];
 
   return (
-    <div className="relative w-full" style={{ height: "min(75vh, 650px)" }}>
-      <DomeGallery
-        images={images}
-        overlayBlurColor="transparent"
-        imageBorderRadius="12px"
-        openedImageBorderRadius="16px"
-        dragDampening={2}
-        autoRotateSpeed={autoRotateSpeed}
+    <div className="relative w-full" style={{ height: sz.height }}>
+      {/* Star field */}
+      {showStars && <DomeStars />}
+
+      {/* Glow behind sphere */}
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl pointer-events-none z-[1]"
+        style={{
+          width: "45%",
+          paddingBottom: "45%",
+          background: `radial-gradient(circle, ${glowColor}30 0%, ${glowColor}10 50%, transparent 70%)`,
+        }}
       />
+
+      {/* Sphere title */}
+      {sphereTitle && (
+        <div className="absolute top-4 left-0 right-0 text-center z-[10] pointer-events-none">
+          <p
+            className="text-sm font-bold uppercase tracking-[0.3em] drop-shadow-lg"
+            style={{ color: glowColor }}
+          >
+            {sphereTitle}
+          </p>
+        </div>
+      )}
+
+      {/* Dome Gallery */}
+      <div className="relative z-[4]" style={{ height: "100%" }}>
+        <DomeGallery
+          images={images}
+          overlayBlurColor="transparent"
+          fit={sz.fit}
+          minRadius={sz.minRadius}
+          imageBorderRadius="12px"
+          openedImageBorderRadius="16px"
+          dragDampening={2}
+          autoRotateSpeed={autoRotateSpeed}
+        />
+      </div>
     </div>
   );
 }

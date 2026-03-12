@@ -67,12 +67,18 @@ export default async function HangarSettingsPage() {
           accentColor: user.accentColor ?? "#dc2626",
           pinnedBuildIds: user.pinnedBuildIds ?? [],
           featuredBuildId: featuredBuild?.id ?? null,
-          domeSettings: {
-            selectedBuildIds: (Array.isArray((user.domeSettings as Record<string, unknown>)?.selectedBuildIds)
-              ? (user.domeSettings as Record<string, unknown>).selectedBuildIds : []) as string[],
-            autoSpin: !!(user.domeSettings as Record<string, unknown>)?.autoSpin,
-            spinSpeed: Number((user.domeSettings as Record<string, unknown>)?.spinSpeed) || 1,
-          },
+          domeSettings: (() => {
+            const ds = (user.domeSettings ?? {}) as Record<string, unknown>;
+            return {
+              selectedBuildIds: (Array.isArray(ds.selectedBuildIds) ? ds.selectedBuildIds : []) as string[],
+              autoSpin: !!ds.autoSpin,
+              spinSpeed: Number(ds.spinSpeed) || 1,
+              sphereSize: (ds.sphereSize as "small" | "medium" | "large") ?? "medium",
+              glowColor: (ds.glowColor as string) ?? "#3b82f6",
+              showStars: ds.showStars !== false,
+              sphereTitle: (ds.sphereTitle as string) ?? "",
+            };
+          })(),
         }}
         userLevel={userLevel}
         builds={simplifiedBuilds}

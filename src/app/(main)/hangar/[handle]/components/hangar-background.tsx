@@ -58,16 +58,9 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
           </video>
         </motion.div>
 
-        {/* Overlay stack for readability */}
-        <div className="absolute inset-0 bg-black/50 z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
-        <div
-          className="absolute inset-0 z-[2]"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
-          }}
-        />
+        {/* Light overlay — keep video vibrant */}
+        <div className="absolute inset-0 bg-black/25 z-[1]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-[1]" />
       </div>
     );
   }

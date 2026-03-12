@@ -33,6 +33,10 @@ interface DomeSettings {
   selectedBuildIds: string[];
   autoSpin: boolean;
   spinSpeed: number;
+  sphereSize: "small" | "medium" | "large";
+  glowColor: string;
+  showStars: boolean;
+  sphereTitle: string;
 }
 
 interface HangarFormData {
@@ -391,6 +395,108 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                   <span className="text-[10px] text-muted-foreground w-8 text-right">Fast</span>
                 </div>
               )}
+            </div>
+
+            {/* Sphere Size */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Sphere Size</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["small", "medium", "large"] as const).map((s) => {
+                  const isActive = form.domeSettings.sphereSize === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        const next = { ...form.domeSettings, sphereSize: s };
+                        setForm((prev) => ({ ...prev, domeSettings: next }));
+                        autoSave({ domeSettings: next }, "domeSettings");
+                      }}
+                      className={cn(
+                        "p-2 rounded-lg border text-center transition-colors capitalize",
+                        isActive
+                          ? "border-gx-red bg-gx-red/5"
+                          : "border-border/50 bg-gx-surface hover:border-border"
+                      )}
+                    >
+                      <p className="text-sm font-medium text-foreground">{s}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Glow Color */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Sphere Glow</label>
+              <div className="flex flex-wrap gap-2">
+                {["#dc2626", "#3b82f6", "#8b5cf6", "#06b6d4", "#22c55e", "#f59e0b", "#ec4899", "#f8fafc"].map((color) => {
+                  const isActive = form.domeSettings.glowColor === color;
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => {
+                        const next = { ...form.domeSettings, glowColor: color };
+                        setForm((prev) => ({ ...prev, domeSettings: next }));
+                        autoSave({ domeSettings: next }, "domeSettings");
+                      }}
+                      className={cn(
+                        "w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center",
+                        isActive ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+                      )}
+                      style={{ backgroundColor: color }}
+                    >
+                      {isActive && <Check className={cn("h-3 w-3", color === "#f8fafc" ? "text-zinc-900" : "text-white")} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Star Field */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Star Field</label>
+                <p className="text-[10px] text-muted-foreground/60">Twinkling stars around the sphere</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = { ...form.domeSettings, showStars: !form.domeSettings.showStars };
+                  setForm((prev) => ({ ...prev, domeSettings: next }));
+                  autoSave({ domeSettings: next }, "domeSettings");
+                }}
+                className={cn(
+                  "relative w-9 h-5 rounded-full transition-colors",
+                  form.domeSettings.showStars ? "bg-gx-red" : "bg-border"
+                )}
+              >
+                <div
+                  className={cn(
+                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                    form.domeSettings.showStars ? "translate-x-4" : "translate-x-0.5"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Sphere Title */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Sphere Title</label>
+              <input
+                type="text"
+                value={form.domeSettings.sphereTitle}
+                onChange={(e) => {
+                  const next = { ...form.domeSettings, sphereTitle: e.target.value };
+                  setForm((prev) => ({ ...prev, domeSettings: next }));
+                  debouncedSave({ domeSettings: next }, "domeSettings");
+                }}
+                maxLength={40}
+                placeholder="e.g. MY HANGAR, FEDERATION FLEET..."
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
+              />
+              <p className="text-[10px] text-muted-foreground/60">Displayed above the sphere (optional)</p>
             </div>
 
           </section>

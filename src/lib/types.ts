@@ -218,6 +218,10 @@ export interface DomeGallerySettings {
   selectedBuildIds?: string[];
   autoSpin?: boolean;
   spinSpeed?: number;
+  sphereSize?: "small" | "medium" | "large";
+  glowColor?: string;
+  showStars?: boolean;
+  sphereTitle?: string;
 }
 
 export interface HangarUser {
