@@ -9,7 +9,6 @@ import {
   ChevronUp,
   Package,
   Paintbrush,
-  Wrench,
   FileText,
   Save,
   X,
@@ -129,6 +128,7 @@ interface BuildData {
   topcoat: string | null;
   timeInvested: string | null;
   tools: string[];
+  description: string | null;
   intentStatement: string | null;
   images: { id: string; url: string; alt: string; isPrimary: boolean; order: number }[];
 }
@@ -160,6 +160,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
   const [topcoat, setTopcoat] = useState(build.topcoat ?? "");
   const [timeInvested, setTimeInvested] = useState(build.timeInvested ?? "");
   const [tools, setTools] = useState(build.tools.join(", "));
+  const [description, setDescription] = useState(build.description ?? "");
   const [intentStatement, setIntentStatement] = useState(build.intentStatement ?? "");
 
   // Submit state
@@ -267,6 +268,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
       if (selectedTechniques.length > 0) {
         formData.set("techniques", JSON.stringify(selectedTechniques));
       }
+      formData.set("description", description);
       formData.set("paintSystem", paintSystem);
       formData.set("topcoat", topcoat);
       formData.set("timeInvested", timeInvested);
@@ -392,6 +394,17 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                     </button>
                   ))}
                 </div>
+              </FormField>
+
+              <FormField label="Description" helper="Tell the story behind this build — what inspired you, what techniques you used, challenges you faced, etc.">
+                <textarea
+                  rows={4}
+                  placeholder="Share the story of your build..."
+                  className={inputClass}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={5000}
+                />
               </FormField>
 
               <FormField label={t("upload.photos")}>
@@ -542,36 +555,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
             </div>
           </CollapsibleSection>
 
-          {/* Section 3: Advanced Detailing */}
-          <CollapsibleSection
-            title={t("upload.advancedDetailing")}
-            description={t("upload.advancedDetailingDesc")}
-            icon={Wrench}
-          >
-            <div className="space-y-4">
-              <FormField label={t("upload.scribing")} helper={t("upload.scribingHelper")}>
-                <textarea rows={3} placeholder={t("upload.scribingPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.decals")} helper={t("upload.decalsHelper")}>
-                <input type="text" placeholder={t("upload.decalsPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.weathering")} helper={t("upload.weatheringHelper")}>
-                <textarea rows={3} placeholder={t("upload.weatheringPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.kitbash")} helper={t("upload.kitbashHelper")}>
-                <textarea rows={3} placeholder={t("upload.kitbashPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.ledElectronics")} helper={t("upload.ledHelper")}>
-                <textarea rows={3} placeholder={t("upload.ledPlaceholder")} className={inputClass} />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 4: Build Context */}
+          {/* Section 3: Build Context */}
           <CollapsibleSection
             title={t("upload.buildContext")}
             description={t("upload.buildContextDesc")}
@@ -608,13 +592,6 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                 />
               </FormField>
 
-              <FormField label={t("upload.baseKitRef")} helper={t("upload.baseKitHelper")}>
-                <input type="text" placeholder={t("upload.baseKitPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.inspiredBy")} helper={t("upload.inspiredByHelper")}>
-                <input type="text" placeholder={t("upload.inspiredByPlaceholder")} className={inputClass} />
-              </FormField>
             </div>
           </CollapsibleSection>
 

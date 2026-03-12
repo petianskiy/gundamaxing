@@ -217,6 +217,9 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const clipboardRef = useRef<ShowcaseElementType[]>([]);
   const drawingRef = useRef<DrawingOverlayHandle>(null);
 
+  // Track active drag/resize to hide panels on mobile
+  const [isInteracting, setIsInteracting] = useState(false);
+
   // Marquee (rubber-band) selection state
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
   const marqueeRef = useRef<typeof marquee>(null);
@@ -406,6 +409,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     }
     dragRef.current = null;
     resizeRef.current = null;
+    setIsInteracting(false);
     setSnapGuides([]);
   }, [dispatch, marquee, layout.elements]);
 
@@ -446,6 +450,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       }
 
       dispatch({ type: "BEGIN_BATCH" });
+      setIsInteracting(true);
       dragRef.current = {
         elementIds: dragIds,
         startX: e.clientX,
@@ -466,6 +471,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       const el = layout.elements.find((el) => el.id === elementId);
       if (!el) return;
       dispatch({ type: "BEGIN_BATCH" });
+      setIsInteracting(true);
       resizeRef.current = {
         elementId,
         handle,
@@ -1504,8 +1510,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         )}
       </div>
 
-      {/* Element properties panel */}
-      {selectedElement && (
+      {/* Element properties panel — hidden on mobile during drag/resize */}
+      {selectedElement && !isInteracting && (
         <ElementPropsPanel
           element={selectedElement}
           onUpdate={(updates) =>

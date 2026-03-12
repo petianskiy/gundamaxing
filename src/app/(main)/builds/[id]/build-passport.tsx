@@ -413,6 +413,14 @@ export function BuildPassport({
             ))}
           </div>
 
+          {/* Description */}
+          {build.description && (
+            <div className="mb-6">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">About This Build</h3>
+              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">{build.description}</p>
+            </div>
+          )}
+
           {/* Techniques */}
           <div className="mb-6">
             <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">{t("builds.techniques")}</h3>

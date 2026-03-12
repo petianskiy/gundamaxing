@@ -66,6 +66,7 @@ export function toUIBuild(b: any): Build {
     topcoat: b.topcoat ?? undefined,
     timeInvested: b.timeInvested ?? undefined,
     tools: b.tools.length > 0 ? b.tools : undefined,
+    description: b.description ?? undefined,
     intentStatement: b.intentStatement ?? undefined,
     images: (b.images ?? []).map(
       (img: { id: string; url: string; alt: string; isPrimary: boolean; objectPosition: string | null; order: number }): BuildImage => ({

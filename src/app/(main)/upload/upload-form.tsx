@@ -10,7 +10,6 @@ import {
   ChevronUp,
   Package,
   Paintbrush,
-  Wrench,
   FileText,
   Upload,
   X,
@@ -145,6 +144,7 @@ export function UploadForm() {
   const [topcoat, setTopcoat] = useState("");
   const [timeInvested, setTimeInvested] = useState("");
   const [tools, setTools] = useState("");
+  const [description, setDescription] = useState("");
   const [intentStatement, setIntentStatement] = useState("");
 
   // Submit state
@@ -244,6 +244,7 @@ export function UploadForm() {
       if (selectedTechniques.length > 0) {
         formData.set("techniques", JSON.stringify(selectedTechniques));
       }
+      if (description) formData.set("description", description);
       if (paintSystem) formData.set("paintSystem", paintSystem);
       if (topcoat) formData.set("topcoat", topcoat);
       if (timeInvested) formData.set("timeInvested", timeInvested);
@@ -383,6 +384,17 @@ export function UploadForm() {
                     </button>
                   ))}
                 </div>
+              </FormField>
+
+              <FormField label="Description" helper="Tell the story behind this build — what inspired you, what techniques you used, challenges you faced, etc.">
+                <textarea
+                  rows={4}
+                  placeholder="Share the story of your build..."
+                  className={inputClass}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={5000}
+                />
               </FormField>
 
               <FormField label={t("upload.photos")} required>
@@ -527,37 +539,7 @@ export function UploadForm() {
             </div>
           </CollapsibleSection>
 
-          {/* Section 3: Advanced Detailing */}
-          <CollapsibleSection
-            title={t("upload.advancedDetailing")}
-            description={t("upload.advancedDetailingDesc")}
-            icon={Wrench}
-            badge="Optional"
-          >
-            <div className="space-y-4">
-              <FormField label={t("upload.scribing")} helper={t("upload.scribingHelper")}>
-                <textarea rows={3} placeholder={t("upload.scribingPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.decals")} helper={t("upload.decalsHelper")}>
-                <input type="text" placeholder={t("upload.decalsPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.weathering")} helper={t("upload.weatheringHelper")}>
-                <textarea rows={3} placeholder={t("upload.weatheringPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.kitbash")} helper={t("upload.kitbashHelper")}>
-                <textarea rows={3} placeholder={t("upload.kitbashPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.ledElectronics")} helper={t("upload.ledHelper")}>
-                <textarea rows={3} placeholder={t("upload.ledPlaceholder")} className={inputClass} />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 4: Build Context */}
+          {/* Section 3: Build Context */}
           <CollapsibleSection
             title={t("upload.buildContext")}
             description={t("upload.buildContextDesc")}
@@ -595,13 +577,6 @@ export function UploadForm() {
                 />
               </FormField>
 
-              <FormField label={t("upload.baseKitRef")} helper={t("upload.baseKitHelper")}>
-                <input type="text" placeholder={t("upload.baseKitPlaceholder")} className={inputClass} />
-              </FormField>
-
-              <FormField label={t("upload.inspiredBy")} helper={t("upload.inspiredByHelper")}>
-                <input type="text" placeholder={t("upload.inspiredByPlaceholder")} className={inputClass} />
-              </FormField>
             </div>
           </CollapsibleSection>
 

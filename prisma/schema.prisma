@@ -222,6 +222,7 @@ model Build {
   topcoat         String?
   timeInvested    String?
   tools           String[]         @default([])
+  description     String?          @db.Text
   intentStatement String?          @db.Text
   baseKit         String?
   verification    VerificationTier @default(UNVERIFIED)

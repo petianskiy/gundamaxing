@@ -23,6 +23,7 @@ const buildSchema = z.object({
   topcoat: z.string().optional(),
   timeInvested: z.string().optional(),
   tools: z.array(z.string()).optional(),
+  description: z.string().max(5000).optional(),
   intentStatement: z.string().max(1000).optional(),
   imageUrls: z.array(z.string().min(1)).min(1).max(25),
   primaryIndex: z.number().int().min(0).optional(),
@@ -107,6 +108,7 @@ export async function createBuild(formData: FormData) {
       topcoat: (formData.get("topcoat") as string) || undefined,
       timeInvested: (formData.get("timeInvested") as string) || undefined,
       tools: toolsRaw ? JSON.parse(toolsRaw) : undefined,
+      description: (formData.get("description") as string) || undefined,
       intentStatement:
         (formData.get("intentStatement") as string) || undefined,
       imageUrls: imageUrlsRaw ? JSON.parse(imageUrlsRaw) : [],
@@ -137,6 +139,10 @@ export async function createBuild(formData: FormData) {
     if (titleCheck) return { error: titleCheck };
     const kitNameCheck = validateCleanContent(data.kitName, "Kit name");
     if (kitNameCheck) return { error: kitNameCheck };
+    if (data.description) {
+      const descCheck = validateCleanContent(data.description, "Description");
+      if (descCheck) return { error: descCheck };
+    }
     if (data.intentStatement) {
       const intentCheck = validateCleanContent(data.intentStatement, "Intent statement");
       if (intentCheck) return { error: intentCheck };
@@ -163,6 +169,7 @@ export async function createBuild(formData: FormData) {
           topcoat: data.topcoat ?? null,
           timeInvested: data.timeInvested ?? null,
           tools: data.tools ?? [],
+          description: data.description ?? null,
           intentStatement: data.intentStatement ?? null,
           userId: user.id,
         },
@@ -261,6 +268,8 @@ export async function updateBuild(formData: FormData) {
     const timeInvested = formData.get("timeInvested") as string;
     if (timeInvested !== null) updateData.timeInvested = timeInvested || null;
     if (toolsRaw) updateData.tools = JSON.parse(toolsRaw);
+    const description = formData.get("description") as string;
+    if (description !== null) updateData.description = description || null;
     const intentStatement = formData.get("intentStatement") as string;
     if (intentStatement !== null) updateData.intentStatement = intentStatement || null;
 
@@ -272,6 +281,10 @@ export async function updateBuild(formData: FormData) {
     if (kitName) {
       const kitNameCheck = validateCleanContent(kitName, "Kit name");
       if (kitNameCheck) return { error: kitNameCheck };
+    }
+    if (description) {
+      const descCheck = validateCleanContent(description, "Description");
+      if (descCheck) return { error: descCheck };
     }
     if (intentStatement) {
       const intentCheck = validateCleanContent(intentStatement, "Intent statement");

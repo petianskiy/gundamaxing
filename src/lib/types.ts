@@ -77,6 +77,7 @@ export interface Build {
   topcoat?: string;
   timeInvested?: string;
   tools?: string[];
+  description?: string;
   intentStatement?: string;
   images: BuildImage[];
   calloutPins?: CalloutPin[];
