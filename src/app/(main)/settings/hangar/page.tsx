@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserSettingsData } from "@/lib/data/users";
-import { getBuildsByUserId } from "@/lib/data/builds";
 import { db } from "@/lib/db";
 import { HangarSettingsForm } from "./hangar-settings-form";
 import { EraManager } from "./era-manager";
+import { calculateLevel } from "@/lib/achievements";
 
 export default async function HangarSettingsPage() {
   const session = await auth();
@@ -14,7 +14,21 @@ export default async function HangarSettingsPage() {
 
   const [user, builds, eras] = await Promise.all([
     getUserSettingsData(userId),
-    getBuildsByUserId(userId),
+    db.build.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        kitName: true,
+        isFeaturedBuild: true,
+        images: {
+          where: { isPrimary: true },
+          take: 1,
+          select: { url: true },
+        },
+      },
+    }),
     db.buildEra.findMany({
       where: { userId },
       orderBy: { order: "asc" },
@@ -33,10 +47,14 @@ export default async function HangarSettingsPage() {
 
   if (!user) redirect("/login");
 
+  const userLevel = calculateLevel(user.xp);
+  const featuredBuild = builds.find((b) => b.isFeaturedBuild);
+
   const simplifiedBuilds = builds.map((b) => ({
     id: b.id,
     title: b.title,
     kitName: b.kitName,
+    thumbnail: b.images[0]?.url ?? null,
   }));
 
   return (
@@ -46,7 +64,12 @@ export default async function HangarSettingsPage() {
           hangarTheme: user.hangarTheme ?? "CYBER_BAY",
           hangarLayout: user.hangarLayout ?? "GALLERY",
           manifesto: user.manifesto ?? "",
+          accentColor: user.accentColor ?? "#dc2626",
+          pinnedBuildIds: user.pinnedBuildIds ?? [],
+          featuredBuildId: featuredBuild?.id ?? null,
         }}
+        userLevel={userLevel}
+        builds={simplifiedBuilds}
       />
       <EraManager initialEras={eras} allBuilds={simplifiedBuilds} />
     </div>

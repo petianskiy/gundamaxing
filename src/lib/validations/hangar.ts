@@ -4,6 +4,9 @@ export const hangarSettingsSchema = z.object({
   hangarTheme: z.enum(["CLEAN_LAB", "CYBER_BAY", "DESERT_BATTLEFIELD", "NEON_TOKYO"]).optional(),
   hangarLayout: z.enum(["GALLERY", "BLUEPRINT", "STORY"]).optional(),
   manifesto: z.string().max(500).optional().or(z.literal("")),
+  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color").optional(),
+  pinnedBuildIds: z.array(z.string()).max(6).optional(),
+  featuredBuildId: z.string().optional().nullable(),
 });
 
 export const createEraSchema = z.object({

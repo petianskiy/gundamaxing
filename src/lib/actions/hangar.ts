@@ -9,6 +9,9 @@ export async function updateHangarSettings(data: {
   hangarTheme?: string;
   hangarLayout?: string;
   manifesto?: string;
+  accentColor?: string;
+  pinnedBuildIds?: string[];
+  featuredBuildId?: string | null;
 }) {
   try {
     const session = await auth();
@@ -36,11 +39,46 @@ export async function updateHangarSettings(data: {
     if (parsed.data.manifesto !== undefined) {
       updates.manifesto = parsed.data.manifesto || null;
     }
+    if (parsed.data.accentColor !== undefined) {
+      updates.accentColor = parsed.data.accentColor;
+    }
+    if (parsed.data.pinnedBuildIds !== undefined) {
+      // Verify all build IDs belong to this user
+      const validBuilds = await db.build.findMany({
+        where: { id: { in: parsed.data.pinnedBuildIds }, userId },
+        select: { id: true },
+      });
+      const validIds = new Set(validBuilds.map((b) => b.id));
+      updates.pinnedBuildIds = parsed.data.pinnedBuildIds.filter((id) => validIds.has(id));
+    }
 
-    await db.user.update({
-      where: { id: userId },
-      data: updates,
-    });
+    // Handle featured build in a transaction
+    if (parsed.data.featuredBuildId !== undefined) {
+      await db.$transaction(async (tx) => {
+        // Unfeature all current builds
+        await tx.build.updateMany({
+          where: { userId, isFeaturedBuild: true },
+          data: { isFeaturedBuild: false },
+        });
+        // Feature the selected build (if one was chosen)
+        if (parsed.data.featuredBuildId) {
+          await tx.build.updateMany({
+            where: { id: parsed.data.featuredBuildId, userId },
+            data: { isFeaturedBuild: true },
+          });
+        }
+        // Update user settings
+        await tx.user.update({
+          where: { id: userId },
+          data: updates,
+        });
+      });
+    } else {
+      await db.user.update({
+        where: { id: userId },
+        data: updates,
+      });
+    }
 
     return { success: true };
   } catch (error) {
