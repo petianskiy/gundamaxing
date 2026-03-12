@@ -27,6 +27,8 @@ export function HangarShell({
   isOwner,
   currentUserId,
 }: HangarShellProps) {
+  const accent = user.accentColor || "#dc2626";
+
   // Collect all non-era builds (latest + unassigned, deduplicated)
   const allLooseBuilds = useMemo(() => {
     const seen = new Set<string>();
@@ -43,11 +45,14 @@ export function HangarShell({
   const hasEras = eras.length > 0;
 
   return (
-    <div className="relative min-h-screen">
+    <div
+      className="relative min-h-screen"
+      style={{ "--hangar-accent": accent } as React.CSSProperties}
+    >
       <HangarBackground />
 
       <div className="relative z-10 min-h-screen">
-        {/* Identity bar — scrolls with page */}
+        {/* Identity bar */}
         <div className="pt-20">
           <HangarIdentity user={user} isOwner={isOwner} />
         </div>
@@ -66,11 +71,15 @@ export function HangarShell({
               unassignedBuilds={allLooseBuilds}
             />
           ) : (
-            <BuildGrid builds={allLooseBuilds} />
+            <BuildGrid
+              builds={allLooseBuilds}
+              pinnedBuildIds={user.pinnedBuildIds}
+              layout={user.hangarLayout}
+              accentColor={accent}
+            />
           )}
         </div>
       </div>
-
     </div>
   );
 }

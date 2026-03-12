@@ -235,6 +235,7 @@ export interface HangarUser {
   tools: string[];
   techniques: string[];
   country: string | null;
+  pinnedBuildIds: string[];
   createdAt: string;
   buildCount: number;
   badgeCount: number;

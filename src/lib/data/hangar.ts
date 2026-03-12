@@ -99,6 +99,7 @@ export const getHangarByUsername = cache(async (username: string): Promise<Hanga
     tools: user.tools,
     techniques: user.techniques,
     country: user.country,
+    pinnedBuildIds: user.pinnedBuildIds,
     createdAt: formatDate(user.createdAt),
     buildCount: user._count.builds,
     badgeCount: user._count.badges,
