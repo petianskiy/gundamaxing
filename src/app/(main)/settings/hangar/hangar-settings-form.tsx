@@ -8,7 +8,7 @@ import { updateHangarSettings } from "@/lib/actions/hangar";
 import {
   Check,
   Grid3X3,
-  Layout,
+  Globe,
   BookOpen,
   Lock,
   Star,
@@ -55,7 +55,7 @@ const THEMES = [
 
 const LAYOUTS = [
   { value: "GALLERY", label: "Gallery", desc: "Clean grid of cards", icon: Grid3X3 },
-  { value: "BLUEPRINT", label: "Blueprint", desc: "Technical list view with grid overlay", icon: Layout },
+  { value: "DOME_GALLERY", label: "Dome Gallery", desc: "3D spherical gallery with drag interaction", icon: Globe },
   { value: "STORY", label: "Story", desc: "Cinematic timeline scroll", icon: BookOpen },
 ] as const;
 

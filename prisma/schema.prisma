@@ -105,7 +105,7 @@ enum HangarTheme {
 
 enum HangarLayout {
   GALLERY
-  BLUEPRINT
+  DOME_GALLERY
   STORY
 }
 

@@ -202,7 +202,7 @@ export type FilterConfig = {
 
 export type ReactionType = "RESPECT" | "TECHNIQUE" | "CREATIVITY";
 export type HangarTheme = "CLEAN_LAB" | "CYBER_BAY" | "DESERT_BATTLEFIELD" | "NEON_TOKYO";
-export type HangarLayout = "GALLERY" | "BLUEPRINT" | "STORY";
+export type HangarLayout = "GALLERY" | "DOME_GALLERY" | "STORY";
 
 export interface BuildEra {
   id: string;
