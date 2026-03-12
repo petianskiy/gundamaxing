@@ -3,11 +3,13 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil, ArrowRight } from "lucide-react";
+import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { VerificationBadge } from "@/components/ui/verification-badge";
+import { GradeBadge } from "@/components/ui/grade-badge";
+import { TechniqueChip } from "@/components/ui/technique-chip";
 import { BuildCard } from "@/components/build/build-card";
 import { ShowcaseCanvas } from "./showcase-canvas";
 import { ShowcaseEditor } from "./showcase-editor";
@@ -225,6 +227,9 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
           />
         </div>
 
+        {/* Build Info Section */}
+        <BuildInfoSection build={build} isOwner={isOwner} />
+
         {/* Comments */}
         <CommentSection
           buildId={build.id}
@@ -279,5 +284,99 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
         )}
       </div>
     </div>
+  );
+}
+
+/* ─── Build Info Section (below canvas) ──────────────────────────── */
+
+function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }) {
+  const metaRows = [
+    { icon: Package, label: "Kit", value: build.kitName },
+    { icon: Palette, label: "Paint System", value: build.paintSystem },
+    { icon: Layers, label: "Topcoat", value: build.topcoat },
+    { icon: Clock, label: "Time Invested", value: build.timeInvested },
+    { icon: Wrench, label: "Tools", value: build.tools?.join(", ") },
+  ].filter((row) => row.value);
+
+  const hasInfo = build.description || build.intentStatement || metaRows.length > 0 || build.techniques.length > 0;
+
+  if (!hasInfo) return null;
+
+  return (
+    <section className="mt-8 rounded-xl border border-border/50 bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 pt-5 pb-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-foreground">Build Details</h2>
+          <GradeBadge grade={build.grade} />
+          <span className="text-xs font-mono text-muted-foreground">{build.scale}</span>
+          <span className={cn(
+            "text-xs font-medium px-2 py-0.5 rounded",
+            build.status === "WIP"
+              ? "bg-amber-500/10 text-amber-400"
+              : build.status === "Completed"
+                ? "bg-green-500/10 text-green-400"
+                : "bg-zinc-500/10 text-zinc-400"
+          )}>
+            {build.status}
+          </span>
+        </div>
+        {isOwner && (
+          <Link
+            href={`/builds/${build.slug}/edit`}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <Pencil className="h-3 w-3" />
+            Edit Info
+          </Link>
+        )}
+      </div>
+
+      <div className="px-6 pb-6 space-y-5">
+        {/* Description */}
+        {build.description && (
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">About This Build</h3>
+            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">{build.description}</p>
+          </div>
+        )}
+
+        {/* Intent Statement */}
+        {build.intentStatement && (
+          <blockquote className="border-l-2 border-gx-red pl-4 py-2">
+            <p className="text-sm text-zinc-300 italic leading-relaxed">
+              &ldquo;{build.intentStatement}&rdquo;
+            </p>
+          </blockquote>
+        )}
+
+        {/* Metadata grid */}
+        {metaRows.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5">
+            {metaRows.map((row) => (
+              <div key={row.label} className="flex items-start gap-3 py-2 border-b border-border/30">
+                <row.icon className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{row.label}</p>
+                  <p className="text-sm text-foreground mt-0.5">{row.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Techniques */}
+        {build.techniques.length > 0 && (
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Techniques</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {build.techniques.map((tech) => (
+                <TechniqueChip key={tech} technique={tech} size="md" />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

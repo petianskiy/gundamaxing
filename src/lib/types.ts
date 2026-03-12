@@ -338,7 +338,7 @@ export interface ShowcaseTextElement extends ShowcaseElementBase {
 
 export interface ShowcaseMetadataElement extends ShowcaseElementBase {
   type: "metadata";
-  variant: "compact" | "full";
+  variant: "compact" | "full" | "stats" | "description" | "paint" | "tools" | "intent";
 }
 
 export interface ShowcaseEffectElement extends ShowcaseElementBase {

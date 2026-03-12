@@ -702,20 +702,28 @@ export function ElementPropsPanel({ element, onUpdate, onDelete, onClose }: Elem
         {/* Metadata-specific */}
         {element.type === "metadata" && (
           <div>
-            <label className="text-xs text-zinc-400 uppercase tracking-wider mb-1 block">Variant</label>
-            <div className="flex gap-2">
-              {(["compact", "full"] as const).map((v) => (
+            <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">Info Card Style</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([
+                { value: "compact", label: "Compact" },
+                { value: "full", label: "Full Info" },
+                { value: "stats", label: "Stats" },
+                { value: "description", label: "Description" },
+                { value: "paint", label: "Paint & Specs" },
+                { value: "tools", label: "Tools" },
+                { value: "intent", label: "Quote" },
+              ] as const).map((v) => (
                 <button
-                  key={v}
-                  onClick={() => onUpdate({ variant: v })}
+                  key={v.value}
+                  onClick={() => onUpdate({ variant: v.value })}
                   className={cn(
-                    "flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors",
-                    element.variant === v
+                    "px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors text-left",
+                    element.variant === v.value
                       ? "border-blue-500 bg-blue-500/10 text-blue-400"
                       : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
                   )}
                 >
-                  {v}
+                  {v.label}
                 </button>
               ))}
             </div>

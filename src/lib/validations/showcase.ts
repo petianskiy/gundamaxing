@@ -66,7 +66,7 @@ const showcaseMetadataElement = z.object({
   x: posX, y: posY, width: dimW, height: dimH,
   zIndex: z.number().int(),
   rotation: rot,
-  variant: z.enum(["compact", "full"]),
+  variant: z.enum(["compact", "full", "stats", "description", "paint", "tools", "intent"]),
 });
 
 const showcaseEffectElement = z.object({

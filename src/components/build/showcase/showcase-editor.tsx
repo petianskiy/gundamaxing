@@ -894,9 +894,17 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     const formData = new FormData();
     formData.set("buildId", build.id);
     formData.set("showcaseLayout", JSON.stringify(fullLayout));
-    const result = await updateShowcaseLayout(formData);
+    let result;
+    try {
+      result = await updateShowcaseLayout(formData);
+    } catch (err) {
+      console.error("Save failed:", err);
+      setIsSaving(false);
+      toast.error("Save failed — please try again");
+      return;
+    }
     setIsSaving(false);
-    if ("error" in result) {
+    if (result && "error" in result && result.error) {
       toast.error(result.error);
     } else {
       toast.success("Showcase saved!");
@@ -1643,7 +1651,11 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         onBackground={() => setActivePanel(activePanel === "background" ? null : "background")}
         onLayers={() => setActivePanel(activePanel === "layers" ? null : "layers")}
         onSave={handleSave}
-        onExit={onExit}
+        onExit={() => {
+          if (window.confirm("Exit without saving? Any unsaved changes will be lost.")) {
+            onExit();
+          }
+        }}
         onUndo={() => dispatch({ type: "UNDO" })}
         onRedo={() => dispatch({ type: "REDO" })}
         onShowGuide={() => setShowEditorGuide(true)}
