@@ -1180,6 +1180,37 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
   return (
     <div className="relative">
+      {/* ── Floating top bar: Save & Exit ── */}
+      <div className="flex items-center justify-between mb-4 sticky top-20 z-[400] bg-background/80 backdrop-blur-sm rounded-xl border border-border/50 px-4 py-2.5">
+        <p className="text-sm text-muted-foreground font-medium">Editing Showcase</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (window.confirm("Exit without saving? Any unsaved changes will be lost.")) {
+                onExit();
+              }
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors"
+          >
+            Exit
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-gx-red hover:bg-gx-red/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {isSaving ? (
+              <>
+                <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Build"
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Page navigation strip */}
       <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
         {pagesState.map((page, i) => (
