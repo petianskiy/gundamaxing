@@ -85,13 +85,13 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
 
 function DomeGalleryLayout({ builds, accentColor }: { builds: Build[]; accentColor: string }) {
   const images = useMemo(() => {
-    const result: { src: string; alt: string }[] = [];
-    for (const build of builds) {
-      for (const img of build.images) {
-        result.push({ src: img.url, alt: img.alt || build.title });
-      }
-    }
-    return result;
+    return builds
+      .map((build) => {
+        const primary = build.images.find((img) => img.isPrimary) || build.images[0];
+        if (!primary) return null;
+        return { src: primary.url, alt: build.title, href: `/builds/${build.slug}` };
+      })
+      .filter(Boolean) as { src: string; alt: string; href: string }[];
   }, [builds]);
 
   if (images.length === 0) {

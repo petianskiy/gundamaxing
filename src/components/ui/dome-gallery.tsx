@@ -7,6 +7,7 @@ import "./dome-gallery.css";
 interface DomeImage {
   src: string;
   alt: string;
+  href?: string;
 }
 
 interface DomeGalleryProps {
@@ -55,6 +56,7 @@ interface ItemCoord {
   sizeY: number;
   src: string;
   alt: string;
+  href?: string;
 }
 
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
@@ -75,6 +77,7 @@ function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
   const normalized = pool.map((img) => ({
     src: img.src || "",
     alt: img.alt || "",
+    href: img.href,
   }));
 
   const used = Array.from({ length: totalSlots }, (_, i) => normalized[i % normalized.length]);
@@ -93,7 +96,7 @@ function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
     }
   }
 
-  return coords.map((c, i) => ({ ...c, src: used[i].src, alt: used[i].alt }));
+  return coords.map((c, i) => ({ ...c, src: used[i].src, alt: used[i].alt, href: used[i].href }));
 }
 
 function computeItemBaseRotation(
@@ -460,14 +463,25 @@ export default function DomeGallery({
     };
   }, [enlargeTransitionMs, unlockScroll]);
 
+  const navigateToHref = useCallback((el: HTMLElement) => {
+    const item = el.closest(".item") as HTMLElement | null;
+    const href = item?.dataset.href;
+    if (href) {
+      window.location.href = href;
+      return true;
+    }
+    return false;
+  }, []);
+
   const onTileClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (draggingRef.current || movedRef.current) return;
       if (performance.now() - lastDragEndAt.current < 80) return;
       if (openingRef.current) return;
+      if (navigateToHref(e.currentTarget)) return;
       openItemFromElement(e.currentTarget);
     },
-    [openItemFromElement]
+    [openItemFromElement, navigateToHref]
   );
 
   const onTilePointerUp = useCallback(
@@ -476,9 +490,10 @@ export default function DomeGallery({
       if (draggingRef.current || movedRef.current) return;
       if (performance.now() - lastDragEndAt.current < 80) return;
       if (openingRef.current) return;
+      if (navigateToHref(e.currentTarget)) return;
       openItemFromElement(e.currentTarget);
     },
-    [openItemFromElement]
+    [openItemFromElement, navigateToHref]
   );
 
   useEffect(() => {
@@ -510,6 +525,7 @@ export default function DomeGallery({
                 key={`${it.x},${it.y},${i}`}
                 className="item"
                 data-src={it.src}
+                data-href={it.href || undefined}
                 data-offset-x={it.x}
                 data-offset-y={it.y}
                 data-size-x={it.sizeX}
