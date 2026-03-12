@@ -6,7 +6,7 @@ export const hangarSettingsSchema = z.object({
   manifesto: z.string().max(500).optional().or(z.literal("")),
   accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color").optional(),
   domeSettings: z.object({
-    density: z.enum(["low", "medium", "high"]).optional(),
+    selectedBuildIds: z.array(z.string()).max(12).optional(),
     autoSpin: z.boolean().optional(),
     spinSpeed: z.number().min(0).max(5).optional(),
     grayscale: z.boolean().optional(),

@@ -84,18 +84,28 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
 
 /* ─── DOME GALLERY LAYOUT ────────────────────────────────────────── */
 
-const DENSITY_MAP = { low: 12, medium: 20, high: 30 } as const;
+const MAX_SPHERE_BUILDS = 12;
 
 function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Build[]; accentColor: string; domeSettings?: DomeGallerySettings | null }) {
   const images = useMemo(() => {
-    return builds
+    // If user selected specific builds, use only those (in order)
+    const selectedIds = domeSettings?.selectedBuildIds;
+    const pool = selectedIds && selectedIds.length > 0
+      ? selectedIds
+          .map((id) => builds.find((b) => b.id === id))
+          .filter(Boolean) as Build[]
+      : builds;
+
+    // Cap at max
+    return pool
+      .slice(0, MAX_SPHERE_BUILDS)
       .map((build) => {
         const primary = build.images.find((img) => img.isPrimary) || build.images[0];
         if (!primary) return null;
         return { src: primary.url, alt: build.title, href: `/builds/${build.slug}` };
       })
       .filter(Boolean) as { src: string; alt: string; href: string }[];
-  }, [builds]);
+  }, [builds, domeSettings?.selectedBuildIds]);
 
   if (images.length === 0) {
     return (
@@ -105,20 +115,17 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
     );
   }
 
-  const density = domeSettings?.density || "medium";
-  const segments = DENSITY_MAP[density];
   const grayscale = domeSettings?.grayscale ?? false;
   const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
 
   return (
-    <div className="relative w-full" style={{ height: "min(70vh, 600px)" }}>
+    <div className="relative w-full" style={{ height: "min(65vh, 550px)" }}>
       <DomeGallery
         images={images}
         overlayBlurColor="var(--background, #060010)"
         grayscale={grayscale}
-        segments={segments}
-        minRadius={300}
-        fit={0.6}
+        minRadius={180}
+        fit={0.35}
         imageBorderRadius="12px"
         openedImageBorderRadius="16px"
         dragDampening={2}

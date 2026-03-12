@@ -68,7 +68,8 @@ export default async function HangarSettingsPage() {
           pinnedBuildIds: user.pinnedBuildIds ?? [],
           featuredBuildId: featuredBuild?.id ?? null,
           domeSettings: {
-            density: (user.domeSettings as Record<string, unknown>)?.density as "low" | "medium" | "high" ?? "medium",
+            selectedBuildIds: (Array.isArray((user.domeSettings as Record<string, unknown>)?.selectedBuildIds)
+              ? (user.domeSettings as Record<string, unknown>).selectedBuildIds : []) as string[],
             autoSpin: !!(user.domeSettings as Record<string, unknown>)?.autoSpin,
             spinSpeed: Number((user.domeSettings as Record<string, unknown>)?.spinSpeed) || 1,
             grayscale: !!(user.domeSettings as Record<string, unknown>)?.grayscale,

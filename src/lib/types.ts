@@ -215,7 +215,7 @@ export interface BuildEra {
 }
 
 export interface DomeGallerySettings {
-  density?: "low" | "medium" | "high";
+  selectedBuildIds?: string[];
   autoSpin?: boolean;
   spinSpeed?: number;
   grayscale?: boolean;

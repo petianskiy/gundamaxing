@@ -30,7 +30,7 @@ interface BuildItem {
 }
 
 interface DomeSettings {
-  density: "low" | "medium" | "high";
+  selectedBuildIds: string[];
   autoSpin: boolean;
   spinSpeed: number;
   grayscale: boolean;
@@ -283,36 +283,70 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
               Customize how your 3D sphere gallery looks and behaves
             </p>
 
-            {/* Density */}
+            {/* Sphere Builds selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Tile Density</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["low", "medium", "high"] as const).map((d) => {
-                  const isActive = form.domeSettings.density === d;
-                  const labels = { low: "Sparse", medium: "Balanced", high: "Dense" };
-                  const descs = { low: "~80 tiles", medium: "~160 tiles", high: "~250 tiles" };
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => {
-                        const next = { ...form.domeSettings, density: d };
-                        setForm((prev) => ({ ...prev, domeSettings: next }));
-                        autoSave({ domeSettings: next }, "domeSettings");
-                      }}
-                      className={cn(
-                        "p-2.5 rounded-lg border text-center transition-colors",
-                        isActive
-                          ? "border-gx-red bg-gx-red/5"
-                          : "border-border/50 bg-gx-surface hover:border-border"
-                      )}
-                    >
-                      <p className="text-sm font-medium text-foreground">{labels[d]}</p>
-                      <p className="text-[10px] text-muted-foreground">{descs[d]}</p>
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">Sphere Builds</label>
+                <span className="text-[10px] text-muted-foreground">
+                  {form.domeSettings.selectedBuildIds.length}/12 selected
+                </span>
               </div>
+              <p className="text-[10px] text-muted-foreground/60">
+                Choose up to 12 builds to display on the sphere. If none are selected, your most recent builds are used.
+              </p>
+              {builds.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">No builds yet</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[280px] overflow-y-auto pr-1">
+                  {builds.map((build) => {
+                    const isSelected = form.domeSettings.selectedBuildIds.includes(build.id);
+                    return (
+                      <button
+                        key={build.id}
+                        type="button"
+                        onClick={() => {
+                          let nextIds: string[];
+                          if (isSelected) {
+                            nextIds = form.domeSettings.selectedBuildIds.filter((id) => id !== build.id);
+                          } else {
+                            if (form.domeSettings.selectedBuildIds.length >= 12) {
+                              toast.error("Maximum 12 builds on the sphere");
+                              return;
+                            }
+                            nextIds = [...form.domeSettings.selectedBuildIds, build.id];
+                          }
+                          const next = { ...form.domeSettings, selectedBuildIds: nextIds };
+                          setForm((prev) => ({ ...prev, domeSettings: next }));
+                          autoSave({ domeSettings: next }, "domeSettings");
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-lg border text-left transition-all",
+                          isSelected
+                            ? "border-gx-red/50 bg-gx-red/5"
+                            : "border-border/50 bg-gx-surface hover:border-border"
+                        )}
+                      >
+                        <div className="relative w-9 h-9 rounded-md overflow-hidden bg-muted shrink-0">
+                          {build.thumbnail ? (
+                            <Image src={build.thumbnail} alt={build.title} fill className="object-cover" unoptimized />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[9px]">N/A</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{build.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{build.kitName}</p>
+                        </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-gx-red flex items-center justify-center shrink-0">
+                            <Check className="h-2.5 w-2.5 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Auto-spin */}

@@ -32,10 +32,10 @@ interface DomeGalleryProps {
 }
 
 const DEFAULTS = {
-  maxVerticalRotationDeg: 80,
+  maxVerticalRotationDeg: 25,
   dragSensitivity: 20,
   enlargeTransitionMs: 300,
-  segments: 35,
+  segments: 14,
 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
@@ -60,22 +60,26 @@ interface ItemCoord {
   href?: string;
 }
 
+/**
+ * Build sphere tile positions using latitude-aware distribution.
+ * - 5 Y rows: -4, -2, 0, 2, 4 (leaves poles empty)
+ * - Fewer columns at higher latitudes (cos scaling)
+ * - Total tiles capped at ~60 to prevent overlap
+ */
 function buildItems(pool: DomeImage[], seg: number): ItemCoord[] {
-  const unit = 360 / seg / 2; // degrees per unit offset
+  const unit = 360 / seg / 2;
   const allXCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
-  // Y rows covering full sphere (-14 to +14 in steps of 2)
-  const yRows = Array.from({ length: 15 }, (_, i) => -14 + i * 2);
+  // Only 5 rows — band around equator, poles stay empty
+  const yRows = [-4, -2, 0, 2, 4];
 
   const coords: { x: number; y: number; sizeX: number; sizeY: number }[] = [];
 
   for (const y of yRows) {
-    // Calculate latitude angle and reduce columns proportionally
     const latDeg = Math.abs(unit * y);
     const latRad = (latDeg * Math.PI) / 180;
-    const ratio = Math.max(0.1, Math.cos(latRad));
-    const colCount = Math.max(2, Math.round(allXCols.length * ratio));
+    const ratio = Math.cos(latRad);
+    const colCount = Math.max(3, Math.round(allXCols.length * ratio));
 
-    // Evenly sample columns for this latitude row
     const step = allXCols.length / colCount;
     for (let i = 0; i < colCount; i++) {
       const idx = Math.floor(i * step);
