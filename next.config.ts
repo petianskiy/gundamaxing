@@ -2,16 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year — R2 keys are immutable
+    // Disabled until R2 images are served via CDN (R2_PUBLIC_URL).
+    // The /api/files proxy can't be optimized by Next.js on Vercel.
+    unoptimized: true,
     remotePatterns: [
-      // OAuth provider avatars
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "cdn.discordapp.com" },
-      // Cloudflare R2 CDN custom domain (set R2_PUBLIC_URL in env)
       ...(process.env.R2_PUBLIC_URL
         ? [{ protocol: "https" as const, hostname: new URL(process.env.R2_PUBLIC_URL).hostname }]
         : []),
