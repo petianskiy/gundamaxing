@@ -10,7 +10,7 @@ export default async function MissionPage() {
     return (
       <div className="relative min-h-screen">
         <div className="fixed inset-0 -z-20">
-          <Image src="/images/mission-bg.jpg" alt="" fill className="object-cover object-center" priority unoptimized />
+          <Image src="/images/mission-bg.jpg" alt="" fill className="object-cover object-center" priority />
         </div>
         <div className="fixed inset-0 -z-10 bg-black/70" />
         <div className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 text-center">

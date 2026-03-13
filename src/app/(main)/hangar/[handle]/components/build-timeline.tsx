@@ -101,7 +101,6 @@ export function BuildTimeline({ entries }: BuildTimelineProps) {
                       src={imgUrl}
                       alt={`${entry.title} image ${imgIdx + 1}`}
                       fill
-                      unoptimized
                       className="object-cover"
                       sizes="80px"
                     />

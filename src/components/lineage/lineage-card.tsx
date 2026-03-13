@@ -46,7 +46,6 @@ export function LineageCard({ lineage, showActions, onDelete, onTogglePublic }: 
                       alt={build.title}
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                 ) : null;
@@ -89,7 +88,7 @@ export function LineageCard({ lineage, showActions, onDelete, onTogglePublic }: 
           <div className="mt-3 flex items-center gap-2">
             {lineage.userAvatar && (
               <div className="relative w-5 h-5 rounded-full overflow-hidden ring-1 ring-border/50 flex-shrink-0">
-                <Image src={lineage.userAvatar} alt={lineage.username} fill className="object-cover" unoptimized />
+                <Image src={lineage.userAvatar} alt={lineage.username} fill className="object-cover" />
               </div>
             )}
             <span className="text-[11px] text-muted-foreground truncate">{lineage.username}</span>

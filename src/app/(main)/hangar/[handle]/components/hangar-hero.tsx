@@ -52,9 +52,9 @@ export function HangarHero({ build, onInspect }: HangarHeroProps) {
             src={primaryImage.url}
             alt={primaryImage.alt || build.title}
             fill
+            sizes="100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
-            unoptimized
             priority
           />
         ) : (

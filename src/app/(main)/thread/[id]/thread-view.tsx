@@ -129,7 +129,6 @@ function CommentItem({
                   alt={comment.username}
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             </Link>
@@ -282,7 +281,6 @@ export function ThreadView({
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/65" />
@@ -391,7 +389,6 @@ export function ThreadView({
                       alt={thread.username}
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </div>
                 </Link>

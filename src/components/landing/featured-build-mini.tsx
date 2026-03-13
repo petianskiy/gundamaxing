@@ -32,8 +32,8 @@ export function FeaturedBuildMini({ build }: { build: Build }) {
                 src={primaryImage.url}
                 alt={primaryImage.alt}
                 fill
+                sizes="64px"
                 className="object-cover"
-                unoptimized
               />
             </div>
             <div className="flex-1 min-w-0">

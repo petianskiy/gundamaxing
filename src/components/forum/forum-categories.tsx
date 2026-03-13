@@ -26,7 +26,6 @@ function CategoryCard({ cat, featured = false }: { cat: ForumCategory; featured?
             alt=""
             fill
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-            unoptimized
           />
         ) : (
           <div className="absolute inset-0 bg-zinc-900" />

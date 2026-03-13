@@ -12,7 +12,7 @@ export function ConnectSection() {
       name: "Instagram",
       handle: t("connect.igHandle"),
       href: "https://instagram.com/gundamaxing",
-      icon: "/instagram-icon.png",
+      icon: "/instagram-icon.webp",
       description: t("connect.igDesc"),
       cta: t("connect.igCta"),
       japLabel: "インスタグラム",
@@ -35,6 +35,7 @@ export function ConnectSection() {
           src="/images/connect-bg.png"
           alt=""
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />
@@ -92,7 +93,6 @@ export function ConnectSection() {
                   width={64}
                   height={64}
                   className="h-full w-full object-cover"
-                  unoptimized
                 />
               </div>
 

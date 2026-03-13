@@ -67,7 +67,6 @@ export function HangarIdentity({ user, isOwner }: HangarIdentityProps) {
               width={64}
               height={64}
               className="h-full w-full object-cover"
-              unoptimized
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-xl font-bold text-white/30 bg-white/5">

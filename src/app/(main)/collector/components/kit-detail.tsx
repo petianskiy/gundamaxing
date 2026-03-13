@@ -174,7 +174,6 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
                 alt={kit.name}
                 fill
                 className="object-contain p-8"
-                unoptimized
               />
             ) : (
               <div className="flex h-full items-center justify-center">
@@ -358,7 +357,6 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
                         width={32}
                         height={32}
                         className="rounded-full"
-                        unoptimized
                       />
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">

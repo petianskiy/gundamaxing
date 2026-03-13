@@ -331,7 +331,7 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                       >
                         <div className="relative w-9 h-9 rounded-md overflow-hidden bg-muted shrink-0">
                           {build.thumbnail ? (
-                            <Image src={build.thumbnail} alt={build.title} fill className="object-cover" unoptimized />
+                            <Image src={build.thumbnail} alt={build.title} fill className="object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[9px]">N/A</div>
                           )}
@@ -594,7 +594,7 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                   >
                     <div className="relative w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0">
                       {build.thumbnail ? (
-                        <Image src={build.thumbnail} alt={build.title} fill className="object-cover" unoptimized />
+                        <Image src={build.thumbnail} alt={build.title} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">N/A</div>
                       )}
@@ -642,7 +642,7 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                   <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0">
                     {build.thumbnail ? (
-                      <Image src={build.thumbnail} alt={build.title} fill className="object-cover" unoptimized />
+                      <Image src={build.thumbnail} alt={build.title} fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">N/A</div>
                     )}
@@ -677,7 +677,7 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                   <div className="w-4 shrink-0" />
                   <div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0">
                     {build.thumbnail ? (
-                      <Image src={build.thumbnail} alt={build.title} fill className="object-cover" unoptimized />
+                      <Image src={build.thumbnail} alt={build.title} fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[10px]">N/A</div>
                     )}

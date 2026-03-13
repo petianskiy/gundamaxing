@@ -43,7 +43,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
               <Image
-                src="/gundam-emoji.png"
+                src="/gundam-emoji.webp"
                 alt="Gundam"
                 width={28}
                 height={28}

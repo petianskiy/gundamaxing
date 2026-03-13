@@ -19,7 +19,7 @@ export default async function LineagesPage() {
     <div className="relative min-h-screen">
       <div
         className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/lineages-bg.png')" }}
+        style={{ backgroundImage: "url('/images/lineages-bg.webp')" }}
       />
       <div className="fixed inset-0 -z-10 bg-black/60" />
       <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">

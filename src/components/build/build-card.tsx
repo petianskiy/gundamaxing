@@ -31,9 +31,9 @@ export function BuildCard({ build }: { build: Build }) {
             src={primaryImage.url}
             alt={primaryImage.alt}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
             style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
-            unoptimized
           />
 
           {/* Top-left: Grade + Scale */}
@@ -101,8 +101,8 @@ export function BuildCard({ build }: { build: Build }) {
                   src={build.userAvatar}
                   alt={build.username}
                   fill
+                  sizes="18px"
                   className="object-cover"
-                  unoptimized
                 />
               </div>
               <span className="text-xs text-muted-foreground truncate">

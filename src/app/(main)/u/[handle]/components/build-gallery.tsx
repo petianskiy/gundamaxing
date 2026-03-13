@@ -182,13 +182,13 @@ export function BuildGallery({
                     src={primaryImage.url}
                     alt={primaryImage.alt}
                     fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     style={
                       primaryImage.objectPosition
                         ? { objectPosition: primaryImage.objectPosition }
                         : undefined
                     }
-                    unoptimized
                   />
                 )}
                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">

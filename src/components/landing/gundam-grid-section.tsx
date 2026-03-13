@@ -14,7 +14,7 @@ const gundamImages = [
   "/gundam-art/xi-gundam.webp",
   "/gundam-art/jupitive-gundam.jpg",
   "/gundam-art/psycho-zaku.jpg",
-  "/gundam-art/mighty-strike-freedom.png",
+  "/gundam-art/mighty-strike-freedom.webp",
   "/gundam-art/schwarzette.webp",
   "/gundam-art/rg-rx78-2.jpg",
   "/gundam-art/force-impulse.jpg",

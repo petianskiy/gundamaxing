@@ -57,7 +57,7 @@ export default async function LineageDetailPage({ params }: Props) {
             <div className="mt-3 flex items-center gap-2">
               {lineage.userAvatar && (
                 <Link href={`/u/${lineage.userHandle}`} className="relative w-6 h-6 rounded-full overflow-hidden ring-1 ring-border/50">
-                  <Image src={lineage.userAvatar} alt={lineage.username} fill className="object-cover" unoptimized />
+                  <Image src={lineage.userAvatar} alt={lineage.username} fill className="object-cover" />
                 </Link>
               )}
               <Link href={`/u/${lineage.userHandle}`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">

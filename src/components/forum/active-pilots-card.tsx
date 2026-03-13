@@ -32,7 +32,6 @@ export function ActivePilotsCard({ pilots }: { pilots: ForumActivePilot[] }) {
                     alt={pilot.displayName ?? pilot.username}
                     fill
                     className="object-cover"
-                    unoptimized
                   />
                 </div>
               ) : (

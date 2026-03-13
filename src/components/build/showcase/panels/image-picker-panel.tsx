@@ -139,7 +139,7 @@ export function ImagePickerPanel({
     {isRemoving && (
       <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-zinc-900 border border-zinc-700/50 max-w-sm w-full mx-4 shadow-2xl">
-          <img src="/gundam-emoji.png" alt="" className="w-16 h-16 object-contain" />
+          <img src="/gundam-emoji.webp" alt="" className="w-16 h-16 object-contain" />
           <div className="text-center">
             <p className="text-sm font-medium text-white">
               {stage === "queued" ? `Queued (${queuePosition} of ${queueSize})` :
@@ -233,7 +233,6 @@ export function ImagePickerPanel({
                   alt={img.alt || "Build image"}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform"
-                  unoptimized
                 />
                 {/* Overlay */}
                 <div className={cn(

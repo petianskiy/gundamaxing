@@ -33,7 +33,7 @@ export function HeroVideo() {
       muted
       loop
       playsInline
-      preload="auto"
+      preload="metadata"
       disablePictureInPicture
       controlsList="nodownload nofullscreen noremoteplayback"
       className="absolute inset-0 w-full h-full object-cover pointer-events-none"

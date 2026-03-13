@@ -107,7 +107,6 @@ export function MissionSubmissionsTable({ submissions, missionId, winnerId }: Pr
                             alt=""
                             fill
                             className="object-cover"
-                            unoptimized
                           />
                         </div>
                       ) : (
@@ -236,7 +235,6 @@ export function MissionSubmissionsTable({ submissions, missionId, winnerId }: Pr
                                   alt=""
                                   fill
                                   className="object-cover"
-                                  unoptimized
                                 />
                               </div>
                             ))}

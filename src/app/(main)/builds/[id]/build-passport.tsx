@@ -174,7 +174,6 @@ export function BuildPassport({
               fill
               className="object-cover object-top"
               style={currentImage.objectPosition ? { objectPosition: currentImage.objectPosition } : undefined}
-              unoptimized
               priority
             />
 
@@ -222,7 +221,7 @@ export function BuildPassport({
                       i === selectedImageIndex ? "border-gx-red" : "border-transparent opacity-60 hover:opacity-100"
                     )}
                   >
-                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -239,7 +238,7 @@ export function BuildPassport({
                         : "border-transparent opacity-70 hover:opacity-100"
                     )}
                   >
-                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -284,7 +283,6 @@ export function BuildPassport({
                 width={1200}
                 height={900}
                 className="max-h-[80vh] w-auto object-contain rounded-lg"
-                unoptimized
               />
 
               {/* Next arrow */}
@@ -315,7 +313,7 @@ export function BuildPassport({
                         : "border-transparent opacity-50 hover:opacity-80"
                     )}
                   >
-                    <Image src={img.url} alt={img.alt} fill className="object-cover" unoptimized />
+                    <Image src={img.url} alt={img.alt} fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -434,7 +432,6 @@ export function BuildPassport({
                 alt={build.username}
                 fill
                 className="object-cover"
-                unoptimized
               />
             </div>
             <div>
@@ -466,7 +463,7 @@ export function BuildPassport({
                     <div className="flex gap-2 mt-3">
                       {entry.images.map((img, i) => (
                         <div key={i} className="relative w-24 h-16 rounded-md overflow-hidden">
-                          <Image src={img} alt="" fill className="object-cover" unoptimized />
+                          <Image src={img} alt="" fill className="object-cover" />
                         </div>
                       ))}
                     </div>

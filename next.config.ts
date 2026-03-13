@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year — R2 keys are immutable
+    remotePatterns: [
+      // Cloudflare R2 CDN custom domain (set R2_PUBLIC_URL in env)
+      ...(process.env.R2_PUBLIC_URL
+        ? [{ protocol: "https" as const, hostname: new URL(process.env.R2_PUBLIC_URL).hostname }]
+        : []),
+    ],
+  },
   async headers() {
     return [
       {
@@ -17,6 +29,16 @@ const nextConfig: NextConfig = {
           {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
+          },
+        ],
+      },
+      {
+        // Cache static assets (images, fonts, videos) in /public
+        source: "/:path((?:.*\\.(?:jpg|jpeg|png|webp|avif|gif|svg|ico|woff2|woff|mp4))$)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },

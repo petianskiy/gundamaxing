@@ -20,12 +20,11 @@ export default async function MyLineagesPage() {
     <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-20">
         <Image
-          src="/images/lineages-bg.png"
+          src="/images/lineages-bg.webp"
           alt=""
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/60" />

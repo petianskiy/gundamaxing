@@ -168,7 +168,7 @@ export function MissionSubmitForm({ existingSubmission, onSuccess, onCancel }: M
               key={url}
               className="group/img relative w-[88px] h-[88px] overflow-hidden border border-white/[0.08]"
             >
-              <Image src={url} alt="" fill className="object-cover" unoptimized />
+              <Image src={url} alt="" fill className="object-cover" />
               <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-colors" />
               <button
                 type="button"

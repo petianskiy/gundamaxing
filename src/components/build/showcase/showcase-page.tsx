@@ -166,7 +166,6 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
                 alt={build.username}
                 fill
                 className="object-cover"
-                unoptimized
               />
             </div>
             <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors truncate">

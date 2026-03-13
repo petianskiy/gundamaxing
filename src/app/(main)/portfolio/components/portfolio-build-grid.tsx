@@ -139,7 +139,6 @@ export function PortfolioBuildGrid({ builds, pinnedBuildIds: initialPinned }: Bu
                       alt={primaryImage.alt || build.title}
                       fill
                       className="object-cover transition-transform group-hover:scale-[1.02]"
-                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">

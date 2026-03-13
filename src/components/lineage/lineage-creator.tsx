@@ -386,7 +386,6 @@ export function LineageCreator({ userBuilds, existingLineage }: LineageCreatorPr
                           alt={build.title}
                           fill
                           className="object-cover"
-                          unoptimized
                         />
                       )}
                       {/* Selection check */}
@@ -449,7 +448,7 @@ export function LineageCreator({ userBuilds, existingLineage }: LineageCreatorPr
                   {/* Build thumbnail */}
                   {primaryImage && (
                     <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                      <Image src={primaryImage.url} alt={build.title} fill className="object-cover" unoptimized />
+                      <Image src={primaryImage.url} alt={build.title} fill className="object-cover" />
                     </div>
                   )}
 

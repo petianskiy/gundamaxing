@@ -48,7 +48,7 @@ export function BgRefineModal({ imageUrl, onComplete, onClose }: BgRemovalModalP
     <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center" role="dialog" aria-modal="true">
       <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-zinc-900 border border-zinc-700/50 max-w-sm w-full mx-4 shadow-2xl">
         {/* Static sticker */}
-        <img src="/gundam-emoji.png" alt="" className="w-16 h-16 object-contain" />
+        <img src="/gundam-emoji.webp" alt="" className="w-16 h-16 object-contain" />
 
         {error ? (
           <div className="flex flex-col items-center gap-3">

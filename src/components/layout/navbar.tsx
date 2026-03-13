@@ -42,7 +42,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
             <Image
-              src="/gundam-emoji.png"
+              src="/gundam-emoji.webp"
               alt="Gundam"
               width={32}
               height={32}

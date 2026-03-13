@@ -20,7 +20,6 @@ export default async function NewThreadPage({ searchParams }: Props) {
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />

@@ -46,7 +46,7 @@ function TreeNodeCard({
       {/* Thumbnail */}
       {primaryImage && (
         <div className="relative w-14 h-[68px] flex-shrink-0">
-          <Image src={primaryImage.url} alt={node.build.title} fill className="object-cover" unoptimized />
+          <Image src={primaryImage.url} alt={node.build.title} fill className="object-cover" />
         </div>
       )}
 

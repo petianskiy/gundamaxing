@@ -55,8 +55,8 @@ export function WorkshopsSection() {
                     src={workshop.image}
                     alt={workshop.name}
                     fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
                 </div>

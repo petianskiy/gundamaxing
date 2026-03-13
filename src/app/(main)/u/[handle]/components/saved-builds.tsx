@@ -47,7 +47,6 @@ export function SavedBuilds({ builds }: SavedBuildsProps) {
                     alt={primaryImage.alt || build.title}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    unoptimized
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">

@@ -20,7 +20,6 @@ export function SubCategoryGrid({
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/60" />
@@ -44,7 +43,6 @@ export function SubCategoryGrid({
                 alt=""
                 fill
                 className="object-cover"
-                unoptimized
               />
               <div
                 className="absolute inset-0"
@@ -111,7 +109,6 @@ export function SubCategoryGrid({
                       alt=""
                       fill
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-                      unoptimized
                     />
                   ) : (
                     <div

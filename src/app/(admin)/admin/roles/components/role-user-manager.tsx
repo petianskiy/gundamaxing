@@ -141,7 +141,6 @@ export function RoleUserManager({
                     width={24}
                     height={24}
                     className="h-full w-full object-cover"
-                    unoptimized
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-muted-foreground">
@@ -193,7 +192,6 @@ export function RoleUserManager({
                     width={28}
                     height={28}
                     className="h-full w-full object-cover"
-                    unoptimized
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-xs font-bold text-muted-foreground">

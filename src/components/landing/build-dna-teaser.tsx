@@ -50,7 +50,6 @@ export function BuildDnaTeaser() {
               width={640}
               height={900}
               className="w-full h-auto object-cover"
-              unoptimized
             />
             {/* Subtle overlay for integration */}
             <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-background/30" />

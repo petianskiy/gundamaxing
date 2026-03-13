@@ -14,7 +14,7 @@ const BACKGROUNDS = [
   "/hangar/backgrounds/bg-06.jpg",
   "/hangar/backgrounds/bg-07.jpg",
   "/hangar/backgrounds/bg-08.jpg",
-  "/hangar/backgrounds/bg-09.png",
+  "/hangar/backgrounds/bg-09.webp",
   "/hangar/backgrounds/bg-10.jpg",
 ];
 
@@ -52,6 +52,7 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
             loop
             muted
             playsInline
+            preload="metadata"
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source src="/dome-bg.mp4" type="video/mp4" />
@@ -84,7 +85,6 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
             fill
             className="object-cover"
             priority={idx === 0}
-            unoptimized
             sizes="100vw"
           />
         </motion.div>

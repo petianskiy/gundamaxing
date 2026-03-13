@@ -25,7 +25,6 @@ export default async function NotificationsPage() {
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/75" />

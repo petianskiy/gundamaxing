@@ -164,7 +164,7 @@ export function ProfileSettingsForm({
             </label>
             <div className="relative rounded-xl overflow-hidden border border-border/50 bg-gx-surface h-32 group">
               {form.banner ? (
-                <Image src={form.banner} alt="Banner" fill className="object-cover" unoptimized />
+                <Image src={form.banner} alt="Banner" fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <Upload className="h-6 w-6" />
@@ -213,7 +213,7 @@ export function ProfileSettingsForm({
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-border/50 bg-gx-surface group shrink-0">
                 {form.avatar ? (
-                  <Image src={form.avatar} alt="Avatar" fill className="object-cover" unoptimized />
+                  <Image src={form.avatar} alt="Avatar" fill className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <Camera className="h-6 w-6" />

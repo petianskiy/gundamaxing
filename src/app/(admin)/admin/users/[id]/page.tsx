@@ -192,7 +192,6 @@ export default async function UserDetailPage({
               alt="Banner"
               fill
               className="object-cover"
-              unoptimized
             />
           )}
         </div>
@@ -213,7 +212,6 @@ export default async function UserDetailPage({
                   width={80}
                   height={80}
                   className="h-full w-full object-cover"
-                  unoptimized
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-2xl font-bold text-muted-foreground">

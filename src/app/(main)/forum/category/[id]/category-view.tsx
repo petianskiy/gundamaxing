@@ -32,7 +32,6 @@ export function CategoryView({ category, threads, currentPage, totalPages, sort 
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/60" />
@@ -56,7 +55,6 @@ export function CategoryView({ category, threads, currentPage, totalPages, sort 
                 alt=""
                 fill
                 className="object-cover"
-                unoptimized
               />
               <div
                 className="absolute inset-0"

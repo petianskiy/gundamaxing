@@ -51,7 +51,7 @@ export function UserMenu() {
           )}
         >
           {session.user.image ? (
-            <Image src={session.user.image} alt="" fill className="object-cover" unoptimized />
+            <Image src={session.user.image} alt="" fill className="object-cover" />
           ) : (
             <div className="w-full h-full bg-gx-red/20 flex items-center justify-center">
               <User className="h-4 w-4 text-gx-red" />

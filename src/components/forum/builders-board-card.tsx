@@ -46,7 +46,6 @@ export function BuildersBoardCard({ entries }: { entries: ForumLeaderboardEntry[
                     alt={entry.displayName ?? entry.username}
                     fill
                     className="object-cover"
-                    unoptimized
                   />
                 </div>
               ) : (

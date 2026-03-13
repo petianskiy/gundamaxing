@@ -47,7 +47,6 @@ export function GradeBadge({
       width={120}
       height={48}
       className={cn("w-auto object-contain", sizeClasses[size], className)}
-      unoptimized
     />
   );
 }

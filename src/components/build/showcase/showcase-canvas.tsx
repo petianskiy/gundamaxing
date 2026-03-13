@@ -106,7 +106,6 @@ export function ShowcaseCanvas({ layout, build, pageBackground }: ShowcaseCanvas
               opacity: bgOpacity,
               filter: bgBlurStyle,
             }}
-            unoptimized
           />
         </div>
       )}

@@ -65,7 +65,6 @@ export function HangarHeader({ user, isOwner }: HangarHeaderProps) {
               width={56}
               height={56}
               className="h-full w-full object-cover"
-              unoptimized
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-lg font-bold text-zinc-500 bg-zinc-900">

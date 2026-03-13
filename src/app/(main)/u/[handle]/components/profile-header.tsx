@@ -78,8 +78,8 @@ export function ProfileHeader({
             src={user.banner}
             alt={`${user.displayName || user.username}'s banner`}
             fill
+            sizes="100vw"
             className="object-cover"
-            unoptimized
           />
         ) : (
           <div
@@ -113,7 +113,6 @@ export function ProfileHeader({
                   width={96}
                   height={96}
                   className="h-full w-full object-cover"
-                  unoptimized
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-3xl font-bold text-muted-foreground bg-gx-surface">

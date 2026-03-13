@@ -212,9 +212,9 @@ function StoryLayout({ builds, pinnedBuildIds, accentColor }: { builds: Build[];
                         src={primaryImage.url}
                         alt={primaryImage.alt || build.title}
                         fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 60vw"
                         className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                         style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
-                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

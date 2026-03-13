@@ -30,7 +30,6 @@ export function KitCard({
             alt={kit.name}
             fill
             className="object-contain p-4 transition-transform group-hover:scale-105"
-            unoptimized
           />
         ) : (
           <div className="flex h-full items-center justify-center">

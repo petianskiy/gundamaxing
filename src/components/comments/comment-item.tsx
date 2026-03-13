@@ -77,7 +77,7 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
           style={{ width: size, height: size }}
         >
           {comment.userAvatar ? (
-            <Image src={comment.userAvatar} alt={comment.username} fill className="object-cover" unoptimized />
+            <Image src={comment.userAvatar} alt={comment.username} fill sizes="32px" className="object-cover" />
           ) : (
             <div className="w-full h-full bg-gx-red/20 rounded-full" />
           )}

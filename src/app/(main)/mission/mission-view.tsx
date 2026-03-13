@@ -74,7 +74,6 @@ export function MissionView({
           fill
           className="object-cover object-center"
           priority
-          unoptimized
         />
       </div>
       <div className="fixed inset-0 -z-10 bg-black/65" />
@@ -213,7 +212,6 @@ export function MissionView({
                         alt={winnerSubmission.title}
                         fill
                         className="object-cover"
-                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/40 hidden sm:block" />
                     </div>
@@ -239,7 +237,6 @@ export function MissionView({
                           width={22}
                           height={22}
                           className="rounded-full border border-[#d4a017]/30"
-                          unoptimized
                         />
                       )}
                       <span className="font-share-tech-mono text-[10px] text-[#d4a017]/80 uppercase tracking-wider">
@@ -298,7 +295,7 @@ export function MissionView({
                   <div className="flex gap-5">
                     {userSubmission.images[0] && (
                       <div className="relative w-28 h-28 shrink-0 overflow-hidden border border-white/[0.06]">
-                        <Image src={userSubmission.images[0]} alt="" fill className="object-cover" unoptimized />
+                        <Image src={userSubmission.images[0]} alt="" fill className="object-cover" />
                         {userSubmission.images.length > 1 && (
                           <div className="absolute bottom-0 right-0 bg-black/70 px-1.5 py-0.5">
                             <span className="font-share-tech-mono text-[8px] text-white/60">
@@ -404,7 +401,6 @@ export function MissionView({
                         alt={sub.title}
                         fill
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     </div>
@@ -444,7 +440,6 @@ export function MissionView({
                           width={16}
                           height={16}
                           className="rounded-full border border-white/10"
-                          unoptimized
                         />
                       )}
                       <span className="font-share-tech-mono text-[9px] text-white/40 uppercase tracking-wider">

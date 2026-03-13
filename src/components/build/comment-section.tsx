@@ -169,8 +169,8 @@ function CommentItem({
             src={comment.userAvatar || "/default-avatar.png"}
             alt={comment.username}
             fill
+            sizes="32px"
             className="object-cover"
-            unoptimized
           />
         </div>
       </Link>

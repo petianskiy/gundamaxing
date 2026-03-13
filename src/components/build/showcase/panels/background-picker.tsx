@@ -537,7 +537,6 @@ export function BackgroundPicker({
                       alt=""
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </button>
                 ))}
@@ -578,7 +577,6 @@ export function BackgroundPicker({
                       alt=""
                       fill
                       className="object-cover"
-                      unoptimized
                     />
                   </button>
                 ))}

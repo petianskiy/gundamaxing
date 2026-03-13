@@ -514,7 +514,7 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
             <div className="flex items-center gap-3 px-4 py-3">
               <Link href={`/u/${build.userHandle}`} className="shrink-0">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-gx-red/30">
-                  <Image src={build.userAvatar} alt={build.username} fill className="object-cover" unoptimized />
+                  <Image src={build.userAvatar} alt={build.username} fill sizes="32px" className="object-cover" />
                 </div>
               </Link>
               <div className="flex-1 min-w-0">
@@ -536,9 +536,9 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
                   src={primaryImage.url}
                   alt={primaryImage.alt}
                   fill
+                  sizes="(max-width: 510px) 100vw, 470px"
                   className="object-cover"
                   style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
-                  unoptimized
                 />
                 {build.status === "WIP" && (
                   <div className="absolute top-3 left-3">

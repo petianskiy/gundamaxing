@@ -1165,7 +1165,6 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
               opacity: bgOpacity,
               filter: bgBlurStyle,
             }}
-            unoptimized
           />
         </div>
       )}

@@ -58,7 +58,6 @@ export function ThreadList({ threads }: { threads: Thread[] }) {
                   alt={thread.username}
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               </div>
             ) : (

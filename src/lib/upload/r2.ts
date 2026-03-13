@@ -10,6 +10,7 @@ const R2_ENDPOINT = process.env.R2_ENDPOINT!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "gundamaxing-uploads";
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL; // e.g. https://cdn.gundamaxing.com
 
 export const r2Client = new S3Client({
   region: "auto",
@@ -20,9 +21,13 @@ export const r2Client = new S3Client({
   },
 });
 
-// Stable proxy URL that the app stores in the database.
-// Served by /api/files/[...key] which streams from R2 with caching.
+// Returns a public URL for the given R2 key.
+// If R2_PUBLIC_URL is set (Cloudflare CDN custom domain), serves directly from CDN.
+// Otherwise falls back to the Next.js proxy at /api/files/[...key].
 export function getProxyUrl(key: string): string {
+  if (R2_PUBLIC_URL) {
+    return `${R2_PUBLIC_URL}/${key}`;
+  }
   return `/api/files/${key}`;
 }
 

@@ -99,7 +99,6 @@ export function InspectionOverlay({
                   alt={selectedImage.alt || build.title}
                   width={1200}
                   height={750}
-                  unoptimized
                   className="w-full h-auto object-contain max-h-[70vh]"
                   style={{ objectPosition: selectedImage.objectPosition }}
                 />
@@ -138,7 +137,6 @@ export function InspectionOverlay({
                     src={img.url}
                     alt={img.alt || `${build.title} thumbnail ${index + 1}`}
                     fill
-                    unoptimized
                     className="object-cover"
                     sizes="80px"
                   />

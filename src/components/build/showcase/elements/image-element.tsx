@@ -40,7 +40,6 @@ export function ImageElement({ element }: ImageElementProps) {
             element.objectFit === "contain" ? "object-contain" : "object-cover"
           )}
           style={{ borderRadius: radius, transform: flipTransform }}
-          unoptimized
         />
         {element.shadow && (
           <div
