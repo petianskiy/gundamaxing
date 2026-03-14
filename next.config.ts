@@ -2,8 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Some images served via /api/files/ proxy (local) which Vercel can't self-optimize.
-    // Keep unoptimized until all images migrate to external CDN.
     unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
