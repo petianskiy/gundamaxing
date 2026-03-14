@@ -356,15 +356,8 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
             {/* Grid View */}
             {viewMode === "grid" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {filteredBuilds.map((build, i) => (
-                  <motion.div
-                    key={build.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: Math.min(i, 20) * 0.03 }}
-                  >
-                    <BuildCard build={build} />
-                  </motion.div>
+                {filteredBuilds.map((build) => (
+                  <BuildCard key={build.id} build={build} />
                 ))}
               </div>
             )}
@@ -503,11 +496,8 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
         const isBookmarked = bookmarkedSet.has(build.id);
 
         return (
-          <motion.article
+          <article
             key={build.id}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: Math.min(i, 10) * 0.06 }}
             className="rounded-xl border border-border/50 bg-card overflow-hidden"
           >
             {/* Header — user row */}
@@ -606,7 +596,7 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
                 </div>
               )}
             </div>
-          </motion.article>
+          </article>
         );
       })}
     </div>
