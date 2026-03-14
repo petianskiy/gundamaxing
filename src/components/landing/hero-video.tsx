@@ -4,17 +4,18 @@ import { useEffect, useRef, useState } from "react";
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    // Skip video on reduced-motion preference or narrow screens (saves 13MB download)
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const narrow = window.innerWidth < 768;
+    if (reducedMotion || narrow) return;
+
+    setShowVideo(true);
   }, []);
 
-  if (reducedMotion) {
+  if (!showVideo) {
     return (
       <div
         className="absolute inset-0"
@@ -33,7 +34,7 @@ export function HeroVideo() {
       muted
       loop
       playsInline
-      preload="metadata"
+      preload="none"
       disablePictureInPicture
       controlsList="nodownload nofullscreen noremoteplayback"
       className="absolute inset-0 w-full h-full object-cover pointer-events-none"

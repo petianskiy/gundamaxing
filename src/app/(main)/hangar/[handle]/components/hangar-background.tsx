@@ -37,31 +37,17 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
     return () => clearInterval(t);
   }, [advance, layout]);
 
-  // Dome Gallery layout: looping video background
+  // Dome Gallery layout: deep space background
   if (layout === "DOME_GALLERY") {
     return (
       <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+        <div
           className="absolute inset-0"
-        >
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src="/dome-bg.mp4" type="video/mp4" />
-          </video>
-        </motion.div>
-
-        {/* Light overlay — keep video vibrant */}
-        <div className="absolute inset-0 bg-black/25 z-[1]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-[1]" />
+          style={{
+            background: "radial-gradient(ellipse at 50% 40%, #0d1117 0%, #070a0f 40%, #020204 100%)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-[1]" />
       </div>
     );
   }

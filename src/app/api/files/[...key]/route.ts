@@ -28,8 +28,12 @@ export async function GET(
       headers: {
         "Content-Type": object.ContentType || "application/octet-stream",
         "Content-Length": object.ContentLength?.toString() || "",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        // s-maxage tells Vercel's edge CDN to cache this response.
+        // stale-while-revalidate serves cached version while refreshing in background.
+        // Each R2 key is unique (timestamp+random), so content is immutable.
+        "Cache-Control": "public, s-maxage=31536000, max-age=31536000, stale-while-revalidate=31536000, immutable",
         "ETag": object.ETag || "",
+        "CDN-Cache-Control": "public, max-age=31536000, immutable",
       },
     });
   } catch (err: any) {
