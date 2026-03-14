@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import dynamic from "next/dynamic";
 import { ShowcaseElement } from "./showcase-element";
 import { isWebGLPreset } from "./backgrounds";

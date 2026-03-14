@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { cn } from "@/lib/utils";
 import type { ShowcaseImageElement } from "@/lib/types";
 import { ImageLightbox } from "./image-lightbox";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import {
   assignRoleToUser,
   removeRoleFromUser,

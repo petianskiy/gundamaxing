@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getActiveMission, getMissionSubmissions, getUserMissionSubmission } from "@/lib/data/missions";
 import { MissionView } from "./mission-view";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 
 export default async function MissionPage() {
   const [mission, session] = await Promise.all([getActiveMission(), auth()]);

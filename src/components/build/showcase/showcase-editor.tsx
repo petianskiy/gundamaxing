@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShowcaseElement } from "./showcase-element";

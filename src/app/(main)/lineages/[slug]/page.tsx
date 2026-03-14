@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { notFound } from "next/navigation";
 import { GitFork, ArrowLeft, Pencil, Share2 } from "lucide-react";
 import { auth } from "@/lib/auth";

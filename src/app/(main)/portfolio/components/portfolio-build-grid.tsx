@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { toast } from "sonner";
 import { Heart, MessageSquare, Pin, Trash2, Eye, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";

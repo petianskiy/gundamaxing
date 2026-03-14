@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Plus, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "@/lib/i18n/context";

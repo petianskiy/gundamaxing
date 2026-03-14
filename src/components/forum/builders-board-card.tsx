@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { SidebarCard } from "./sidebar-card";
 import type { ForumLeaderboardEntry } from "@/lib/types";

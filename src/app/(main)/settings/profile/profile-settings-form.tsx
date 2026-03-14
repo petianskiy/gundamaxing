@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";

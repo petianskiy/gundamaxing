@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Upload, X, Loader2, Send, Film, Check } from "lucide-react";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { submitMission } from "@/lib/actions/mission";

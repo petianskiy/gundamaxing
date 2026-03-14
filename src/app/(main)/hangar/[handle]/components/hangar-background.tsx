@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { HangarLayout } from "@/lib/types";
 

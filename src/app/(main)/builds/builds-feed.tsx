@@ -14,7 +14,7 @@ import {
   Bookmark,
   Share2,
 } from "lucide-react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -539,6 +539,8 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
                   sizes="(max-width: 510px) 100vw, 470px"
                   className="object-cover"
                   style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
+                  priority={i < 2}
+                  loading={i < 2 ? "eager" : "lazy"}
                 />
                 {build.status === "WIP" && (
                   <div className="absolute top-3 left-3">

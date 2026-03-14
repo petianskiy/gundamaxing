@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ThumbsUp, MessageSquare, Flag, Trash2, MoreHorizontal } from "lucide-react";

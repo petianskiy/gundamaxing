@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { X, Upload, Plus, Trash2, Loader2, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

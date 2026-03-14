@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Settings, Shield, LogOut, ChevronDown, Warehouse, Bookmark, GitFork } from "lucide-react";
 import { cn } from "@/lib/utils";

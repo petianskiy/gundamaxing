@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";

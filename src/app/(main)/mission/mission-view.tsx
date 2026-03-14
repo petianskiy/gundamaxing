@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { Target, Trophy, Edit3, Send, Users, ImageIcon, Film, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";

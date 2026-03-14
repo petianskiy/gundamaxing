@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { toast } from "sonner";
 import { motion, Reorder } from "framer-motion";
 import { updateHangarSettings } from "@/lib/actions/hangar";

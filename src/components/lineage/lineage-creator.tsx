@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Check, Search, GitFork, Loader2 } from "lucide-react";
 import { toast } from "sonner";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Trophy, Trash2, Eye, X, Film } from "lucide-react";
 import { selectMissionWinner, clearMissionWinner, adminDeleteSubmission } from "@/lib/actions/admin-missions";
 import type { AdminMissionSubmissionUI } from "@/lib/types";

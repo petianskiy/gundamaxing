@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getUserCustomRoles, getAllCustomRoles } from "@/lib/data/roles";
 import { assignRoleToUser, removeRoleFromUser } from "@/lib/actions/roles";
 import { adminSetUserLevel, adminSetUserXp } from "@/lib/actions/admin-users";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import {
   ShieldCheck,

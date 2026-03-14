@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, MessageCircle, GitFork, Pin } from "lucide-react";

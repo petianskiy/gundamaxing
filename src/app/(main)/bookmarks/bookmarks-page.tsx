@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Bookmark } from "lucide-react";
 import { BuildCard } from "@/components/build/build-card";
 import { useTranslation } from "@/lib/i18n/context";

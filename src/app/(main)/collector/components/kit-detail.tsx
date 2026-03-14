@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { ArrowLeft, Star, Users, Package, Wrench, Award, MessageSquare, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";

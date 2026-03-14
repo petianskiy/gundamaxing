@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getNotifications } from "@/lib/data/notifications";

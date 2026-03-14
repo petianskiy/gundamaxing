@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { Pin, Lock, MessageSquare, Eye, Flame } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
