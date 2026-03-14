@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback, useRef } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { ArrowLeft, Star, Users, Package, Wrench, Award, MessageSquare, Trash2 } from "lucide-react";
@@ -36,6 +36,34 @@ function RatingSlider({
   value: number | null;
   onChange: (val: number | null) => void;
 }) {
+  const current = value ?? 5;
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const getValueFromX = useCallback((clientX: number) => {
+    const track = trackRef.current;
+    if (!track) return current;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(ratio * 9) + 1; // 1–10
+  }, [current]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    onChange(getValueFromX(e.clientX));
+
+    const onMove = (ev: Event) => onChange(getValueFromX((ev as globalThis.PointerEvent).clientX));
+    const onUp = () => {
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+    };
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+  }, [onChange, getValueFromX]);
+
+  const fillPercent = ((current - 1) / 9) * 100;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -44,14 +72,39 @@ function RatingSlider({
           {value !== null ? `${value}/10` : "--"}
         </span>
       </div>
-      <input
-        type="range"
-        min={1}
-        max={10}
-        value={value ?? 5}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-muted accent-gx-red"
-      />
+      <div
+        ref={trackRef}
+        className="relative h-6 flex items-center cursor-pointer touch-none select-none"
+        onPointerDown={handlePointerDown}
+      >
+        {/* Track background */}
+        <div className="absolute inset-x-0 h-2 rounded-full bg-muted" />
+        {/* Filled track */}
+        <div
+          className="absolute left-0 h-2 rounded-full bg-gx-red"
+          style={{ width: `${fillPercent}%` }}
+        />
+        {/* Dot markers */}
+        {Array.from({ length: 10 }, (_, i) => {
+          const pos = (i / 9) * 100;
+          const isActive = i + 1 <= current;
+          return (
+            <div
+              key={i}
+              className={cn(
+                "absolute w-1.5 h-1.5 rounded-full -translate-x-1/2 pointer-events-none",
+                isActive ? "bg-gx-red" : "bg-zinc-600"
+              )}
+              style={{ left: `${pos}%` }}
+            />
+          );
+        })}
+        {/* Thumb */}
+        <div
+          className="absolute w-4 h-4 rounded-full bg-white shadow-md -translate-x-1/2 pointer-events-none ring-2 ring-gx-red"
+          style={{ left: `${fillPercent}%` }}
+        />
+      </div>
       <div className="flex justify-between text-[10px] text-muted-foreground/50">
         <span>1</span>
         <span>10</span>
