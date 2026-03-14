@@ -104,25 +104,6 @@ img {
   background-size: 256px 256px;
 }
 
-/* Page entrance animations (CSS-only, works in server components) */
-@keyframes page-fade-in {
-  from { opacity: 0.6; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes page-slide-up {
-  from { opacity: 0.6; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-page-header {
-  animation: page-fade-in 0.3s ease-out both;
-}
-.animate-page-content {
-  animation: page-slide-up 0.3s ease-out both;
-}
-.animate-page-grid {
-  animation: page-slide-up 0.3s ease-out both;
-}
-
 /* Skeleton loading */
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 0.4; }
