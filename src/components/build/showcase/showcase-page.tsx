@@ -115,7 +115,10 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
 
   const handleExit = useCallback(() => {
     setIsEditing(false);
-    window.location.reload();
+    // Strip ?edit=1 from URL so reload doesn't re-enter editor
+    const url = new URL(window.location.href);
+    url.searchParams.delete("edit");
+    window.location.replace(url.toString());
   }, []);
 
   const handleGuideDismiss = useCallback(() => {

@@ -127,6 +127,18 @@ export function ProfileSettingsForm({
     e.preventDefault();
     setSaving(true);
 
+    // If username was changed and allowed, handle it alongside the profile save
+    if (canChangeUsername && newUsername !== form.username) {
+      setUsernameError("");
+      const usernameResult = await changeUsername({ username: newUsername });
+      if (usernameResult.error) {
+        setUsernameError(usernameResult.error);
+        setSaving(false);
+        return;
+      }
+      setForm((prev) => ({ ...prev, username: newUsername }));
+    }
+
     const formData = new FormData();
     formData.set("displayName", form.displayName);
     formData.set("bio", form.bio);
