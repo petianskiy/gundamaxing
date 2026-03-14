@@ -46,16 +46,19 @@ function RatingSlider({
       </div>
       <input
         type="range"
-        min={1}
+        min={0}
         max={10}
         value={value ?? 5}
-        onChange={(e) => onChange(parseInt(e.target.value))}
+        onChange={(e) => {
+          const v = parseInt(e.target.value);
+          onChange(v < 1 ? 1 : v);
+        }}
         className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-muted accent-gx-red"
       />
-      <div className="relative text-[10px] text-muted-foreground/50 h-4">
-        <span className="absolute left-0">1</span>
-        <span className="absolute" style={{ left: "calc((5 - 1) / (10 - 1) * 100%)", transform: "translateX(-50%)" }}>5</span>
-        <span className="absolute right-0">10</span>
+      <div className="flex justify-between text-[10px] text-muted-foreground/50">
+        <span>1</span>
+        <span>5</span>
+        <span>10</span>
       </div>
     </div>
   );
