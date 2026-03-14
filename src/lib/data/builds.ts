@@ -37,6 +37,20 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
+/** Recursively rewrite /api/files/ URLs inside showcase layout JSON */
+function rewriteShowcaseUrls(layout: unknown): unknown {
+  if (typeof layout === "string") return toCdnUrl(layout);
+  if (Array.isArray(layout)) return layout.map(rewriteShowcaseUrls);
+  if (layout && typeof layout === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(layout)) {
+      out[k] = rewriteShowcaseUrls(v);
+    }
+    return out;
+  }
+  return layout;
+}
+
 export const buildInclude = {
   user: {
     select: { id: true, username: true, displayName: true, avatar: true, isProfilePrivate: true },
@@ -113,7 +127,7 @@ export function toUIBuild(b: any): Build {
     creativityCount: b.creativityCount ?? 0,
     commentsEnabled: b.commentsEnabled ?? true,
     verification: verificationTierMap[b.verification as PrismaVerificationTier],
-    showcaseLayout: (b.showcaseLayout as ShowcaseLayout | null) ?? undefined,
+    showcaseLayout: b.showcaseLayout ? (rewriteShowcaseUrls(b.showcaseLayout) as ShowcaseLayout) : undefined,
     createdAt: formatDate(b.createdAt),
     updatedAt: formatDate(b.updatedAt),
   };

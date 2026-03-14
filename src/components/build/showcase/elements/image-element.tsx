@@ -35,6 +35,7 @@ export function ImageElement({ element }: ImageElementProps) {
           src={element.imageUrl}
           alt={element.caption || "Build image"}
           fill
+          sizes="(max-width: 768px) 100vw, 50vw"
           draggable={false}
           className={cn(
             element.objectFit === "contain" ? "object-contain" : "object-cover"

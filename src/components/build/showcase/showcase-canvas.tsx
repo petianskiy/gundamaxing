@@ -101,6 +101,7 @@ export function ShowcaseCanvas({ layout, build, pageBackground }: ShowcaseCanvas
             src={bgUrl}
             alt="Showcase background"
             fill
+            sizes="100vw"
             className="object-cover"
             style={{
               opacity: bgOpacity,
