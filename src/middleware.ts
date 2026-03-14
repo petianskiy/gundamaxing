@@ -48,6 +48,12 @@ function isPublicRoute(pathname: string): boolean {
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Redirect /api/files/* to CDN when configured
+  if (pathname.startsWith("/api/files/") && process.env.R2_PUBLIC_URL) {
+    const key = pathname.slice("/api/files/".length);
+    return NextResponse.redirect(`${process.env.R2_PUBLIC_URL}/${key}`, 301);
+  }
+
   // Allow public routes without authentication
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
@@ -71,6 +77,9 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    // Always run middleware for /api/files (CDN redirect)
+    "/api/files/:path*",
+    // Run for all routes except static assets
     "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm|mov|mp3|ogg|woff2?|ttf|eot|txt|xml)$).*)",
   ],
 };

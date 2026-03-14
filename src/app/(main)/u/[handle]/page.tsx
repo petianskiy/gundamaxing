@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Warehouse } from "lucide-react";
+import { toCdnUrl } from "@/lib/upload/r2";
 import { ProfileHeader } from "./components/profile-header";
 import { BuildGallery } from "./components/build-gallery";
 import { WorkshopSpecs } from "./components/workshop-specs";
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${user.displayName || user.username} | Gundamaxing`,
       description: user.bio || undefined,
-      images: user.avatar ? [{ url: user.avatar }] : undefined,
+      images: user.avatar ? [{ url: toCdnUrl(user.avatar) }] : undefined,
     },
   };
 }
@@ -88,7 +89,7 @@ export default async function ProfilePage({ params }: Props) {
     );
   }
 
-  const builds = await db.build.findMany({
+  const rawBuilds = await db.build.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: {
@@ -96,6 +97,11 @@ export default async function ProfilePage({ params }: Props) {
       user: { select: { username: true, avatar: true } },
     },
   });
+  const builds = rawBuilds.map((b) => ({
+    ...b,
+    images: b.images.map((img) => ({ ...img, url: toCdnUrl(img.url) })),
+    user: { ...b.user, avatar: b.user.avatar ? toCdnUrl(b.user.avatar) : b.user.avatar },
+  }));
 
   const session = await auth();
   const isOwner = session?.user?.id === user.id;
@@ -218,8 +224,8 @@ export default async function ProfilePage({ params }: Props) {
           user={{
             displayName: user.displayName,
             username: user.username,
-            avatar: user.avatar,
-            banner: user.banner,
+            avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+            banner: user.banner ? toCdnUrl(user.banner) : user.banner,
             bio: user.bio,
             accentColor: user.accentColor,
             verificationTier: user.verificationTier,

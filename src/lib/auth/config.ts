@@ -7,6 +7,7 @@ import DiscordProvider from "next-auth/providers/discord";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/security/password";
 import { logEvent } from "@/lib/data/events";
+import { toCdnUrl } from "@/lib/upload/r2";
 
 // ---------------------------------------------------------------------------
 // Custom adapter: wraps PrismaAdapter to handle OAuth user creation
@@ -460,7 +461,7 @@ const authConfig: NextAuthConfig = {
               token.username = dbUser.username;
               token.verificationTier = dbUser.verificationTier;
               token.onboardingComplete = dbUser.onboardingComplete;
-              token.picture = dbUser.avatar ?? user.image ?? "";
+              token.picture = dbUser.avatar ? toCdnUrl(dbUser.avatar) : user.image ?? "";
               token.name = user.name ?? "";
               token.isBanned = dbUser.riskScore >= 100;
             } else {
@@ -509,7 +510,7 @@ const authConfig: NextAuthConfig = {
           });
           if (freshUser) {
             token.role = freshUser.role;
-            token.picture = freshUser.avatar ?? token.picture ?? "";
+            token.picture = freshUser.avatar ? toCdnUrl(freshUser.avatar) : token.picture ?? "";
             token.isBanned = freshUser.riskScore >= 100;
           }
           token.lastRoleCheck = Date.now();
@@ -535,7 +536,7 @@ const authConfig: NextAuthConfig = {
           token.username = dbUser.username;
           token.verificationTier = dbUser.verificationTier;
           token.onboardingComplete = dbUser.onboardingComplete;
-          token.picture = dbUser.avatar;
+          token.picture = dbUser.avatar ? toCdnUrl(dbUser.avatar) : "";
           token.name = dbUser.displayName ?? dbUser.username;
           token.isBanned = dbUser.riskScore >= 100;
         }

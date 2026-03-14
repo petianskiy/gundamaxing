@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserSettingsData } from "@/lib/data/users";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import { HangarSettingsForm } from "./hangar-settings-form";
 import { EraManager } from "./era-manager";
 import { calculateLevel } from "@/lib/achievements";
@@ -54,7 +55,7 @@ export default async function HangarSettingsPage() {
     id: b.id,
     title: b.title,
     kitName: b.kitName,
-    thumbnail: b.images[0]?.url ?? null,
+    thumbnail: b.images[0]?.url ? toCdnUrl(b.images[0].url) : null,
   }));
 
   return (
