@@ -9,6 +9,8 @@ type LanguageContextValue = {
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
 
+const VALID_LOCALES: Locale[] = ["en", "ja", "zh-TW"];
+
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -16,8 +18,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "ja") {
-      setLocaleState(stored);
+    if (stored && VALID_LOCALES.includes(stored as Locale)) {
+      setLocaleState(stored as Locale);
       document.documentElement.lang = stored;
     }
   }, []);

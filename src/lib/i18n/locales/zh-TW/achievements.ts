@@ -1,0 +1,90 @@
+export const achievements: Record<string, string> = {
+  // Page titles
+  "achievements.title": "成就",
+  "achievements.subtitle": "追蹤你的進度並解鎖獎勵",
+  "achievements.unlocked": "已解鎖",
+  "achievements.locked": "未解鎖",
+  "achievements.progress": "進度",
+  "achievements.unlockedOn": "解鎖於",
+
+  // Categories
+  "achievements.category.BUILDING": "製作",
+  "achievements.category.SOCIAL": "社交",
+  "achievements.category.POPULARITY": "人氣",
+  "achievements.category.LINEAGE": "族譜",
+  "achievements.category.FORUM": "論壇",
+  "achievements.category.COLLECTOR": "收藏",
+  "achievements.category.COMMUNITY": "社群",
+
+  // Level
+  "achievements.level": "等級",
+  "achievements.level.label": "Lv.",
+  "achievements.xp": "經驗值",
+  "achievements.xpToNext": "距下一等級所需經驗值",
+  "achievements.maxLevel": "最高等級",
+  "achievements.totalXp": "總經驗值",
+
+  // Stats
+  "achievements.total": "成就總數",
+  "achievements.completionRate": "完成率",
+
+  // Empty states
+  "achievements.empty": "尚未解鎖任何成就。",
+  "achievements.empty.subtitle": "開始製作、互動和探索來獲得成就！",
+
+  // Admin
+  "achievements.admin.setLevel": "設定等級",
+  "achievements.admin.setXp": "設定經驗值",
+  "achievements.admin.levelUpdated": "等級更新成功",
+  "achievements.admin.xpUpdated": "經驗值更新成功",
+
+  // Achievement names
+  "achievements.name.first_build": "第一步",
+  "achievements.name.five_builds": "機庫建造者",
+  "achievements.name.ten_builds": "工作坊老手",
+  "achievements.name.twenty_builds": "大師級玩家",
+  "achievements.name.first_like": "支持者",
+  "achievements.name.fifty_likes": "愛好者",
+  "achievements.name.hundred_likes": "忠實粉絲",
+  "achievements.name.ten_likes_received": "嶄露頭角",
+  "achievements.name.fifty_likes_received": "人氣玩家",
+  "achievements.name.hundred_likes_received": "社群之星",
+  "achievements.name.first_thread": "話題發起者",
+  "achievements.name.first_comment": "參與者",
+  "achievements.name.ten_posts": "活躍之聲",
+  "achievements.name.fifty_comments": "話匣子玩家",
+  "achievements.name.first_lineage": "族譜學家",
+  "achievements.name.five_lineages": "族譜大師",
+  "achievements.name.first_kit": "收藏家",
+  "achievements.name.ten_kits": "囤貨達人",
+  "achievements.name.twenty_five_kits": "武器庫",
+  "achievements.name.fifty_kits": "軍火庫",
+  "achievements.name.first_review": "評論家",
+  "achievements.name.profile_complete": "身份確立",
+  "achievements.name.hangar_setup": "大本營",
+
+  // Achievement descriptions
+  "achievements.desc.first_build": "上傳你的第一件作品",
+  "achievements.desc.five_builds": "上傳 5 件作品",
+  "achievements.desc.ten_builds": "上傳 10 件作品",
+  "achievements.desc.twenty_builds": "上傳 20 件作品",
+  "achievements.desc.first_like": "按讚你的第一件作品",
+  "achievements.desc.fifty_likes": "按讚 50 件作品",
+  "achievements.desc.hundred_likes": "按讚 100 件作品",
+  "achievements.desc.ten_likes_received": "你的作品獲得 10 個讚",
+  "achievements.desc.fifty_likes_received": "你的作品獲得 50 個讚",
+  "achievements.desc.hundred_likes_received": "你的作品獲得 100 個讚",
+  "achievements.desc.first_thread": "建立你的第一個討論串",
+  "achievements.desc.first_comment": "發表你的第一則留言",
+  "achievements.desc.ten_posts": "發表 10 則留言或討論串",
+  "achievements.desc.fifty_comments": "發表 50 則留言或討論串",
+  "achievements.desc.first_lineage": "建立你的第一個族譜",
+  "achievements.desc.five_lineages": "建立 5 個族譜",
+  "achievements.desc.first_kit": "將你的第一件模型加入收藏",
+  "achievements.desc.ten_kits": "收藏 10 件模型",
+  "achievements.desc.twenty_five_kits": "收藏 25 件模型",
+  "achievements.desc.fifty_kits": "收藏 50 件模型",
+  "achievements.desc.first_review": "撰寫你的第一篇模型評測",
+  "achievements.desc.profile_complete": "完成你的個人資料",
+  "achievements.desc.hangar_setup": "自訂你的機庫",
+};

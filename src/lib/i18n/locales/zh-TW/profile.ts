@@ -1,0 +1,15 @@
+export const profile = {
+  "profile.notFound": "找不到玩家",
+  "profile.notFoundDesc": "此玩家資料不存在。",
+  "profile.browseBuilds": "瀏覽作品",
+  "profile.level": "等級",
+  "profile.rep": "聲望",
+  "profile.builds": "作品",
+  "profile.likes": "按讚",
+  "profile.tabBuilds": "作品",
+  "profile.tabActivity": "動態",
+  "profile.tabThreads": "討論串",
+  "profile.noBuilds": "尚無作品。",
+  "profile.noThreads": "尚無討論串。",
+  "profile.activitySoon": "動態功能即將推出。",
+} as const;

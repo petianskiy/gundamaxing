@@ -30,9 +30,31 @@ import { lineage as jaLineage } from "./locales/ja/lineage";
 import { achievements as jaAchievements } from "./locales/ja/achievements";
 import { collector as jaCollector } from "./locales/ja/collector";
 
-export type Locale = "en" | "ja";
+import { common as zhTWCommon } from "./locales/zh-TW/common";
+import { landing as zhTWLanding } from "./locales/zh-TW/landing";
+import { builds as zhTWBuilds } from "./locales/zh-TW/builds";
+import { forum as zhTWForum } from "./locales/zh-TW/forum";
+import { upload as zhTWUpload } from "./locales/zh-TW/upload";
+import { profile as zhTWProfile } from "./locales/zh-TW/profile";
+import { content as zhTWContent } from "./locales/zh-TW/content";
+import { filters as zhTWFilters } from "./locales/zh-TW/filters";
+import { auth as zhTWAuth } from "./locales/zh-TW/auth";
+import { admin as zhTWAdmin } from "./locales/zh-TW/admin";
+import { settings as zhTWSettings } from "./locales/zh-TW/settings";
+import { hangar as zhTWHangar } from "./locales/zh-TW/hangar";
+import { lineage as zhTWLineage } from "./locales/zh-TW/lineage";
+import { achievements as zhTWAchievements } from "./locales/zh-TW/achievements";
+import { collector as zhTWCollector } from "./locales/zh-TW/collector";
+
+export type Locale = "en" | "ja" | "zh-TW";
 export const DEFAULT_LOCALE: Locale = "en";
 export const STORAGE_KEY = "gx-lang";
+
+export const LOCALE_LABELS: Record<Locale, string> = {
+  en: "English",
+  ja: "日本語",
+  "zh-TW": "繁體中文",
+};
 
 function merge(...objs: Record<string, string>[]): Record<string, string> {
   return Object.assign({}, ...objs);
@@ -41,4 +63,5 @@ function merge(...objs: Record<string, string>[]): Record<string, string> {
 export const translations: Record<Locale, Record<string, string>> = {
   en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar, enLineage, enAchievements, enCollector),
   ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar, jaLineage, jaAchievements, jaCollector),
+  "zh-TW": merge(zhTWCommon, zhTWLanding, zhTWBuilds, zhTWForum, zhTWUpload, zhTWProfile, zhTWContent, zhTWFilters, zhTWAuth, zhTWAdmin, zhTWSettings, zhTWHangar, zhTWLineage, zhTWAchievements, zhTWCollector),
 };
