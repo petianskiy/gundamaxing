@@ -1,11 +1,11 @@
-const CDN_URL = process.env.R2_PUBLIC_URL || "https://cdn.gundamaxing.com";
+const CDN_URL = process.env.R2_PUBLIC_URL; // only set when CDN is actually working
 
 /**
- * Rewrites /api/files/... URLs (stored in DB) to CDN URLs.
- * Pass-through for external URLs, null, or empty strings.
+ * Rewrites /api/files/... URLs to CDN URLs when CDN is configured.
+ * Pass-through for everything else (UploadThing URLs, OAuth avatars, etc.).
  */
 export function toCdnUrl(url: string): string {
-  if (url.startsWith("/api/files/")) {
+  if (CDN_URL && url.startsWith("/api/files/")) {
     return `${CDN_URL}/${url.slice("/api/files/".length)}`;
   }
   return url;
