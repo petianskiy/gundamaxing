@@ -22,12 +22,9 @@ export const r2Client = new S3Client({
 });
 
 // Returns a public URL for the given R2 key.
-// If R2_PUBLIC_URL is set (Cloudflare CDN custom domain), serves directly from CDN.
-// Otherwise falls back to the Next.js proxy at /api/files/[...key].
+// Always stores /api/files/ proxy URLs in the DB for portability.
+// The DAL layer rewrites these to CDN URLs at read time when CDN is available.
 export function getProxyUrl(key: string): string {
-  if (R2_PUBLIC_URL) {
-    return `${R2_PUBLIC_URL}/${key}`;
-  }
   return `/api/files/${key}`;
 }
 

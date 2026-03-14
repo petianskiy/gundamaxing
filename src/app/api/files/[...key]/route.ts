@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getR2Object } from "@/lib/upload/r2";
 
-// Serve files from R2.
-// When R2_PUBLIC_URL is set, redirects to CDN for better performance.
-// Otherwise streams directly from R2 with aggressive caching.
+// Serve files from R2 by streaming directly with aggressive caching.
+// This is the fallback proxy — the DAL layer rewrites URLs to CDN when available.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ key: string[] }> },
@@ -13,12 +12,6 @@ export async function GET(
 
   if (!key) {
     return NextResponse.json({ error: "Missing key" }, { status: 400 });
-  }
-
-  // If CDN is configured, redirect there instead of proxying
-  const cdnUrl = process.env.R2_PUBLIC_URL;
-  if (cdnUrl) {
-    return NextResponse.redirect(`${cdnUrl}/${key}`, 301);
   }
 
   try {
