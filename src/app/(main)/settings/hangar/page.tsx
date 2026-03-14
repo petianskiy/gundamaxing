@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserSettingsData } from "@/lib/data/users";
 import { db } from "@/lib/db";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 import { HangarSettingsForm } from "./hangar-settings-form";
 import { EraManager } from "./era-manager";
 import { calculateLevel } from "@/lib/achievements";

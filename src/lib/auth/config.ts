@@ -7,7 +7,7 @@ import DiscordProvider from "next-auth/providers/discord";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/security/password";
 import { logEvent } from "@/lib/data/events";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 
 // ---------------------------------------------------------------------------
 // Custom adapter: wraps PrismaAdapter to handle OAuth user creation

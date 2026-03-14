@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 import type { MonthlyMissionUI, MissionSubmissionUI, AdminMissionSubmissionUI } from "@/lib/types";
 
 export const getActiveMission = cache(async (): Promise<MonthlyMissionUI | null> => {

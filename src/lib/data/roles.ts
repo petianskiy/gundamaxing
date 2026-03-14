@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 
 export const getAllCustomRoles = cache(async () => {
   try {

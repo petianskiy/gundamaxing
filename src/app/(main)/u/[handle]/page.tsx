@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Warehouse } from "lucide-react";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 import { ProfileHeader } from "./components/profile-header";
 import { BuildGallery } from "./components/build-gallery";
 import { WorkshopSpecs } from "./components/workshop-specs";

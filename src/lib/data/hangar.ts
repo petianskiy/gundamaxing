@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { toCdnUrl } from "@/lib/upload/r2";
+import { toCdnUrl } from "@/lib/upload/cdn";
 import { buildInclude, toUIBuild } from "@/lib/data/builds";
 import type { HangarData, HangarUser, BuildEra, HangarTheme, HangarLayout, DomeGallerySettings } from "@/lib/types";
 
