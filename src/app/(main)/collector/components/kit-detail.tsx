@@ -46,18 +46,14 @@ function RatingSlider({
       </div>
       <input
         type="range"
-        min={0}
+        min={1}
         max={10}
         value={value ?? 5}
-        onChange={(e) => {
-          const v = parseInt(e.target.value);
-          onChange(v < 1 ? 1 : v);
-        }}
+        onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-muted accent-gx-red"
       />
       <div className="flex justify-between text-[10px] text-muted-foreground/50">
         <span>1</span>
-        <span>5</span>
         <span>10</span>
       </div>
     </div>
