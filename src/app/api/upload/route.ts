@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPresignedUploadUrl, generateKey, getProxyUrl } from "@/lib/upload/r2";
+import { getPresignedUploadUrl, generateKey, getPublicUrl } from "@/lib/upload/r2";
 import { getLimitsForTier } from "@/lib/upload/limits";
 
 export async function POST(req: NextRequest) {
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
     const maxSize = type === "image" ? limits.maxImageSize : limits.maxVideoSize;
     const key = generateKey(type, session.user.id, filename);
     const presignedUrl = await getPresignedUploadUrl(key, contentType);
-    // Stable proxy URL — stored in DB, served by /api/files/[...key]
-    const url = getProxyUrl(key);
+    // Public URL — CDN direct when configured, proxy fallback otherwise
+    const url = getPublicUrl(key);
 
     return NextResponse.json({
       presignedUrl,

@@ -10,7 +10,7 @@ const R2_ENDPOINT = process.env.R2_ENDPOINT!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "gundamaxing-uploads";
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL; // only set when CDN is actually working
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL; // https://cdn.gundamaxing.com
 
 export const r2Client = new S3Client({
   region: "auto",
@@ -22,20 +22,13 @@ export const r2Client = new S3Client({
 });
 
 // Returns a public URL for the given R2 key.
-// Always stores /api/files/ proxy URLs in the DB for portability.
-// The DAL layer rewrites these to CDN URLs at read time when CDN is available.
-export function getProxyUrl(key: string): string {
-  return `/api/files/${key}`;
-}
-
-// Rewrites legacy /api/files/... URLs stored in the database to CDN URLs.
-// Pass-through for external URLs or when CDN is not configured.
-export function toCdnUrl(url: string): string {
-  if (!R2_PUBLIC_URL) return url;
-  if (url.startsWith("/api/files/")) {
-    return `${R2_PUBLIC_URL}/${url.slice("/api/files/".length)}`;
+// When CDN is configured, returns direct CDN URL (no proxy needed).
+// Falls back to /api/files/ proxy when CDN is not available.
+export function getPublicUrl(key: string): string {
+  if (R2_PUBLIC_URL) {
+    return `${R2_PUBLIC_URL}/${key}`;
   }
-  return url;
+  return `/api/files/${key}`;
 }
 
 // Generate a presigned PUT URL for direct browser → R2 upload

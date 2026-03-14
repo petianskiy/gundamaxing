@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getR2Object } from "@/lib/upload/r2";
 
-// Serve files from R2 by streaming directly with aggressive caching.
-// This is the fallback proxy — the DAL layer rewrites URLs to CDN when available.
+// Fallback proxy for /api/files/ URLs.
+// When CDN is configured, redirects to CDN (302 so browsers don't cache permanently).
+// Otherwise streams directly from R2.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ key: string[] }> },
@@ -14,6 +15,13 @@ export async function GET(
     return NextResponse.json({ error: "Missing key" }, { status: 400 });
   }
 
+  // Redirect to CDN when available (302 = temporary, safe to change later)
+  const cdnUrl = process.env.R2_PUBLIC_URL;
+  if (cdnUrl) {
+    return NextResponse.redirect(`${cdnUrl}/${key}`, 302);
+  }
+
+  // Fallback: stream from R2 directly
   try {
     const object = await getR2Object(key);
 
@@ -28,12 +36,8 @@ export async function GET(
       headers: {
         "Content-Type": object.ContentType || "application/octet-stream",
         "Content-Length": object.ContentLength?.toString() || "",
-        // s-maxage tells Vercel's edge CDN to cache this response.
-        // stale-while-revalidate serves cached version while refreshing in background.
-        // Each R2 key is unique (timestamp+random), so content is immutable.
-        "Cache-Control": "public, s-maxage=31536000, max-age=31536000, stale-while-revalidate=31536000, immutable",
+        "Cache-Control": "public, s-maxage=31536000, max-age=31536000, immutable",
         "ETag": object.ETag || "",
-        "CDN-Cache-Control": "public, max-age=31536000, immutable",
       },
     });
   } catch (err: any) {
