@@ -328,6 +328,13 @@ export async function updateBuild(formData: FormData) {
 
 export async function updateBuildInfo(data: {
   buildId: string;
+  title?: string;
+  kitName?: string;
+  grade?: string;
+  scale?: string;
+  status?: string;
+  techniques?: string[];
+  tools?: string[];
   description?: string;
   intentStatement?: string;
   paintSystem?: string;
@@ -343,12 +350,20 @@ export async function updateBuildInfo(data: {
 
     const build = await db.build.findUnique({
       where: { id: data.buildId },
-      select: { id: true, userId: true, slug: true },
+      select: { id: true, userId: true, slug: true, title: true, user: { select: { username: true } } },
     });
     if (!build) return { error: "Build not found." };
     if (build.userId !== session.user.id) return { error: "Not authorized." };
 
     // Profanity checks
+    if (data.title) {
+      const check = validateCleanContent(data.title, "Title");
+      if (check) return { error: check };
+    }
+    if (data.kitName) {
+      const check = validateCleanContent(data.kitName, "Kit name");
+      if (check) return { error: check };
+    }
     if (data.description) {
       const check = validateCleanContent(data.description, "Description");
       if (check) return { error: check };
@@ -358,9 +373,24 @@ export async function updateBuildInfo(data: {
       if (check) return { error: check };
     }
 
+    // If title changed, regenerate slug
+    let newSlug: string | undefined;
+    if (data.title && data.title !== build.title) {
+      const baseSlug = generateSlug(data.title);
+      newSlug = await uniqueSlug(baseSlug);
+    }
+
     await db.build.update({
       where: { id: data.buildId },
       data: {
+        ...(data.title && { title: data.title }),
+        ...(newSlug && { slug: newSlug }),
+        ...(data.kitName && { kitName: data.kitName }),
+        ...(data.grade && { grade: data.grade }),
+        ...(data.scale && { scale: data.scale }),
+        ...(data.status && { status: toDbStatus(data.status) }),
+        ...(data.techniques && { techniques: data.techniques }),
+        ...(data.tools !== undefined && { tools: data.tools }),
         description: data.description ?? null,
         intentStatement: data.intentStatement ?? null,
         paintSystem: data.paintSystem ?? null,
@@ -369,10 +399,60 @@ export async function updateBuildInfo(data: {
       },
     });
 
-    revalidatePath(`/builds/${build.slug}`);
-    return { success: true };
+    revalidatePath(`/builds/${newSlug || build.slug}`);
+    revalidatePath("/builds");
+    if (build.user?.username) {
+      revalidatePath(`/u/${build.user.username}`);
+    }
+    return { success: true, ...(newSlug && { newSlug }) };
   } catch (error) {
     console.error("updateBuildInfo error:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+export async function updateImagePosition(data: {
+  buildId: string;
+  imageId: string;
+  objectPosition: string;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "You must be signed in." };
+
+    const banError = await checkBanned(session.user.id);
+    if (banError) return { error: banError };
+
+    // Validate objectPosition format (e.g. "50% 30%")
+    if (!/^\d{1,3}% \d{1,3}%$/.test(data.objectPosition)) {
+      return { error: "Invalid position format." };
+    }
+
+    const build = await db.build.findUnique({
+      where: { id: data.buildId },
+      select: { id: true, userId: true, slug: true, user: { select: { username: true } } },
+    });
+    if (!build) return { error: "Build not found." };
+    if (build.userId !== session.user.id) return { error: "Not authorized." };
+
+    const image = await db.buildImage.findFirst({
+      where: { id: data.imageId, buildId: data.buildId },
+    });
+    if (!image) return { error: "Image not found." };
+
+    await db.buildImage.update({
+      where: { id: data.imageId },
+      data: { objectPosition: data.objectPosition },
+    });
+
+    revalidatePath(`/builds/${build.slug}`);
+    revalidatePath("/builds");
+    if (build.user?.username) {
+      revalidatePath(`/u/${build.user.username}`);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("updateImagePosition error:", error);
     return { error: "An unexpected error occurred." };
   }
 }

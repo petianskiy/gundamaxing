@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
-import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check } from "lucide-react";
+import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check, Crosshair, Move } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -16,9 +16,18 @@ import { ShowcaseEditor } from "./showcase-editor";
 import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
-import { updateBuildInfo } from "@/lib/actions/build";
+import { updateBuildInfo, updateImagePosition } from "@/lib/actions/build";
 import { toast } from "sonner";
-import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType } from "@/lib/types";
+import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType, Grade, Scale, BuildStatus, Technique } from "@/lib/types";
+
+const ALL_GRADES: Grade[] = ["HG", "RG", "MG", "PG", "SD", "RE/100", "FM", "EG", "MGEX", "HiRM"];
+const ALL_SCALES: Scale[] = ["1/144", "1/100", "1/60", "Non-scale"];
+const ALL_STATUSES: BuildStatus[] = ["WIP", "Completed", "Abandoned"];
+const ALL_TECHNIQUES: Technique[] = [
+  "Straight Build", "Panel Lining", "Painting", "Airbrushing", "Hand Painting",
+  "Weathering", "Scribing", "Pla-plating", "Kitbashing", "Scratch Building",
+  "LED/Electronics", "Custom Decals", "Topcoat", "Candy Coat", "Metallic Finish", "Battle Damage",
+];
 
 const DEFAULT_LAYOUT: ShowcaseLayout = {
   version: 1,
@@ -296,18 +305,32 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
 function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // All editable fields
+  const [title, setTitle] = useState(build.title);
+  const [kitName, setKitName] = useState(build.kitName);
+  const [grade, setGrade] = useState<string>(build.grade);
+  const [scale, setScale] = useState<string>(build.scale);
+  const [status, setStatus] = useState<string>(build.status);
+  const [techniques, setTechniques] = useState<string[]>(build.techniques);
+  const [toolsStr, setToolsStr] = useState(build.tools?.join(", ") || "");
   const [description, setDescription] = useState(build.description || "");
   const [intentStatement, setIntentStatement] = useState(build.intentStatement || "");
   const [paintSystem, setPaintSystem] = useState(build.paintSystem || "");
   const [topcoat, setTopcoat] = useState(build.topcoat || "");
   const [timeInvested, setTimeInvested] = useState(build.timeInvested || "");
 
+  // Image focal point state
+  const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
+  const [focalPoint, setFocalPoint] = useState(primaryImage?.objectPosition || "50% 50%");
+  const [isSavingFocal, setIsSavingFocal] = useState(false);
+
   const metaRows = [
     { icon: Package, label: "Kit", value: build.kitName },
     { icon: Palette, label: "Paint System", value: isEditing ? undefined : (build.paintSystem || paintSystem) },
     { icon: Layers, label: "Topcoat", value: isEditing ? undefined : (build.topcoat || topcoat) },
     { icon: Clock, label: "Time Invested", value: isEditing ? undefined : (build.timeInvested || timeInvested) },
-    { icon: Wrench, label: "Tools", value: build.tools?.join(", ") },
+    { icon: Wrench, label: "Tools", value: isEditing ? undefined : build.tools?.join(", ") },
   ].filter((row) => row.value);
 
   const displayDescription = isEditing ? undefined : (build.description || description);
@@ -315,10 +338,27 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
 
   const hasInfo = displayDescription || displayIntent || metaRows.length > 0 || build.techniques.length > 0 || isOwner;
 
+  function toggleTechnique(tech: string) {
+    setTechniques((prev) =>
+      prev.includes(tech) ? prev.filter((t) => t !== tech) : [...prev, tech]
+    );
+  }
+
   async function handleSave() {
+    if (!title.trim()) { toast.error("Title is required."); return; }
+    if (!kitName.trim()) { toast.error("Kit name is required."); return; }
+
     setIsSaving(true);
+    const toolsArray = toolsStr.split(",").map((t) => t.trim()).filter(Boolean);
     const result = await updateBuildInfo({
       buildId: build.id,
+      title: title.trim(),
+      kitName: kitName.trim(),
+      grade,
+      scale,
+      status,
+      techniques,
+      tools: toolsArray,
       description: description || undefined,
       intentStatement: intentStatement || undefined,
       paintSystem: paintSystem || undefined,
@@ -331,16 +371,34 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
     } else {
       toast.success("Build info updated!");
       setIsEditing(false);
-      // Update the build object in-place for immediate UI feedback
+      // Update build object in-place for immediate UI feedback
+      build.title = title.trim();
+      build.kitName = kitName.trim();
+      build.grade = grade as Build["grade"];
+      build.scale = scale as Build["scale"];
+      build.status = status as Build["status"];
+      build.techniques = techniques as Build["techniques"];
+      build.tools = toolsArray;
       build.description = description || undefined;
       build.intentStatement = intentStatement || undefined;
       build.paintSystem = paintSystem || undefined;
       build.topcoat = topcoat || undefined;
       build.timeInvested = timeInvested || undefined;
+      // If slug changed, redirect
+      if ("newSlug" in result && result.newSlug) {
+        window.location.replace(`/builds/${result.newSlug}`);
+      }
     }
   }
 
   function handleCancel() {
+    setTitle(build.title);
+    setKitName(build.kitName);
+    setGrade(build.grade);
+    setScale(build.scale);
+    setStatus(build.status);
+    setTechniques([...build.techniques]);
+    setToolsStr(build.tools?.join(", ") || "");
     setDescription(build.description || "");
     setIntentStatement(build.intentStatement || "");
     setPaintSystem(build.paintSystem || "");
@@ -349,26 +407,57 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
     setIsEditing(false);
   }
 
+  async function handleFocalPointClick(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+    const pos = `${x}% ${y}%`;
+    setFocalPoint(pos);
+
+    if (!primaryImage?.id) return;
+    setIsSavingFocal(true);
+    const result = await updateImagePosition({
+      buildId: build.id,
+      imageId: primaryImage.id,
+      objectPosition: pos,
+    });
+    setIsSavingFocal(false);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Image position saved!");
+      if (primaryImage) primaryImage.objectPosition = pos;
+    }
+  }
+
   if (!hasInfo) return null;
+
+  const inputClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50";
+  const labelClass = "text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block";
+  const selectClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-gx-red/50";
 
   return (
     <section className="mt-8 rounded-xl border border-border/50 bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-lg font-bold text-foreground">Build Details</h2>
-          <GradeBadge grade={build.grade} />
-          <span className="text-xs font-mono text-muted-foreground">{build.scale}</span>
-          <span className={cn(
-            "text-xs font-medium px-2 py-0.5 rounded",
-            build.status === "WIP"
-              ? "bg-amber-500/10 text-amber-400"
-              : build.status === "Completed"
-                ? "bg-green-500/10 text-green-400"
-                : "bg-zinc-500/10 text-zinc-400"
-          )}>
-            {build.status}
-          </span>
+          {!isEditing && (
+            <>
+              <GradeBadge grade={build.grade} />
+              <span className="text-xs font-mono text-muted-foreground">{build.scale}</span>
+              <span className={cn(
+                "text-xs font-medium px-2 py-0.5 rounded",
+                build.status === "WIP"
+                  ? "bg-amber-500/10 text-amber-400"
+                  : build.status === "Completed"
+                    ? "bg-green-500/10 text-green-400"
+                    : "bg-zinc-500/10 text-zinc-400"
+              )}>
+                {build.status}
+              </span>
+            </>
+          )}
         </div>
         {isOwner && !isEditing && (
           <button
@@ -401,17 +490,91 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
       </div>
 
       <div className="px-6 pb-6 space-y-5">
+        {/* Title & Kit Name */}
+        {isEditing && (
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Build Title</label>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Build title" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Kit Name</label>
+              <input value={kitName} onChange={(e) => setKitName(e.target.value)} maxLength={200} placeholder="Kit name" className={inputClass} />
+            </div>
+          </div>
+        )}
+
+        {/* Grade, Scale, Status */}
+        {isEditing && (
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div>
+              <label className={labelClass}>Grade</label>
+              <select value={grade} onChange={(e) => setGrade(e.target.value)} className={selectClass}>
+                {ALL_GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Scale</label>
+              <select value={scale} onChange={(e) => setScale(e.target.value)} className={selectClass}>
+                {ALL_SCALES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
+                {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Techniques (toggle chips in edit mode, read-only chips otherwise) */}
+        {isEditing ? (
+          <div>
+            <label className={labelClass}>Techniques</label>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_TECHNIQUES.map((tech) => {
+                const active = techniques.includes(tech);
+                return (
+                  <button
+                    key={tech}
+                    type="button"
+                    onClick={() => toggleTechnique(tech)}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-medium rounded-full border transition-colors",
+                      active
+                        ? "bg-gx-red/20 text-gx-red border-gx-red/40"
+                        : "bg-muted/30 text-muted-foreground border-border/50 hover:border-border"
+                    )}
+                  >
+                    {tech}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : build.techniques.length > 0 ? (
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Techniques</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {build.techniques.map((tech) => (
+                <TechniqueChip key={tech} technique={tech} size="md" />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Description */}
         {isEditing ? (
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">About This Build</label>
+            <label className={labelClass}>About This Build</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               maxLength={5000}
               placeholder="Describe your build — the story behind it, what makes it special..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50 resize-y"
+              className={cn(inputClass, "resize-y")}
             />
             <p className="text-[10px] text-muted-foreground/50 text-right mt-0.5">{description.length}/5000</p>
           </div>
@@ -425,14 +588,14 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
         {/* Intent Statement */}
         {isEditing ? (
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Builder&apos;s Quote</label>
+            <label className={labelClass}>Builder&apos;s Quote</label>
             <textarea
               value={intentStatement}
               onChange={(e) => setIntentStatement(e.target.value)}
               rows={2}
               maxLength={500}
               placeholder="A short quote about your intent or philosophy behind this build..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground italic placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50 resize-y"
+              className={cn(inputClass, "resize-y italic")}
             />
           </div>
         ) : displayIntent ? (
@@ -443,35 +606,24 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
           </blockquote>
         ) : null}
 
-        {/* Editable paint/topcoat/time fields */}
+        {/* Paint, Topcoat, Time, Tools */}
         {isEditing && (
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Paint System</label>
-              <input
-                value={paintSystem}
-                onChange={(e) => setPaintSystem(e.target.value)}
-                placeholder="e.g. Lacquer, Acrylic, Enamel"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
-              />
+              <label className={labelClass}>Paint System</label>
+              <input value={paintSystem} onChange={(e) => setPaintSystem(e.target.value)} placeholder="e.g. Lacquer, Acrylic, Enamel" className={inputClass} />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Topcoat</label>
-              <input
-                value={topcoat}
-                onChange={(e) => setTopcoat(e.target.value)}
-                placeholder="e.g. Matte, Gloss, Semi-gloss"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
-              />
+              <label className={labelClass}>Topcoat</label>
+              <input value={topcoat} onChange={(e) => setTopcoat(e.target.value)} placeholder="e.g. Matte, Gloss, Semi-gloss" className={inputClass} />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 block">Time Invested</label>
-              <input
-                value={timeInvested}
-                onChange={(e) => setTimeInvested(e.target.value)}
-                placeholder="e.g. 40 hours, 2 weeks"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-gx-red/50"
-              />
+              <label className={labelClass}>Time Invested</label>
+              <input value={timeInvested} onChange={(e) => setTimeInvested(e.target.value)} placeholder="e.g. 40 hours, 2 weeks" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Tools (comma-separated)</label>
+              <input value={toolsStr} onChange={(e) => setToolsStr(e.target.value)} placeholder="e.g. Airbrush, Panel liner, Nippers" className={inputClass} />
             </div>
           </div>
         )}
@@ -491,14 +643,34 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
           </div>
         )}
 
-        {/* Techniques */}
-        {build.techniques.length > 0 && (
+        {/* Image Focal Point (edit mode only) */}
+        {isEditing && primaryImage && (
           <div>
-            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Techniques</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {build.techniques.map((tech) => (
-                <TechniqueChip key={tech} technique={tech} size="md" />
-              ))}
+            <label className={labelClass}>
+              <Move className="h-3 w-3 inline mr-1" />
+              Cover Image Focal Point
+            </label>
+            <p className="text-[10px] text-muted-foreground mb-2">Click on the image to set where it should be centered when cropped on cards.</p>
+            <div className="relative w-full max-w-sm aspect-[4/3] rounded-lg overflow-hidden border border-border/50 cursor-crosshair group" onClick={handleFocalPointClick}>
+              <Image
+                src={primaryImage.url}
+                alt={primaryImage.alt}
+                fill
+                className="object-cover"
+                style={{ objectPosition: focalPoint }}
+              />
+              {/* Focal point marker */}
+              <div
+                className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ left: focalPoint.split(" ")[0], top: focalPoint.split(" ")[1] }}
+              >
+                <Crosshair className="w-6 h-6 text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
+              </div>
+              {isSavingFocal && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="text-white text-xs">Saving...</span>
+                </div>
+              )}
             </div>
           </div>
         )}
