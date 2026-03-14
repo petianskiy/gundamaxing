@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { Comment } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function toUIComment(c: any): Comment {
     userId: c.userId,
     username: c.user?.displayName || c.user?.username || "",
     userHandle: c.user?.username || "",
-    userAvatar: c.user?.avatar ?? "",
+    userAvatar: c.user?.avatar ? toCdnUrl(c.user.avatar) : "",
     likes: c.likeCount,
     createdAt: formatDate(c.createdAt),
     children: (c.children ?? []).map(toUIComment),

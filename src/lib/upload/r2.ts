@@ -31,6 +31,16 @@ export function getProxyUrl(key: string): string {
   return `/api/files/${key}`;
 }
 
+// Rewrites legacy /api/files/... URLs stored in the database to CDN URLs.
+// Pass-through for external URLs or when CDN is not configured.
+export function toCdnUrl(url: string): string {
+  if (!R2_PUBLIC_URL) return url;
+  if (url.startsWith("/api/files/")) {
+    return `${R2_PUBLIC_URL}/${url.slice("/api/files/".length)}`;
+  }
+  return url;
+}
+
 // Generate a presigned PUT URL for direct browser → R2 upload
 export async function getPresignedUploadUrl(
   key: string,

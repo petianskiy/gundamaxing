@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { ForumCategory } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -21,7 +22,7 @@ function toUICategory(cat: any, postCount: number): ForumCategory {
     description: cat.description,
     icon: cat.icon,
     color: cat.color,
-    image: cat.image ?? null,
+    image: cat.image ? toCdnUrl(cat.image) : null,
     threadCount: cat._count?.threads ?? 0,
     postCount,
     lastActivity,

@@ -2,16 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Disabled until R2 images are served via CDN (R2_PUBLIC_URL).
-    // The /api/files proxy can't be optimized by Next.js on Vercel.
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year — R2 keys are immutable
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "cdn.discordapp.com" },
-      ...(process.env.R2_PUBLIC_URL
-        ? [{ protocol: "https" as const, hostname: new URL(process.env.R2_PUBLIC_URL).hostname }]
-        : []),
+      { protocol: "https", hostname: "cdn.gundamaxing.com" },
     ],
   },
   async headers() {

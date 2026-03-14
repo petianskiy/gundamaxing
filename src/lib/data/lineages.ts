@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { LineageSummary, LineageDetail, LineageNodeUI, Build, BuildImage } from "@/lib/types";
 
 function formatDate(date: Date): string {
@@ -41,7 +42,7 @@ function buildTree(flatNodes: Array<{
         scale: node.build.scale as Build["scale"],
         images: node.build.images.map((img): BuildImage => ({
           id: img.id,
-          url: img.url,
+          url: toCdnUrl(img.url),
           alt: img.alt,
           isPrimary: img.isPrimary,
           objectPosition: img.objectPosition ?? undefined,
@@ -95,11 +96,11 @@ function toLineageSummary(l: any): LineageSummary {
     slug: l.slug,
     title: l.title,
     description: l.description,
-    coverImage: l.coverImage,
+    coverImage: l.coverImage ? toCdnUrl(l.coverImage) : l.coverImage,
     userId: l.userId,
     username: l.user?.displayName || l.user?.username || "",
     userHandle: l.user?.username || "",
-    userAvatar: l.user?.avatar ?? "",
+    userAvatar: l.user?.avatar ? toCdnUrl(l.user.avatar) : "",
     isPublic: l.isPublic,
     nodeCount: l.nodes?.length ?? 0,
     previewBuilds: (l.nodes ?? []).slice(0, 3).map((n: any) => ({
@@ -107,7 +108,7 @@ function toLineageSummary(l: any): LineageSummary {
       title: n.build.title,
       images: n.build.images.map((img: any) => ({
         id: img.id,
-        url: img.url,
+        url: toCdnUrl(img.url),
         alt: img.alt,
         isPrimary: img.isPrimary,
         objectPosition: img.objectPosition ?? undefined,
@@ -145,11 +146,11 @@ export const getLineageBySlug = cache(async (slug: string): Promise<LineageDetai
     slug: lineage.slug,
     title: lineage.title,
     description: lineage.description,
-    coverImage: lineage.coverImage,
+    coverImage: lineage.coverImage ? toCdnUrl(lineage.coverImage) : lineage.coverImage,
     userId: lineage.userId,
     username: lineage.user?.displayName || lineage.user?.username || "",
     userHandle: lineage.user?.username || "",
-    userAvatar: lineage.user?.avatar ?? "",
+    userAvatar: lineage.user?.avatar ? toCdnUrl(lineage.user.avatar) : "",
     isPublic: lineage.isPublic,
     nodes: buildTree(lineage.nodes as any),
     createdAt: formatDate(lineage.createdAt),
@@ -191,7 +192,7 @@ export const getUserBuildsForLineage = cache(async (userId: string): Promise<Pic
     status: b.status === "COMPLETED" ? "Completed" as const : b.status === "ABANDONED" ? "Abandoned" as const : "WIP" as const,
     images: b.images.map((img) => ({
       id: img.id,
-      url: img.url,
+      url: toCdnUrl(img.url),
       alt: img.alt,
       isPrimary: img.isPrimary,
       objectPosition: img.objectPosition ?? undefined,

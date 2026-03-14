@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 
 export const getUserByUsername = cache(async (username: string) => {
   const user = await db.user.findUnique({
@@ -18,25 +19,39 @@ export const getUserByUsername = cache(async (username: string) => {
 
   return {
     ...user,
+    avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+    banner: user.banner ? toCdnUrl(user.banner) : user.banner,
     badgeCount: user._count.badges,
     buildCount: user._count.builds,
   };
 });
 
 export const getUserByEmail = cache(async (email: string) => {
-  return db.user.findUnique({
+  const user = await db.user.findUnique({
     where: { email: email.toLowerCase() },
   });
+  if (!user) return null;
+  return {
+    ...user,
+    avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+    banner: user.banner ? toCdnUrl(user.banner) : user.banner,
+  };
 });
 
 export const getUserById = cache(async (id: string) => {
-  return db.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id },
   });
+  if (!user) return null;
+  return {
+    ...user,
+    avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+    banner: user.banner ? toCdnUrl(user.banner) : user.banner,
+  };
 });
 
 export const getUserSettingsData = cache(async (userId: string) => {
-  return db.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -73,6 +88,12 @@ export const getUserSettingsData = cache(async (userId: string) => {
       createdAt: true,
     },
   });
+  if (!user) return null;
+  return {
+    ...user,
+    avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+    banner: user.banner ? toCdnUrl(user.banner) : user.banner,
+  };
 });
 
 export const getPortfolioStats = cache(async (userId: string) => {

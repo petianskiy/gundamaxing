@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import { getLevelProgress } from "@/lib/achievements";
 import type {
   AchievementUI,
@@ -178,7 +179,7 @@ export const getLeaderboard = cache(
       id: u.id,
       username: u.username,
       displayName: u.displayName,
-      avatar: u.avatar,
+      avatar: u.avatar ? toCdnUrl(u.avatar) : u.avatar,
       xp: u.xp,
       level: u.level,
       achievementCount: u._count.achievements,

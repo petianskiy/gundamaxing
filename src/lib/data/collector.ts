@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { GunplaKitUI, UserKitUI, KitStatus, UserKitReviewUI } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -76,7 +77,7 @@ export const getKitCatalog = cache(
         scale: kit.scale,
         releaseYear: kit.releaseYear,
         manufacturer: kit.manufacturer,
-        imageUrl: kit.imageUrl,
+        imageUrl: kit.imageUrl ? toCdnUrl(kit.imageUrl) : kit.imageUrl,
         slug: kit.slug,
         totalOwners: kit.userKits.length,
         avgRating: avgRating !== null ? Math.round(avgRating * 10) / 10 : null,
@@ -125,7 +126,7 @@ export const getKitBySlug = cache(
       scale: kit.scale,
       releaseYear: kit.releaseYear,
       manufacturer: kit.manufacturer,
-      imageUrl: kit.imageUrl,
+      imageUrl: kit.imageUrl ? toCdnUrl(kit.imageUrl) : kit.imageUrl,
       slug: kit.slug,
       totalOwners: kit.userKits.length,
       avgRating: avgRating !== null ? Math.round(avgRating * 10) / 10 : null,
@@ -135,7 +136,7 @@ export const getKitBySlug = cache(
       id: uk.id,
       userId: uk.userId,
       username: uk.user.displayName || uk.user.username || "",
-      userAvatar: uk.user.avatar,
+      userAvatar: uk.user.avatar ? toCdnUrl(uk.user.avatar) : uk.user.avatar,
       status: uk.status as KitStatus,
       buildDifficulty: uk.buildDifficulty,
       partQuality: uk.partQuality,
@@ -182,7 +183,7 @@ export const getUserCollection = cache(
           scale: uk.kit.scale,
           releaseYear: uk.kit.releaseYear,
           manufacturer: uk.kit.manufacturer,
-          imageUrl: uk.kit.imageUrl,
+          imageUrl: uk.kit.imageUrl ? toCdnUrl(uk.kit.imageUrl) : uk.kit.imageUrl,
           slug: uk.kit.slug,
           totalOwners: uk.kit.userKits.length,
           avgRating: avgRating !== null ? Math.round(avgRating * 10) / 10 : null,

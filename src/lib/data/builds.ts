@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type {
   Build,
   BuildImage,
@@ -71,7 +72,7 @@ export function toUIBuild(b: any): Build {
     images: (b.images ?? []).map(
       (img: { id: string; url: string; alt: string; isPrimary: boolean; objectPosition: string | null; order: number }): BuildImage => ({
         id: img.id,
-        url: img.url,
+        url: toCdnUrl(img.url),
         alt: img.alt,
         isPrimary: img.isPrimary,
         objectPosition: img.objectPosition ?? undefined,
@@ -93,7 +94,7 @@ export function toUIBuild(b: any): Build {
         date: formatDate(entry.date),
         title: entry.title,
         content: entry.content,
-        images: entry.images,
+        images: entry.images.map(toCdnUrl),
       }),
     ),
     baseKit: b.baseKit ?? undefined,
@@ -102,7 +103,7 @@ export function toUIBuild(b: any): Build {
     userId: b.userId,
     username: b.user?.displayName || b.user?.username || "",
     userHandle: b.user?.username || "",
-    userAvatar: b.user?.avatar ?? "",
+    userAvatar: b.user?.avatar ? toCdnUrl(b.user.avatar) : "",
     likes: b.likeCount,
     comments: b.commentCount,
     forkCount: b.forkCount,
@@ -204,7 +205,10 @@ export const getBuildForEdit = cache(async (idOrSlug: string, userId: string) =>
   if (!build) return null;
   if (build.userId !== userId) return null;
 
-  return build;
+  return {
+    ...build,
+    images: build.images.map((img) => ({ ...img, url: toCdnUrl(img.url) })),
+  };
 });
 
 export const getLatestBuilds = cache(async (limit: number = 4): Promise<Build[]> => {

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { MonthlyMissionUI, MissionSubmissionUI, AdminMissionSubmissionUI } from "@/lib/types";
 
 export const getActiveMission = cache(async (): Promise<MonthlyMissionUI | null> => {
@@ -46,10 +47,10 @@ export const getMissionSubmissions = cache(
       missionId: s.missionId,
       userId: s.userId,
       username: s.user.username,
-      userAvatar: s.user.avatar,
+      userAvatar: s.user.avatar ? toCdnUrl(s.user.avatar) : s.user.avatar,
       title: s.title,
       description: s.description,
-      images: s.images,
+      images: s.images.map(toCdnUrl),
       videoUrl: s.videoUrl,
       isWinner: s.id === winnerId,
       createdAt: s.createdAt.toISOString(),
@@ -72,10 +73,10 @@ export const getUserMissionSubmission = cache(
       missionId: sub.missionId,
       userId: sub.userId,
       username: sub.user.username,
-      userAvatar: sub.user.avatar,
+      userAvatar: sub.user.avatar ? toCdnUrl(sub.user.avatar) : sub.user.avatar,
       title: sub.title,
       description: sub.description,
-      images: sub.images,
+      images: sub.images.map(toCdnUrl),
       videoUrl: sub.videoUrl,
       isWinner: false, // caller corrects from mission.winnerId
       createdAt: sub.createdAt.toISOString(),
@@ -115,11 +116,11 @@ export const getAdminMissionSubmissions = cache(
       id: s.id,
       userId: s.userId,
       username: s.user.username,
-      userAvatar: s.user.avatar,
+      userAvatar: s.user.avatar ? toCdnUrl(s.user.avatar) : s.user.avatar,
       userEmail: s.user.email,
       title: s.title,
       description: s.description,
-      images: s.images,
+      images: s.images.map(toCdnUrl),
       videoUrl: s.videoUrl,
       isWinner: s.id === mission?.winnerId,
       createdAt: s.createdAt.toISOString(),

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 
 export const getAllCustomRoles = cache(async () => {
   try {
@@ -18,7 +19,7 @@ export const getAllCustomRoles = cache(async () => {
 
 export const getCustomRole = cache(async (id: string) => {
   try {
-    return await db.customRole.findUnique({
+    const role = await db.customRole.findUnique({
       where: { id },
       include: {
         users: {
@@ -35,6 +36,14 @@ export const getCustomRole = cache(async (id: string) => {
         },
       },
     });
+    if (!role) return null;
+    return {
+      ...role,
+      users: role.users.map((u) => ({
+        ...u,
+        user: { ...u.user, avatar: u.user.avatar ? toCdnUrl(u.user.avatar) : u.user.avatar },
+      })),
+    };
   } catch {
     return null;
   }

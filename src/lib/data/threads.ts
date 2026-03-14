@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { Thread } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ function toUIThread(t: any): Thread {
     userId: t.userId,
     username: t.user?.displayName || t.user?.username || "",
     userHandle: t.user?.username || "",
-    userAvatar: t.user?.avatar ?? "",
+    userAvatar: t.user?.avatar ? toCdnUrl(t.user.avatar) : "",
     replies: t.replyCount,
     views: t.views,
     isPinned: t.isPinned,

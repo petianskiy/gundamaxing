@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type {
   ForumActivePilot,
   ForumLeaderboardEntry,
@@ -23,7 +24,7 @@ export const getActivePilots = cache(async (limit = 5): Promise<ForumActivePilot
     id: u.id,
     username: u.username,
     displayName: u.displayName,
-    avatar: u.avatar,
+    avatar: u.avatar ? toCdnUrl(u.avatar) : u.avatar,
     lastActiveAt: u.lastActiveAt!.toISOString(),
   }));
 });
@@ -55,7 +56,7 @@ export const getTopContributors = cache(async (limit = 5): Promise<ForumLeaderbo
         id: user.id,
         username: user.username,
         displayName: user.displayName,
-        avatar: user.avatar,
+        avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
         totalLikes: b._sum.likeCount ?? 0,
       };
     })

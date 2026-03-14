@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import type { BuildStatus, Prisma } from "@prisma/client";
 
 interface AdminBuildParams {
@@ -53,7 +54,11 @@ export const getAdminBuilds = cache(
       take: pageSize,
     });
 
-    return builds;
+    return builds.map((b) => ({
+      ...b,
+      user: { ...b.user, avatar: b.user.avatar ? toCdnUrl(b.user.avatar) : b.user.avatar },
+      images: b.images.map((img) => ({ ...img, url: toCdnUrl(img.url) })),
+    }));
   }
 );
 
@@ -99,7 +104,10 @@ export const getAdminComments = cache(
       take: pageSize,
     });
 
-    return comments;
+    return comments.map((c) => ({
+      ...c,
+      user: { ...c.user, avatar: c.user.avatar ? toCdnUrl(c.user.avatar) : c.user.avatar },
+    }));
   }
 );
 
@@ -140,7 +148,10 @@ export const getAdminThreads = cache(
       take: pageSize,
     });
 
-    return threads;
+    return threads.map((t) => ({
+      ...t,
+      user: { ...t.user, avatar: t.user.avatar ? toCdnUrl(t.user.avatar) : t.user.avatar },
+    }));
   }
 );
 

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { toCdnUrl } from "@/lib/upload/r2";
 import { buildInclude, toUIBuild } from "@/lib/data/builds";
 import type { HangarData, HangarUser, BuildEra, HangarTheme, HangarLayout, DomeGallerySettings } from "@/lib/types";
 
@@ -82,8 +83,8 @@ export const getHangarByUsername = cache(async (username: string): Promise<Hanga
     id: user.id,
     username: user.username,
     displayName: user.displayName,
-    avatar: user.avatar,
-    banner: user.banner,
+    avatar: user.avatar ? toCdnUrl(user.avatar) : user.avatar,
+    banner: user.banner ? toCdnUrl(user.banner) : user.banner,
     bio: user.bio,
     accentColor: user.accentColor,
     verificationTier: user.verificationTier,
@@ -111,7 +112,7 @@ export const getHangarByUsername = cache(async (username: string): Promise<Hanga
     id: era.id,
     name: era.name,
     description: era.description,
-    coverImage: era.coverImage,
+    coverImage: era.coverImage ? toCdnUrl(era.coverImage) : era.coverImage,
     order: era.order,
     isCollapsed: era.isCollapsed,
     builds: era.builds.map((assignment) => toUIBuild(assignment.build)),
