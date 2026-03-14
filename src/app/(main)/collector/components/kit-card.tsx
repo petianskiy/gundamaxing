@@ -29,6 +29,7 @@ export function KitCard({
             src={kit.imageUrl}
             alt={kit.name}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="object-contain p-4 transition-transform group-hover:scale-105"
           />
         ) : (
