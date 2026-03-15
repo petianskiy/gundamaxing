@@ -1228,35 +1228,32 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
 
   return (
     <div className="relative" style={{ overscrollBehaviorX: "none" }}>
-      {/* ── Floating top bar: Save & Exit ── */}
-      <div className="flex items-center justify-between mb-4 sticky top-20 z-[400] bg-background/80 backdrop-blur-sm rounded-xl border border-border/50 px-4 py-2.5">
-        <p className="text-sm text-muted-foreground font-medium">Editing Showcase</p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (window.confirm("Exit without saving? Any unsaved changes will be lost.")) {
-                onExit();
-              }
-            }}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors"
-          >
-            Exit
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-gx-red hover:bg-gx-red/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-          >
-            {isSaving ? (
-              <>
-                <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Build"
-            )}
-          </button>
-        </div>
+      {/* ── Save & Exit buttons ── */}
+      <div className="flex justify-end gap-2 mb-2">
+        <button
+          onClick={() => {
+            if (window.confirm("Exit without saving? Any unsaved changes will be lost.")) {
+              onExit();
+            }
+          }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground border border-border/50 hover:border-border transition-colors"
+        >
+          Exit
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gx-red hover:bg-gx-red/90 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+        >
+          {isSaving ? (
+            <>
+              <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Build"
+          )}
+        </button>
       </div>
 
       {/* Horizontal page navigation strip with swipe arrows */}
@@ -1300,9 +1297,9 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                 ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-zinc-700"
             )}
-            title={pagesState.length >= maxPages && maxPages < 10 ? "Reach Level 5 to unlock more pages" : undefined}
+            title={pagesState.length >= maxPages && maxPages < 10 ? "Reach Level 5 to unlock more pages" : `Add page (${pagesState.length}/${maxPages})`}
           >
-            +{maxPages < 10 && " (Lv.5)"}
+            {pagesState.length >= maxPages && maxPages < 10 ? "\u{1F512}" : "+"}
           </button>
         </div>
         {/* Right arrow */}

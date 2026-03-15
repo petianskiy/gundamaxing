@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check, Crosshair, Move } from "lucide-react";
@@ -102,6 +102,134 @@ function generateInitialLayout(images: BuildImage[]): ShowcaseLayout {
   }
 
   return { ...DEFAULT_LAYOUT, elements };
+}
+
+// ─── Page Viewer (horizontal swipe navigation) ─────────────────
+
+function PageViewer({
+  pages,
+  layout,
+  build,
+  isOwner,
+  onEdit,
+}: {
+  pages: ShowcasePageType[];
+  layout: ShowcaseLayout;
+  build: Build;
+  isOwner: boolean;
+  onEdit: () => void;
+}) {
+  const [currentPage, setCurrentPage] = useState(0);
+  const touchRef = useRef<{ x: number; time: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Prevent browser back navigation on horizontal swipe
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+      }
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  const goTo = (index: number) => {
+    setCurrentPage(Math.max(0, Math.min(pages.length - 1, index)));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchRef.current = { x: e.touches[0].clientX, time: Date.now() };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const elapsed = Date.now() - touchRef.current.time;
+    touchRef.current = null;
+    if (elapsed > 500 || Math.abs(dx) < 50) return;
+    if (dx < 0) goTo(currentPage + 1);
+    else goTo(currentPage - 1);
+  };
+
+  const page = pages[currentPage];
+
+  return (
+    <div
+      ref={containerRef}
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none"
+      style={{ overscrollBehaviorX: "contain" }}
+      onContextMenu={(e) => e.preventDefault()}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Current page canvas */}
+      <div className="relative">
+        <ShowcaseCanvas
+          layout={{ ...layout, elements: page.elements }}
+          build={build}
+          pageBackground={page.background}
+        />
+
+        {/* Edit button for owner */}
+        {isOwner && (
+          <button
+            onClick={onEdit}
+            className="absolute top-4 right-4 z-20 flex items-center gap-2 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white text-sm font-medium hover:bg-black/80 transition-colors"
+          >
+            <Pencil className="h-4 w-4" />
+            Edit Showcase
+          </button>
+        )}
+      </div>
+
+      {/* Page indicator + navigation */}
+      {pages.length > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            onClick={() => goTo(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+
+          {/* Dot indicators */}
+          <div className="flex items-center gap-1.5">
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={cn(
+                  "rounded-full transition-all",
+                  i === currentPage
+                    ? "w-6 h-2 bg-gx-red"
+                    : "w-2 h-2 bg-zinc-600 hover:bg-zinc-400"
+                )}
+                aria-label={`Page ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => goTo(currentPage + 1)}
+            disabled={currentPage === pages.length - 1}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+
+          <span className="text-xs text-muted-foreground ml-2">
+            {currentPage + 1} / {pages.length}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface ShowcasePageProps {
@@ -220,25 +348,8 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
         </div>
       </div>
 
-      {/* Canvas pages (stacked vertically) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none" onContextMenu={(e) => e.preventDefault()}>
-        {pages.map((page, i) => (
-          <div key={page.id} className={cn("relative", i > 0 && "mt-4")}>
-            <ShowcaseCanvas layout={{ ...layout, elements: page.elements }} build={build} pageBackground={page.background} />
-
-            {/* Edit button for owner — only on first page */}
-            {i === 0 && isOwner && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="absolute top-4 right-4 z-20 flex items-center gap-2 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white text-sm font-medium hover:bg-black/80 transition-colors"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Showcase
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* Canvas pages (horizontal swipe navigation) */}
+      <PageViewer pages={pages} layout={layout} build={build} isOwner={isOwner} onEdit={() => setIsEditing(true)} />
 
       {/* Below canvas content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

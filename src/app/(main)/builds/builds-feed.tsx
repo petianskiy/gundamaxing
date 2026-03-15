@@ -19,8 +19,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
-import { BuildCard } from "@/components/build/build-card";
 import { GradeBadge } from "@/components/ui/grade-badge";
+import { VerificationBadge } from "@/components/ui/verification-badge";
+import { TechniqueChip } from "@/components/ui/technique-chip";
 import { toggleLike, toggleBookmark } from "@/lib/actions/like";
 import { toast } from "sonner";
 import type { Build, Grade, Timeline, Scale, Technique, VerificationTier, BuildStatus } from "@/lib/types";
@@ -89,6 +90,76 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
     for (const b of builds) counts[b.id] = b.likes;
     return counts;
   });
+  const [, startTransition] = useTransition();
+
+  const handleLike = (buildId: string) => {
+    if (!currentUserId) {
+      toast.error(t("builds.toast.signInToLike"));
+      return;
+    }
+    const wasLiked = likedSet.has(buildId);
+    setLikedSet((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) next.delete(buildId);
+      else next.add(buildId);
+      return next;
+    });
+    setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? -1 : 1) }));
+    startTransition(async () => {
+      const result = await toggleLike(buildId);
+      if ("error" in result) {
+        setLikedSet((prev) => {
+          const next = new Set(prev);
+          if (wasLiked) next.add(buildId);
+          else next.delete(buildId);
+          return next;
+        });
+        setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? 1 : -1) }));
+        toast.error(result.error);
+      }
+    });
+  };
+
+  const handleBookmark = (buildId: string) => {
+    if (!currentUserId) {
+      toast.error(t("builds.toast.signInToBookmark"));
+      return;
+    }
+    const wasBookmarked = bookmarkedSet.has(buildId);
+    setBookmarkedSet((prev) => {
+      const next = new Set(prev);
+      if (wasBookmarked) next.delete(buildId);
+      else next.add(buildId);
+      return next;
+    });
+    startTransition(async () => {
+      const result = await toggleBookmark(buildId);
+      if ("error" in result) {
+        setBookmarkedSet((prev) => {
+          const next = new Set(prev);
+          if (wasBookmarked) next.add(buildId);
+          else next.delete(buildId);
+          return next;
+        });
+        toast.error(result.error);
+      }
+    });
+  };
+
+  const handleShare = async (build: Build) => {
+    const url = `${window.location.origin}/builds/${build.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: build.title, url });
+      } catch {
+        await navigator.clipboard.writeText(url);
+        toast.success(t("builds.toast.linkCopied"));
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("builds.toast.linkCopied"));
+    }
+  };
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -357,7 +428,15 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
             {viewMode === "grid" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {filteredBuilds.map((build) => (
-                  <BuildCard key={build.id} build={build} />
+                  <GridBuildCard
+                    key={build.id}
+                    build={build}
+                    isLiked={likedSet.has(build.id)}
+                    isBookmarked={bookmarkedSet.has(build.id)}
+                    likeCount={likeCounts[build.id] ?? build.likes}
+                    onLike={() => handleLike(build.id)}
+                    onBookmark={() => handleBookmark(build.id)}
+                  />
                 ))}
               </div>
             )}
@@ -366,13 +445,12 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
             {viewMode === "wall" && (
               <WallView
                 builds={filteredBuilds}
-                currentUserId={currentUserId}
                 likedSet={likedSet}
-                setLikedSet={setLikedSet}
                 bookmarkedSet={bookmarkedSet}
-                setBookmarkedSet={setBookmarkedSet}
                 likeCounts={likeCounts}
-                setLikeCounts={setLikeCounts}
+                onLike={handleLike}
+                onBookmark={handleBookmark}
+                onShare={handleShare}
                 t={t}
               />
             )}
@@ -402,92 +480,179 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
   );
 }
 
+// ─── Grid Build Card (interactive) ────────────────────────────
+
+interface GridBuildCardProps {
+  build: Build;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  likeCount: number;
+  onLike: () => void;
+  onBookmark: () => void;
+}
+
+function GridBuildCard({ build, isLiked, isBookmarked, likeCount, onLike, onBookmark }: GridBuildCardProps) {
+  const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
+  const shownTechniques = build.techniques.slice(0, 2);
+  const remainingCount = build.techniques.length - 2;
+
+  return (
+    <Link href={`/builds/${build.slug}`} className="h-full">
+      <motion.article
+        whileHover={{ y: -2 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className={cn(
+          "group relative rounded-xl border border-border/50 bg-card overflow-hidden h-full flex flex-col",
+          "shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300"
+        )}
+      >
+        {/* Image */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
+          <Image
+            src={primaryImage.url}
+            alt={primaryImage.alt}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+            style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
+          />
+
+          {/* Top-left: Grade + Scale */}
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 max-w-[calc(100%-20px)] flex-wrap">
+            <GradeBadge grade={build.grade} />
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-black/60 text-zinc-300 backdrop-blur-sm">
+              {build.scale}
+            </span>
+          </div>
+
+          {/* Top-right: Verification */}
+          {build.verification !== "unverified" && (
+            <div className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/50 backdrop-blur-sm">
+              <VerificationBadge tier={build.verification} size="md" />
+            </div>
+          )}
+
+          {/* Bottom-left: WIP badge */}
+          {build.status === "WIP" && (
+            <div className="absolute bottom-2.5 left-2.5">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-black backdrop-blur-sm">
+                WIP
+              </span>
+            </div>
+          )}
+
+          {/* Bottom gradient */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+
+        {/* Content */}
+        <div className="p-4 flex flex-col flex-1 gap-3">
+          {/* Title & kit name */}
+          <div>
+            <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-card-foreground group-hover:text-foreground transition-colors">
+              {build.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+              {build.kitName}
+            </p>
+          </div>
+
+          {/* Techniques — max 2 full tags + overflow count */}
+          <div className="overflow-hidden max-w-full min-h-[22px]">
+            <div className="flex gap-1 items-center flex-nowrap">
+              {shownTechniques.map((tech) => (
+                <TechniqueChip key={tech} technique={tech} size="sm" />
+              ))}
+              {remainingCount > 0 && (
+                <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
+                  +{remainingCount}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Footer — pinned to bottom */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">
+            {/* User */}
+            <Link
+              href={`/u/${build.userHandle}`}
+              className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative w-[18px] h-[18px] rounded-full overflow-hidden shrink-0">
+                <Image
+                  src={build.userAvatar}
+                  alt={build.username}
+                  fill
+                  sizes="18px"
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-xs text-muted-foreground truncate">
+                {build.username}
+              </span>
+            </Link>
+
+            {/* Interactive Stats */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onLike(); }}
+                className="group/action inline-flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center -m-2 p-2"
+              >
+                <Heart
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors",
+                    isLiked ? "fill-red-500 text-red-500" : "text-muted-foreground group-hover/action:text-red-400"
+                  )}
+                />
+                <span className={cn(
+                  "text-xs transition-colors",
+                  isLiked ? "text-red-500 font-semibold" : "text-muted-foreground"
+                )}>
+                  {likeCount >= 1000 ? `${(likeCount / 1000).toFixed(1)}k` : likeCount}
+                </span>
+              </button>
+              <Link
+                href={`/builds/${build.slug}#comments`}
+                onClick={(e) => e.stopPropagation()}
+                className="group/action inline-flex items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center -m-2 p-2"
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-muted-foreground group-hover/action:text-blue-400 transition-colors" />
+                <span className="text-xs text-muted-foreground">{build.comments}</span>
+              </Link>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBookmark(); }}
+                className="group/action inline-flex items-center min-w-[44px] min-h-[44px] justify-center -m-2 p-2"
+              >
+                <Bookmark
+                  className={cn(
+                    "h-3.5 w-3.5 transition-colors",
+                    isBookmarked ? "fill-foreground text-foreground" : "text-muted-foreground group-hover/action:text-yellow-400"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.article>
+    </Link>
+  );
+}
+
 // ─── Wall View (Instagram-style) ──────────────────────────────
 
 interface WallViewProps {
   builds: Build[];
-  currentUserId?: string;
   likedSet: Set<string>;
-  setLikedSet: React.Dispatch<React.SetStateAction<Set<string>>>;
   bookmarkedSet: Set<string>;
-  setBookmarkedSet: React.Dispatch<React.SetStateAction<Set<string>>>;
   likeCounts: Record<string, number>;
-  setLikeCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  onLike: (buildId: string) => void;
+  onBookmark: (buildId: string) => void;
+  onShare: (build: Build) => void;
   t: (key: string) => string;
 }
 
-function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet, setBookmarkedSet, likeCounts, setLikeCounts, t }: WallViewProps) {
-  const [, startTransition] = useTransition();
-
-  const handleLike = (buildId: string) => {
-    if (!currentUserId) {
-      toast.error(t("builds.toast.signInToLike"));
-      return;
-    }
-    const wasLiked = likedSet.has(buildId);
-    setLikedSet((prev) => {
-      const next = new Set(prev);
-      if (wasLiked) next.delete(buildId);
-      else next.add(buildId);
-      return next;
-    });
-    setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? -1 : 1) }));
-    startTransition(async () => {
-      const result = await toggleLike(buildId);
-      if ("error" in result) {
-        setLikedSet((prev) => {
-          const next = new Set(prev);
-          if (wasLiked) next.add(buildId);
-          else next.delete(buildId);
-          return next;
-        });
-        setLikeCounts((prev) => ({ ...prev, [buildId]: (prev[buildId] ?? 0) + (wasLiked ? 1 : -1) }));
-        toast.error(result.error);
-      }
-    });
-  };
-
-  const handleBookmark = (buildId: string) => {
-    if (!currentUserId) {
-      toast.error(t("builds.toast.signInToBookmark"));
-      return;
-    }
-    const wasBookmarked = bookmarkedSet.has(buildId);
-    setBookmarkedSet((prev) => {
-      const next = new Set(prev);
-      if (wasBookmarked) next.delete(buildId);
-      else next.add(buildId);
-      return next;
-    });
-    startTransition(async () => {
-      const result = await toggleBookmark(buildId);
-      if ("error" in result) {
-        setBookmarkedSet((prev) => {
-          const next = new Set(prev);
-          if (wasBookmarked) next.add(buildId);
-          else next.delete(buildId);
-          return next;
-        });
-        toast.error(result.error);
-      }
-    });
-  };
-
-  const handleShare = async (build: Build) => {
-    const url = `${window.location.origin}/builds/${build.slug}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: build.title, url });
-      } catch {
-        await navigator.clipboard.writeText(url);
-        toast.success(t("builds.toast.linkCopied"));
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success(t("builds.toast.linkCopied"));
-    }
-  };
-
+function WallView({ builds, likedSet, bookmarkedSet, likeCounts, onLike, onBookmark, onShare, t }: WallViewProps) {
   return (
     <div className="max-w-[470px] mx-auto space-y-5">
       {builds.map((build, i) => {
@@ -546,7 +711,7 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
             <div className="px-4 pt-3 pb-1">
               <div className="flex items-center">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => handleLike(build.id)} className="group flex items-center gap-1.5">
+                  <button onClick={() => onLike(build.id)} className="group flex items-center gap-1.5">
                     <Heart
                       className={cn(
                         "h-6 w-6 transition-colors",
@@ -559,11 +724,11 @@ function WallView({ builds, currentUserId, likedSet, setLikedSet, bookmarkedSet,
                     <MessageCircle className="h-6 w-6 text-foreground group-hover:text-blue-400 transition-colors" />
                     <span className="text-sm font-semibold text-foreground">{build.comments}</span>
                   </Link>
-                  <button onClick={() => handleShare(build)} className="group">
+                  <button onClick={() => onShare(build)} className="group">
                     <Share2 className="h-5 w-5 text-foreground group-hover:text-green-400 transition-colors" />
                   </button>
                 </div>
-                <button onClick={() => handleBookmark(build.id)} className="ml-auto group">
+                <button onClick={() => onBookmark(build.id)} className="ml-auto group">
                   <Bookmark
                     className={cn(
                       "h-6 w-6 transition-colors",

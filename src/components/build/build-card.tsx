@@ -37,7 +37,7 @@ export function BuildCard({ build }: { build: Build }) {
           />
 
           {/* Top-left: Grade + Scale */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 max-w-[calc(100%-20px)] flex-wrap">
             <GradeBadge grade={build.grade} />
             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-black/60 text-zinc-300 backdrop-blur-sm">
               {build.scale}
@@ -77,15 +77,17 @@ export function BuildCard({ build }: { build: Build }) {
           </div>
 
           {/* Techniques — max 2 full tags + overflow count */}
-          <div className="flex gap-1 items-center min-h-[22px]">
-            {shownTechniques.map((tech) => (
-              <TechniqueChip key={tech} technique={tech} size="sm" />
-            ))}
-            {remainingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
-                +{remainingCount}
-              </span>
-            )}
+          <div className="overflow-hidden max-w-full min-h-[22px]">
+            <div className="flex gap-1 items-center flex-nowrap">
+              {shownTechniques.map((tech) => (
+                <TechniqueChip key={tech} technique={tech} size="sm" />
+              ))}
+              {remainingCount > 0 && (
+                <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
+                  +{remainingCount}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Footer — pinned to bottom */}

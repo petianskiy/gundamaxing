@@ -12,33 +12,81 @@ interface GuideStep {
   selector: string;
   title: string;
   description: string;
+  tip: string;
 }
 
 const STEPS: GuideStep[] = [
   {
     selector: '[data-dock-item="add-image"]',
     title: "Add Images",
-    description: "Upload and add photos of your build to the showcase.",
+    description: "Upload photos of your build to the showcase canvas.",
+    tip: "You can add up to 25 images. Drag to reposition, resize from corners.",
+  },
+  {
+    selector: '[data-dock-item="add-video"]',
+    title: "Add Video",
+    description: "Add a short video clip to your showcase.",
+    tip: "Videos are limited to 60 seconds and 2 per showcase.",
   },
   {
     selector: '[data-dock-item="add-text"]',
     title: "Add Text",
-    description: "Add text labels, titles, and descriptions to your page.",
+    description: "Add text labels, titles, and descriptions.",
+    tip: "Double-click text to edit. Use the properties panel for fonts, colors, and effects.",
+  },
+  {
+    selector: '[data-dock-item="info-card"]',
+    title: "Info Card",
+    description: "Add build metadata cards showing kit details, stats, or techniques.",
+    tip: "Choose from compact, full, stats, description, paint, tools, or intent variants.",
+  },
+  {
+    selector: '[data-dock-item="shapes"]',
+    title: "Shapes",
+    description: "Add geometric shapes like rectangles, circles, stars, and more.",
+    tip: "Shapes work great as decorative frames or dividers between content.",
+  },
+  {
+    selector: '[data-dock-item="effects"]',
+    title: "Effects",
+    description: "Add visual effects like electric particles to your showcase.",
+    tip: "Effects are animated and will play when viewers see your showcase.",
+  },
+  {
+    selector: '[data-dock-item="templates"]',
+    title: "Templates",
+    description: "Apply a pre-made layout template to quickly arrange your content.",
+    tip: "Templates will replace current elements. Great for getting started quickly.",
   },
   {
     selector: '[data-dock-item="draw"]',
     title: "Draw",
     description: "Draw directly on your showcase with the pencil tool.",
+    tip: "Use layers in the drawing mode for non-destructive sketching.",
+  },
+  {
+    selector: '[data-dock-item="background"]',
+    title: "Background",
+    description: "Customize your canvas background with colors, gradients, or images.",
+    tip: "Try the animated gradient backgrounds for a dynamic showcase.",
   },
   {
     selector: '[data-dock-item="layers"]',
     title: "Layers",
-    description: "Manage element ordering and visibility.",
+    description: "Manage element stacking order and lock elements in place.",
+    tip: "Lock elements you're done with to avoid accidentally moving them.",
+  },
+  {
+    selector: '[data-dock-item="undo"]',
+    title: "Undo / Redo",
+    description: "Undo your last action or redo it. Keyboard: Ctrl+Z / Ctrl+Shift+Z.",
+    tip: "The editor remembers your recent history so you can experiment freely.",
   },
   {
     selector: '[data-dock-item="save"]',
     title: "Save",
-    description: "Don't forget to save your work when you're done!",
+    description: "Save your showcase. Don't forget to save before exiting!",
+    tip: "Your showcase is visible to everyone once saved. Save often!",
   },
 ];
 
@@ -299,7 +347,12 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
               <h3 className="text-sm font-semibold text-foreground mb-1">{step.title}</h3>
 
               {/* Description */}
-              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{step.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-2">{step.description}</p>
+
+              {/* Tip */}
+              <p className="text-xs italic text-muted-foreground/70 leading-relaxed mb-3">
+                {"💡 Tip: "}{step.tip}
+              </p>
 
               {/* Navigation */}
               <div className="flex items-center gap-2">

@@ -3,19 +3,11 @@
 import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
-import {
   ImagePlus,
   Type,
   LayoutGrid,
   Image,
   Layers,
-
   Save,
   X,
   Loader2,
@@ -59,6 +51,7 @@ interface ShowcaseDockProps {
 interface DockItemData {
   icon: React.ElementType;
   label: string;
+  shortLabel: string;
   onClick: () => void;
   highlight?: boolean;
   disabled?: boolean;
@@ -68,6 +61,12 @@ interface DockItemData {
 interface DockTooltipState {
   label: string;
   rect: DOMRect;
+}
+
+function Divider() {
+  return (
+    <div className="flex-shrink-0 w-px self-stretch my-1.5 bg-zinc-700/50" />
+  );
 }
 
 export function ShowcaseDock({
@@ -96,105 +95,113 @@ export function ShowcaseDock({
   videoCount,
   maxVideos,
 }: ShowcaseDockProps) {
-  const mouseX = useMotionValue(Infinity);
   const [tooltip, setTooltip] = useState<DockTooltipState | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // Snap all items to base size immediately when frozen
-  useEffect(() => {
-    if (frozen) mouseX.set(Infinity);
-  }, [frozen, mouseX]);
-
   const imagesAtLimit = imageCount >= maxImages;
   const videosAtLimit = videoCount >= maxVideos;
 
-  const items: DockItemData[] = [
-    { icon: Undo2, label: "Undo", onClick: onUndo, disabled: !canUndo, dockId: "undo" },
-    { icon: Redo2, label: "Redo", onClick: onRedo, disabled: !canRedo, dockId: "redo" },
-    { icon: ImagePlus, label: imagesAtLimit ? `Images ${imageCount}/${maxImages}` : `Add Image (${imageCount}/${maxImages})`, onClick: onAddImage, disabled: imagesAtLimit, dockId: "add-image" },
-    { icon: isVideoUploading ? Loader2 : Film, label: isVideoUploading ? "Uploading..." : videosAtLimit ? `Videos ${videoCount}/${maxVideos}` : `Add Video (${videoCount}/${maxVideos})`, onClick: onAddVideo, disabled: isVideoUploading || videosAtLimit, dockId: "add-video" },
-    { icon: Type, label: "Add Text", onClick: onAddText, dockId: "add-text" },
-    { icon: LayoutGrid, label: "Info Card", onClick: onAddMetadata, dockId: "info-card" },
-    { icon: Pentagon, label: "Shapes", onClick: onAddShape, dockId: "shapes" },
-    { icon: Zap, label: "Effects", onClick: onAddEffect, dockId: "effects" },
-    { icon: LayoutTemplate, label: "Templates", onClick: onAddTemplate, dockId: "templates" },
-    { icon: Pencil, label: "Draw", onClick: onDraw, dockId: "draw" },
-    { icon: Image, label: "Background", onClick: onBackground, dockId: "background" },
-    { icon: Layers, label: "Layers", onClick: onLayers, dockId: "layers" },
-    { icon: isSaving ? Loader2 : Save, label: isSaving ? "Saving..." : "Save", onClick: onSave, highlight: true, dockId: "save" },
-    { icon: X, label: "Exit", onClick: onExit, dockId: "exit" },
+  const historyItems: DockItemData[] = [
+    { icon: Undo2, label: "Undo", shortLabel: "Undo", onClick: onUndo, disabled: !canUndo, dockId: "undo" },
+    { icon: Redo2, label: "Redo", shortLabel: "Redo", onClick: onRedo, disabled: !canRedo, dockId: "redo" },
   ];
 
-  const totalUsed = imageCount + videoCount;
-  const totalMax = maxImages + maxVideos;
-  const loadPercent = Math.round((totalUsed / totalMax) * 100);
-  const loadColor = loadPercent >= 90 ? "bg-red-500" : loadPercent >= 70 ? "bg-amber-500" : "bg-blue-500";
+  const contentItems: DockItemData[] = [
+    { icon: ImagePlus, label: imagesAtLimit ? `Images ${imageCount}/${maxImages}` : `Add Image (${imageCount}/${maxImages})`, shortLabel: "Image", onClick: onAddImage, disabled: imagesAtLimit, dockId: "add-image" },
+    { icon: isVideoUploading ? Loader2 : Film, label: isVideoUploading ? "Uploading..." : videosAtLimit ? `Videos ${videoCount}/${maxVideos}` : `Add Video (${videoCount}/${maxVideos})`, shortLabel: isVideoUploading ? "Upload..." : "Video", onClick: onAddVideo, disabled: isVideoUploading || videosAtLimit, dockId: "add-video" },
+    { icon: Type, label: "Add Text", shortLabel: "Text", onClick: onAddText, dockId: "add-text" },
+    { icon: LayoutGrid, label: "Info Card", shortLabel: "Info", onClick: onAddMetadata, dockId: "info-card" },
+    { icon: Pentagon, label: "Shapes", shortLabel: "Shapes", onClick: onAddShape, dockId: "shapes" },
+    { icon: Zap, label: "Effects", shortLabel: "Effects", onClick: onAddEffect, dockId: "effects" },
+  ];
+
+  const utilityItems: DockItemData[] = [
+    { icon: LayoutTemplate, label: "Templates", shortLabel: "Templates", onClick: onAddTemplate, dockId: "templates" },
+    { icon: Pencil, label: "Draw", shortLabel: "Draw", onClick: onDraw, dockId: "draw" },
+    { icon: Image, label: "Background", shortLabel: "BG", onClick: onBackground, dockId: "background" },
+    { icon: Layers, label: "Layers", shortLabel: "Layers", onClick: onLayers, dockId: "layers" },
+  ];
+
+  const actionItems: DockItemData[] = [
+    { icon: isSaving ? Loader2 : Save, label: isSaving ? "Saving..." : "Save", shortLabel: isSaving ? "Saving" : "Save", onClick: onSave, highlight: true, disabled: isSaving, dockId: "save" },
+    { icon: X, label: "Exit", shortLabel: "Exit", onClick: onExit, dockId: "exit" },
+  ];
+
+  const guideItem: DockItemData | null = onShowGuide
+    ? { icon: HelpCircle, label: "Guide", shortLabel: "Guide", onClick: onShowGuide, dockId: "guide" }
+    : null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[600] flex flex-col items-center gap-1.5 max-w-[calc(100vw-2rem)]">
-      {/* Capacity indicator */}
-      <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/40 text-[10px]">
-        <div className="flex items-center gap-1.5">
-          <ImagePlus className="h-3 w-3 text-zinc-500" />
-          <span className={imageCount >= maxImages ? "text-red-400 font-medium" : "text-zinc-400"}>
-            {imageCount}/{maxImages}
-          </span>
-        </div>
-        <div className="w-px h-3 bg-zinc-700" />
-        <div className="flex items-center gap-1.5">
-          <Film className="h-3 w-3 text-zinc-500" />
-          <span className={videoCount >= maxVideos ? "text-red-400 font-medium" : "text-zinc-400"}>
-            {videoCount}/{maxVideos}
-          </span>
-        </div>
-        <div className="w-px h-3 bg-zinc-700" />
-        <div className="flex items-center gap-1.5">
-          <div className="w-16 h-1.5 rounded-full bg-zinc-700 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${loadColor}`}
-              style={{ width: `${Math.min(100, loadPercent)}%` }}
-            />
-          </div>
-          <span className={loadPercent >= 90 ? "text-red-400 font-medium" : "text-zinc-500"}>
-            {loadPercent}%
-          </span>
-        </div>
-      </div>
-
-      {/* Dock */}
-      <motion.div
-        onMouseMove={(e) => { if (!frozen) mouseX.set(e.pageX); }}
-        onMouseLeave={() => {
-          mouseX.set(Infinity);
-          setTooltip(null);
-        }}
-        className="flex items-end gap-1 px-2 sm:px-3 py-2 rounded-2xl bg-zinc-900/90 backdrop-blur-xl border border-zinc-700/50 shadow-2xl overflow-x-auto max-w-full"
-        style={{ scrollbarWidth: "none" }}
+    <div
+      className="fixed bottom-0 left-0 right-0 z-[600] bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-700/50"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      onMouseLeave={() => setTooltip(null)}
+    >
+      <div
+        className="flex items-stretch gap-1 px-2 py-2 overflow-x-auto"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
       >
-        {items.map((item) => (
-          <DockIcon
-            key={item.label}
-            mouseX={mouseX}
+        {/* History group */}
+        {historyItems.map((item) => (
+          <ToolButton
+            key={item.dockId}
             item={item}
             onShowTooltip={setTooltip}
             onHideTooltip={() => setTooltip(null)}
           />
         ))}
-        {onShowGuide && (
-          <DockIcon
-            mouseX={mouseX}
-            item={{ icon: HelpCircle, label: "Guide", onClick: onShowGuide, dockId: "guide" }}
+
+        <Divider />
+
+        {/* Content tools group */}
+        {contentItems.map((item) => (
+          <ToolButton
+            key={item.dockId}
+            item={item}
+            onShowTooltip={setTooltip}
+            onHideTooltip={() => setTooltip(null)}
+          />
+        ))}
+
+        <Divider />
+
+        {/* Utility group */}
+        {utilityItems.map((item) => (
+          <ToolButton
+            key={item.dockId}
+            item={item}
+            onShowTooltip={setTooltip}
+            onHideTooltip={() => setTooltip(null)}
+          />
+        ))}
+
+        <Divider />
+
+        {/* Action group (save/exit) */}
+        {actionItems.map((item) => (
+          <ToolButton
+            key={item.dockId}
+            item={item}
+            onShowTooltip={setTooltip}
+            onHideTooltip={() => setTooltip(null)}
+          />
+        ))}
+
+        {/* Guide button */}
+        {guideItem && (
+          <ToolButton
+            item={guideItem}
             onShowTooltip={setTooltip}
             onHideTooltip={() => setTooltip(null)}
           />
         )}
-      </motion.div>
+      </div>
 
-      {/* Tooltip rendered via portal to escape transform-based containing block */}
+      {/* Tooltip rendered via portal for desktop hover */}
       {mounted && tooltip && createPortal(
         <div
-          className="fixed z-[601] px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-[10px] text-white whitespace-nowrap pointer-events-none"
+          className="fixed z-[601] px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-[10px] text-white whitespace-nowrap pointer-events-none hidden sm:block"
           style={{
             left: tooltip.rect.left + tooltip.rect.width / 2,
             top: tooltip.rect.top - 8,
@@ -209,53 +216,31 @@ export function ShowcaseDock({
   );
 }
 
-function DockIcon({
-  mouseX,
+function ToolButton({
   item,
   onShowTooltip,
   onHideTooltip,
 }: {
-  mouseX: MotionValue<number>;
   item: DockItemData;
   onShowTooltip: (state: DockTooltipState) => void;
   onHideTooltip: () => void;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
-
-  const distance = useTransform(mouseX, (val) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-  const baseSize = isMobile ? 40 : 40;
-  const hoverSize = isMobile ? 40 : 64;
-  const baseIcon = isMobile ? 18 : 18;
-  const hoverIcon = isMobile ? 18 : 28;
-
-  const widthSync = useTransform(distance, [-150, 0, 150], [baseSize, hoverSize, baseSize]);
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
-
-  const iconSizeSync = useTransform(distance, [-150, 0, 150], [baseIcon, hoverIcon, baseIcon]);
-  const iconSize = useSpring(iconSizeSync, { mass: 0.1, stiffness: 150, damping: 12 });
-
   const Icon = item.icon;
 
   return (
-    <motion.button
+    <button
       ref={ref}
       data-dock-item={item.dockId}
-      style={{ width, height: width }}
       onClick={item.onClick}
       disabled={item.disabled}
-      className={`relative flex items-center justify-center rounded-xl transition-colors ${
+      className={`relative flex flex-col items-center justify-center gap-0.5 rounded-lg min-w-[56px] px-2 py-1.5 flex-shrink-0 transition-colors active:scale-95 ${
         item.disabled
-          ? "bg-zinc-800/50 text-zinc-600 cursor-not-allowed"
+          ? "opacity-40 cursor-not-allowed"
           : item.highlight
             ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
-            : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+            : "text-zinc-300 hover:bg-zinc-700/60 hover:text-white"
       }`}
-      whileTap={item.disabled ? undefined : { scale: 0.9 }}
       onMouseEnter={() => {
         if (ref.current && !item.disabled) {
           onShowTooltip({ label: item.label, rect: ref.current.getBoundingClientRect() });
@@ -263,9 +248,8 @@ function DockIcon({
       }}
       onMouseLeave={onHideTooltip}
     >
-      <motion.div style={{ width: iconSize, height: iconSize }} className="flex items-center justify-center">
-        <Icon className={`w-full h-full ${Icon === Loader2 ? "animate-spin" : ""}`} />
-      </motion.div>
-    </motion.button>
+      <Icon className={`w-5 h-5 ${Icon === Loader2 ? "animate-spin" : ""}`} />
+      <span className="text-[10px] leading-tight whitespace-nowrap">{item.shortLabel}</span>
+    </button>
   );
 }
