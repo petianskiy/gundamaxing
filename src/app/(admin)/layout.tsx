@@ -13,6 +13,7 @@ import {
   Settings2,
   Target,
   MessageSquare,
+  BookOpen,
 } from "lucide-react";
 
 const adminNav = [
@@ -25,6 +26,7 @@ const adminNav = [
   { href: "/admin/roles", label: "Roles", icon: Tags },
   { href: "/admin/events", label: "Events", icon: Activity },
   { href: "/admin/missions", label: "Missions", icon: Target },
+  { href: "/admin/collector", label: "Collector", icon: BookOpen },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ];
 

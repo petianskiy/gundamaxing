@@ -24,7 +24,7 @@ export const getKitCatalog = cache(
   async (filters: KitCatalogFilters = {}): Promise<{ kits: GunplaKitUI[]; total: number }> => {
     const { search, grade, series, sort = "name", page = 1, limit = 24 } = filters;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { isActive: true };
 
     if (search) {
       where.OR = [

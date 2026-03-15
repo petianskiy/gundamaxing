@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, BookOpen, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { KitCard } from "./kit-card";
+import { SuggestKitModal } from "./suggest-kit-modal";
 import type { GunplaKitUI, KitStatus } from "@/lib/types";
 
 interface KitCatalogProps {
@@ -25,6 +26,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
   const [seriesFilter, setSeriesFilter] = useState("");
   const [sort, setSort] = useState<SortOption>("name");
   const [page, setPage] = useState(1);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
 
   const filtered = useMemo(() => {
     let result = [...kits];
@@ -98,6 +100,17 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
             {t("collector.subtitle")}
           </p>
+        </div>
+
+        {/* Suggest a Kit CTA */}
+        <div className="animate-page-content flex justify-center mb-6">
+          <button
+            onClick={() => setShowSuggestModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Don&apos;t see your kit? Suggest one
+          </button>
         </div>
 
         {/* Filters */}
@@ -216,6 +229,13 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
           </>
         )}
         </div>
+
+        {/* Suggest Kit Modal */}
+        <SuggestKitModal
+          open={showSuggestModal}
+          onClose={() => setShowSuggestModal(false)}
+          seriesList={seriesList}
+        />
       </div>
     </div>
   );

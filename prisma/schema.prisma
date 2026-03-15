@@ -194,6 +194,7 @@ model User {
   achievements      UserAchievement[]
   kits              UserKit[]
   missionSubmissions MissionSubmission[]
+  kitSuggestions    KitSuggestion[]
 
   @@index([email])
   @@index([reputation])
@@ -866,23 +867,67 @@ model UserAchievement {
 
 // ─── COLLECTOR'S LORE (Gunpla Kit Database) ─────────────────────
 
+enum KitCategory {
+  BANDAI
+  THIRD_PARTY
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model GundamSeries {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  japaneseTitle String?
+  timeline      String?
+  yearStart     Int?
+  yearEnd       Int?
+  abbreviation  String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  kits GunplaKit[]
+
+  @@index([sortOrder])
+  @@index([timeline])
+}
+
 model GunplaKit {
-  id           String   @id @default(cuid())
-  name         String
-  seriesName   String
-  grade        String
-  scale        String?
-  releaseYear  Int?
-  manufacturer String   @default("Bandai")
-  imageUrl     String?
-  slug         String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String       @id @default(cuid())
+  name          String
+  seriesName    String
+  grade         String
+  scale         String?
+  releaseYear   Int?
+  manufacturer  String       @default("Bandai")
+  imageUrl      String?
+  slug          String       @unique
+  description   String?      @db.Text
+  modelNumber   String?
+  japaneseTitle String?
+  price         Decimal?     @db.Decimal(10, 2)
+  imageFocalX   Float        @default(0.5)
+  imageFocalY   Float        @default(0.5)
+  timeline      String?
+  brand         String       @default("Bandai")
+  category      KitCategory  @default(BANDAI)
+  isActive      Boolean      @default(true)
+  seriesId      String?
+  series        GundamSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   userKits UserKit[]
 
   @@index([grade])
   @@index([seriesName])
+  @@index([isActive])
+  @@index([category])
+  @@index([seriesId])
 }
 
 enum KitStatus {
@@ -909,4 +954,24 @@ model UserKit {
   @@unique([userId, kitId])
   @@index([userId])
   @@index([kitId])
+}
+
+model KitSuggestion {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kitName      String
+  seriesName   String
+  grade        String
+  scale        String?
+  manufacturer String           @default("Bandai")
+  notes        String?          @db.Text
+  status       SuggestionStatus @default(PENDING)
+  adminNotes   String?          @db.Text
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
 }

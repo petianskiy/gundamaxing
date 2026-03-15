@@ -43,6 +43,22 @@ export const uploadRouter = {
     .onUploadComplete(({ metadata, file }) => {
       return { url: file.ufsUrl, userId: metadata.userId };
     }),
+
+  kitImageUpload: f({ image: { maxFileSize: "8MB", maxFileCount: 1 } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user) throw new Error("Unauthorized");
+      const { db } = await import("@/lib/db");
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (user?.role !== "ADMIN") throw new Error("Admin only");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(({ metadata, file }) => {
+      return { url: file.ufsUrl, userId: metadata.userId };
+    }),
 } satisfies FileRouter;
 
 export type UploadRouter = typeof uploadRouter;

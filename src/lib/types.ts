@@ -437,6 +437,8 @@ export interface HangarData {
 
 // ─── Collector's Lore ────────────────────────────────────────
 export type KitStatus = "OWNED" | "BUILT" | "WISHLIST" | "BACKLOG";
+export type KitCategory = "BANDAI" | "THIRD_PARTY";
+export type SuggestionStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface GunplaKitUI {
   id: string;
@@ -450,6 +452,67 @@ export interface GunplaKitUI {
   slug: string;
   totalOwners: number;
   avgRating: number | null;
+  description?: string | null;
+  modelNumber?: string | null;
+  timeline?: string | null;
+  brand?: string;
+  category?: KitCategory;
+}
+
+export interface GundamSeriesUI {
+  id: string;
+  name: string;
+  japaneseTitle: string | null;
+  timeline: string | null;
+  yearStart: number | null;
+  yearEnd: number | null;
+  abbreviation: string | null;
+  sortOrder: number;
+  kitCount: number;
+}
+
+export interface AdminGunplaKitUI {
+  id: string;
+  name: string;
+  seriesName: string;
+  grade: string;
+  scale: string | null;
+  releaseYear: number | null;
+  manufacturer: string;
+  imageUrl: string | null;
+  slug: string;
+  description: string | null;
+  modelNumber: string | null;
+  japaneseTitle: string | null;
+  price: number | null;
+  imageFocalX: number;
+  imageFocalY: number;
+  timeline: string | null;
+  brand: string;
+  category: KitCategory;
+  isActive: boolean;
+  seriesId: string | null;
+  seriesTitle: string | null;
+  totalOwners: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KitSuggestionUI {
+  id: string;
+  userId: string;
+  username: string;
+  userAvatar: string | null;
+  kitName: string;
+  seriesName: string;
+  grade: string;
+  scale: string | null;
+  manufacturer: string;
+  notes: string | null;
+  status: SuggestionStatus;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserKitUI {
