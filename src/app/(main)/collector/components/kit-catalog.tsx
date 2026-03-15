@@ -31,14 +31,23 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
   const filtered = useMemo(() => {
     let result = [...kits];
 
-    // Search filter
+    // Search filter — supports multi-word queries, searches name, series, grade, model number
     if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (kit) =>
-          kit.name.toLowerCase().includes(q) ||
-          kit.seriesName.toLowerCase().includes(q)
-      );
+      const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+      result = result.filter((kit) => {
+        const haystack = [
+          kit.name,
+          kit.seriesName,
+          kit.grade,
+          kit.scale,
+          kit.modelNumber,
+          kit.manufacturer,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return terms.every((term) => haystack.includes(term));
+      });
     }
 
     // Grade filter

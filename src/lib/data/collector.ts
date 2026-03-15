@@ -81,6 +81,10 @@ export const getKitCatalog = cache(
         slug: kit.slug,
         totalOwners: kit.userKits.length,
         avgRating: avgRating !== null ? Math.round(avgRating * 10) / 10 : null,
+        modelNumber: kit.modelNumber,
+        timeline: kit.timeline,
+        brand: kit.brand,
+        category: kit.category,
       };
     });
 
@@ -220,6 +224,7 @@ export const getUserKitStatus = cache(
 
 export const getDistinctSeries = cache(async (): Promise<string[]> => {
   const result = await db.gunplaKit.findMany({
+    where: { isActive: true },
     select: { seriesName: true },
     distinct: ["seriesName"],
     orderBy: { seriesName: "asc" },
@@ -229,6 +234,7 @@ export const getDistinctSeries = cache(async (): Promise<string[]> => {
 
 export const getDistinctGrades = cache(async (): Promise<string[]> => {
   const result = await db.gunplaKit.findMany({
+    where: { isActive: true },
     select: { grade: true },
     distinct: ["grade"],
     orderBy: { grade: "asc" },
