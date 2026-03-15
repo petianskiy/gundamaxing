@@ -69,6 +69,7 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
       {builds.map((build, i) => (
         <motion.div
           key={build.id}
+          className="h-full"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: i * 0.04 }}

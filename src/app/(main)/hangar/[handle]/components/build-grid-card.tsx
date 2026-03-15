@@ -17,17 +17,17 @@ interface BuildGridCardProps {
 
 export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
   const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
-  const shownTechniques = build.techniques.slice(0, 3);
-  const remainingCount = build.techniques.length - 3;
+  const shownTechniques = build.techniques.slice(0, 2);
+  const remainingCount = build.techniques.length - 2;
 
   return (
-    <Link href={`/builds/${build.slug}`}>
+    <Link href={`/builds/${build.slug}`} className="h-full">
     <motion.article
       layoutId={`build-${build.id}`}
       whileHover={{ y: -2 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "group relative rounded-xl border overflow-hidden cursor-pointer",
+        "group relative rounded-xl border overflow-hidden cursor-pointer h-full flex flex-col",
         "bg-card shadow-sm hover:shadow-lg transition-[border-color,box-shadow] duration-300",
         isPinned
           ? "border-gx-red/30 hover:border-gx-red/50"
@@ -35,7 +35,7 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
       )}
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
         {primaryImage ? (
           <Image
             src={primaryImage.url}
@@ -89,7 +89,7 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-2.5">
+      <div className="p-3 flex flex-col flex-1 gap-2.5">
         {/* Title & kit name */}
         <div>
           <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-card-foreground group-hover:text-foreground transition-colors">
@@ -100,22 +100,20 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
           </p>
         </div>
 
-        {/* Techniques */}
-        {shownTechniques.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {shownTechniques.map((tech) => (
-              <TechniqueChip key={tech} technique={tech} size="sm" />
-            ))}
-            {remainingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 whitespace-nowrap">
-                +{remainingCount}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Techniques — max 2 full tags + overflow count */}
+        <div className="flex gap-1 items-center min-h-[22px]">
+          {shownTechniques.map((tech) => (
+            <TechniqueChip key={tech} technique={tech} size="sm" />
+          ))}
+          {remainingCount > 0 && (
+            <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
+              +{remainingCount}
+            </span>
+          )}
+        </div>
 
-        {/* Footer stats */}
-        <div className="flex items-center gap-3 text-muted-foreground pt-1.5 border-t border-border/50">
+        {/* Footer stats — pinned to bottom */}
+        <div className="flex items-center gap-3 text-muted-foreground pt-1.5 border-t border-border/50 mt-auto">
           <span className="flex items-center gap-1 text-xs">
             <Heart className="h-3 w-3" />
             {build.likes >= 1000

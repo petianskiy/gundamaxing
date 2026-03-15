@@ -173,10 +173,10 @@ export function BuildGallery({
             <Link
               key={build.id}
               href={`/builds/${build.slug}`}
-              className="group relative rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300"
+              className="group relative rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300 h-full flex flex-col"
             >
               {/* Image */}
-              <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+              <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
                 {primaryImage && (
                   <Image
                     src={primaryImage.url}
@@ -207,26 +207,27 @@ export function BuildGallery({
               </div>
 
               {/* Details */}
-              <div className="p-4">
-                <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-gx-red transition-colors">
-                  {build.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                  {build.kitName}
-                </p>
-                {build.techniques.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {build.techniques.slice(0, 3).map((tech) => (
-                      <TechniqueChip key={tech} technique={tech} size="sm" />
-                    ))}
-                    {build.techniques.length > 3 && (
-                      <span className="text-[10px] text-muted-foreground px-1">
-                        +{build.techniques.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground">
+              <div className="p-4 flex flex-col flex-1 gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-gx-red transition-colors">
+                    {build.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    {build.kitName}
+                  </p>
+                </div>
+                {/* Techniques — max 2 full tags + overflow count */}
+                <div className="flex gap-1 items-center min-h-[22px]">
+                  {build.techniques.slice(0, 2).map((tech) => (
+                    <TechniqueChip key={tech} technique={tech} size="sm" />
+                  ))}
+                  {build.techniques.length > 2 && (
+                    <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
+                      +{build.techniques.length - 2}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 pt-3 border-t border-border/30 text-xs text-muted-foreground mt-auto">
                   <span className="flex items-center gap-1">
                     <Heart className="h-3 w-3" />
                     {build.likeCount}
