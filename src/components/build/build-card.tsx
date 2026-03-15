@@ -16,17 +16,17 @@ export function BuildCard({ build }: { build: Build }) {
   const remainingCount = build.techniques.length - 3;
 
   return (
-    <Link href={`/builds/${build.slug}`}>
+    <Link href={`/builds/${build.slug}`} className="h-full">
       <motion.article
         whileHover={{ y: -2 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         className={cn(
-          "group relative rounded-xl border border-border/50 bg-card overflow-hidden",
+          "group relative rounded-xl border border-border/50 bg-card overflow-hidden h-full flex flex-col",
           "shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300"
         )}
       >
         {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
           <Image
             src={primaryImage.url}
             alt={primaryImage.alt}
@@ -65,7 +65,7 @@ export function BuildCard({ build }: { build: Build }) {
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-3">
+        <div className="p-4 flex flex-col flex-1 gap-3">
           {/* Title & kit name */}
           <div>
             <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-card-foreground group-hover:text-foreground transition-colors">
@@ -76,20 +76,22 @@ export function BuildCard({ build }: { build: Build }) {
             </p>
           </div>
 
-          {/* Techniques */}
-          <div className="flex flex-wrap gap-1">
-            {shownTechniques.map((tech) => (
-              <TechniqueChip key={tech} technique={tech} size="sm" />
-            ))}
-            {remainingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400">
-                +{remainingCount}
-              </span>
-            )}
-          </div>
+          {/* Techniques — single line, no wrap */}
+          {shownTechniques.length > 0 && (
+            <div className="flex gap-1 overflow-hidden">
+              {shownTechniques.map((tech) => (
+                <TechniqueChip key={tech} technique={tech} size="sm" />
+              ))}
+              {remainingCount > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 shrink-0">
+                  +{remainingCount}
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+          {/* Footer — pinned to bottom */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">
             {/* User */}
             <Link
               href={`/u/${build.userHandle}`}
