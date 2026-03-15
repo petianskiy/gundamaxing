@@ -26,9 +26,11 @@ export function TechniqueChip({ technique, size = "sm" }: { technique: string; s
   return (
     <span
       className={cn(
-        "inline-flex items-center border rounded-full font-medium",
+        "inline-flex items-center border font-medium whitespace-nowrap truncate",
         colorClass,
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
+        size === "sm"
+          ? "text-[11px] leading-[1.4] px-2 py-[2px] rounded max-w-[120px]"
+          : "text-xs leading-[1.4] px-2.5 py-1 rounded-md max-w-[160px]"
       )}
     >
       {technique}

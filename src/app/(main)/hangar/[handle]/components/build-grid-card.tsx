@@ -107,7 +107,7 @@ export function BuildGridCard({ build, isPinned }: BuildGridCardProps) {
               <TechniqueChip key={tech} technique={tech} size="sm" />
             ))}
             {remainingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400">
+              <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 whitespace-nowrap">
                 +{remainingCount}
               </span>
             )}
