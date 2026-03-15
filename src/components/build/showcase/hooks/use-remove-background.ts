@@ -5,7 +5,7 @@ import { useState, useCallback } from "react";
 export type BgRemovalStage = "idle" | "queued" | "loading-model" | "processing" | "uploading" | "done";
 
 // Global queue to prevent concurrent WASM processing
-let globalQueue: Array<{
+const globalQueue: Array<{
   imageUrl: string;
   resolve: (blob: Blob) => void;
   reject: (err: Error) => void;
@@ -66,7 +66,8 @@ export function useRemoveBackground() {
         imageUrl,
         resolve,
         reject,
-        onProgress: (p) => setProgress(p),
+        // Cap WASM progress at 80% to leave room for upload phase
+        onProgress: (p) => setProgress(Math.min(p * 0.8, 0.8)),
         onStage: (s) => setStage(s),
       });
       setQueueSize(globalQueue.length);
@@ -74,13 +75,23 @@ export function useRemoveBackground() {
       processQueue();
     });
 
-    setIsRemoving(false);
-    setStage("done");
+    // Signal uploading phase (caller should set progress to 1.0 when done)
+    setStage("uploading");
+    setProgress(0.85);
     setQueueSize(globalQueue.length);
     return blob;
   }, []);
 
-  return { removeBg, isRemoving, progress, stage, queueSize, queuePosition };
+  const finishRemoval = useCallback(() => {
+    setProgress(1);
+    setStage("done");
+    // Brief delay to show "Done!" before hiding
+    setTimeout(() => {
+      setIsRemoving(false);
+    }, 300);
+  }, []);
+
+  return { removeBg, finishRemoval, isRemoving, progress, stage, queueSize, queuePosition };
 }
 
 export function stageLabel(stage: BgRemovalStage): string {

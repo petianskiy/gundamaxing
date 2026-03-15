@@ -263,6 +263,15 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const imageCount = layout.elements.filter((el) => el.type === "image").length;
   const videoCount = layout.elements.filter((el) => el.type === "video").length;
 
+  // ─── Hide site navbar during editing to prevent accidental navigation ────
+  useEffect(() => {
+    const nav = document.querySelector("nav.fixed");
+    if (nav) (nav as HTMLElement).style.display = "none";
+    return () => {
+      if (nav) (nav as HTMLElement).style.display = "";
+    };
+  }, []);
+
   // ─── Pointer-based drag, resize & marquee ─────────────────────
 
   const handlePointerMove = useCallback(
@@ -670,6 +679,13 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   }, [layout.elements, dispatch]);
 
   const addMetadata = useCallback(() => {
+    // If an info card already exists, select it instead of adding a duplicate
+    const existing = layout.elements.find((el) => el.type === "metadata");
+    if (existing) {
+      setSelectedIds([existing.id]);
+      toast.info("Info card selected — only one allowed per page");
+      return;
+    }
     const maxZ = layout.elements.length > 0 ? Math.max(...layout.elements.map((e) => e.zIndex)) : 0;
     const element: ShowcaseMetadataElement = {
       id: generateId(),
@@ -976,14 +992,47 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     setEditingTextId(null);
   }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
-  // Level-gated page limit: L5+ = 3 pages, below L5 = 2 pages
-  const maxPages = userLevel >= 5 ? 3 : 2;
+  // ─── Page swipe navigation (two-finger swipe on canvas) ──────
+  const pageTouchRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || pagesState.length <= 1) return;
+    const onTouchStart = (e: TouchEvent) => {
+      if (dragRef.current || resizeRef.current) return;
+      if (e.touches.length === 2) {
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        pageTouchRef.current = { x: midX, y: midY, time: Date.now() };
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!pageTouchRef.current) return;
+      if (e.changedTouches.length < 1) { pageTouchRef.current = null; return; }
+      const elapsed = Date.now() - pageTouchRef.current.time;
+      if (elapsed > 1000) { pageTouchRef.current = null; return; }
+      const dx = e.changedTouches[0].clientX - pageTouchRef.current.x;
+      if (Math.abs(dx) > 60) {
+        if (dx < 0 && currentPageIndex < pagesState.length - 1) switchToPage(currentPageIndex + 1);
+        else if (dx > 0 && currentPageIndex > 0) switchToPage(currentPageIndex - 1);
+      }
+      pageTouchRef.current = null;
+    };
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [pagesState.length, currentPageIndex, switchToPage]);
+
+  // Level-gated page limit: L5+ = 10 pages, below L5 = 5 pages
+  const maxPages = userLevel >= 5 ? 10 : 5;
 
   const addPage = useCallback(() => {
     if (pagesState.length >= maxPages) {
       toast.error(
-        maxPages < 3
-          ? `Maximum ${maxPages} pages. Reach Level 5 for a 3rd page!`
+        maxPages < 10
+          ? `Maximum ${maxPages} pages. Reach Level 5 to unlock ${10} pages!`
           : `Maximum ${maxPages} pages allowed.`
       );
       return;
@@ -1178,7 +1227,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   // ─── Editor mode ──────────────────────────────────────────────
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ overscrollBehaviorX: "none" }}>
       {/* ── Floating top bar: Save & Exit ── */}
       <div className="flex items-center justify-between mb-4 sticky top-20 z-[400] bg-background/80 backdrop-blur-sm rounded-xl border border-border/50 px-4 py-2.5">
         <p className="text-sm text-muted-foreground font-medium">Editing Showcase</p>
@@ -1210,39 +1259,63 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         </div>
       </div>
 
-      {/* Page navigation strip */}
-      <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
-        {pagesState.map((page, i) => (
+      {/* Horizontal page navigation strip with swipe arrows */}
+      <div className="flex items-center gap-1 mb-3">
+        {/* Left arrow */}
+        {pagesState.length > 1 && (
           <button
-            key={page.id}
-            onClick={() => switchToPage(i)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setPageContextMenu({ index: i, x: e.clientX, y: e.clientY });
-            }}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors",
-              i === currentPageIndex
-                ? "bg-gx-gold/15 text-gx-gold border border-gx-gold/30"
-                : "text-muted-foreground hover:bg-muted/50 border border-transparent"
-            )}
+            onClick={() => switchToPage(Math.max(0, currentPageIndex - 1))}
+            disabled={currentPageIndex === 0}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            title="Previous page"
           >
-            Page {i + 1}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
           </button>
-        ))}
-        <button
-          onClick={addPage}
-          disabled={pagesState.length >= maxPages}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed shrink-0 transition-colors",
-            pagesState.length >= maxPages
-              ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-zinc-700"
-          )}
-          title={pagesState.length >= maxPages && maxPages < 3 ? "Reach Level 5 to unlock a 3rd page" : undefined}
-        >
-          + Add Page{maxPages < 3 && " (Lv.5)"}
-        </button>
+        )}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: "none" }}>
+          {pagesState.map((page, i) => (
+            <button
+              key={page.id}
+              onClick={() => switchToPage(i)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setPageContextMenu({ index: i, x: e.clientX, y: e.clientY });
+              }}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all",
+                i === currentPageIndex
+                  ? "bg-gx-gold/15 text-gx-gold border border-gx-gold/30 scale-105"
+                  : "text-muted-foreground hover:bg-muted/50 border border-transparent"
+              )}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={addPage}
+            disabled={pagesState.length >= maxPages}
+            className={cn(
+              "px-2.5 py-1.5 rounded-lg text-xs font-medium border border-dashed shrink-0 transition-colors",
+              pagesState.length >= maxPages
+                ? "text-zinc-600 border-zinc-800 cursor-not-allowed"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-zinc-700"
+            )}
+            title={pagesState.length >= maxPages && maxPages < 10 ? "Reach Level 5 to unlock more pages" : undefined}
+          >
+            +{maxPages < 10 && " (Lv.5)"}
+          </button>
+        </div>
+        {/* Right arrow */}
+        {pagesState.length > 1 && (
+          <button
+            onClick={() => switchToPage(Math.min(pagesState.length - 1, currentPageIndex + 1))}
+            disabled={currentPageIndex === pagesState.length - 1}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            title="Next page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+        )}
       </div>
 
       {/* Page context menu */}
@@ -1288,7 +1361,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       {/* Canvas */}
       <div
         ref={canvasRef}
-        className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl select-none"
+        className="relative w-full overflow-hidden bg-zinc-950 border border-zinc-800 rounded-xl select-none touch-none"
         style={{ aspectRatio: layout.canvas.aspectRatio, isolation: "isolate", containerType: "inline-size" }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -1389,7 +1462,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
               key={element.id}
               data-element-wrapper
               className={cn(
-                "absolute touch-none",
+                // bg-transparent ensures touch events are captured even on text/transparent elements
+                "absolute touch-none bg-transparent",
                 isSelected
                   ? "ring-2 ring-blue-500 shadow-lg shadow-blue-500/20"
                   : groups[element.id]
@@ -1468,17 +1542,17 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                     <Trash2 className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                   </button>
 
-                  {/* Resize handles — 4 corners + 4 edge midpoints */}
+                  {/* Resize handles — 4 corners + 4 edge midpoints, large tap targets on mobile */}
                   {(["tl", "t", "tr", "r", "br", "b", "bl", "l"] as HandlePos[]).map((handle) => {
                     const isCorner = ["tl", "tr", "bl", "br"].includes(handle);
                     const posClass: Record<string, string> = {
-                      tl: "-top-2 -left-2 sm:-top-1.5 sm:-left-1.5 cursor-nw-resize",
+                      tl: "-top-3 -left-3 sm:-top-1.5 sm:-left-1.5 cursor-nw-resize",
                       t: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize",
-                      tr: "-top-2 -right-2 sm:-top-1.5 sm:-right-1.5 cursor-ne-resize",
+                      tr: "-top-3 -right-3 sm:-top-1.5 sm:-right-1.5 cursor-ne-resize",
                       r: "top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-e-resize",
-                      br: "-bottom-2 -right-2 sm:-bottom-1.5 sm:-right-1.5 cursor-se-resize",
+                      br: "-bottom-3 -right-3 sm:-bottom-1.5 sm:-right-1.5 cursor-se-resize",
                       b: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize",
-                      bl: "-bottom-2 -left-2 sm:-bottom-1.5 sm:-left-1.5 cursor-sw-resize",
+                      bl: "-bottom-3 -left-3 sm:-bottom-1.5 sm:-left-1.5 cursor-sw-resize",
                       l: "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 cursor-w-resize",
                     };
                     return (
@@ -1486,10 +1560,10 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
                         key={handle}
                         data-resize-handle
                         className={cn(
-                          "absolute z-50 bg-blue-500 border-2 border-white",
+                          "absolute z-50 bg-blue-500 border-2 border-white shadow-sm",
                           isCorner
-                            ? "w-4 h-4 sm:w-3 sm:h-3 rounded-full"
-                            : "w-3 h-2 sm:w-2.5 sm:h-1.5 rounded-sm",
+                            ? "w-6 h-6 sm:w-3 sm:h-3 rounded-full"
+                            : "w-5 h-3 sm:w-2.5 sm:h-1.5 rounded-sm",
                           posClass[handle]
                         )}
                         onPointerDown={(e) => startResize(element.id, handle, e)}

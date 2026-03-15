@@ -319,7 +319,7 @@ export default function DomeGallery({
         }
       },
     },
-    { target: mainRef, eventOptions: { passive: true } }
+    { target: mainRef, eventOptions: { passive: false } }
   );
 
   const openItemFromElement = useCallback(

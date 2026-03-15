@@ -103,9 +103,10 @@ function makeMetadataElement(
   };
 }
 
-function getImage(images: BuildImage[], index: number): { id: string; url: string } {
-  if (images.length === 0) return { id: "placeholder", url: "" };
+function getImage(images: BuildImage[], index: number): { id: string; url: string } | null {
+  if (images.length === 0) return null;
   const img = images[index % images.length];
+  if (!img.url) return null;
   return { id: img.id || img.url, url: img.url };
 }
 
@@ -119,9 +120,9 @@ const TEMPLATES: LayoutTemplate[] = [
     ],
     generate: (images) => {
       const img = getImage(images, 0);
-      return [
-        makeImageElement(img.id, img.url, 15, 10, 70, 80, 1),
-      ];
+      const els: ShowcaseElement[] = [];
+      if (img) els.push(makeImageElement(img.id, img.url, 15, 10, 70, 80, 1));
+      return els;
     },
   },
   {
@@ -133,12 +134,11 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 51, y: 10, w: 48, h: 80, type: "image" },
     ],
     generate: (images) => {
-      const img1 = getImage(images, 0);
-      const img2 = getImage(images, 1);
-      return [
-        makeImageElement(img1.id, img1.url, 1, 10, 48, 80, 1),
-        makeImageElement(img2.id, img2.url, 51, 10, 48, 80, 2),
-      ];
+      const slots: [number, number, number, number, number][] = [[1, 10, 48, 80, 1], [51, 10, 48, 80, 2]];
+      return slots.map(([x, y, w, h, z], i) => {
+        const img = getImage(images, i);
+        return img ? makeImageElement(img.id, img.url, x, y, w, h, z) : null;
+      }).filter((el): el is ShowcaseImageElement => el !== null);
     },
   },
   {
@@ -151,14 +151,11 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 61, y: 51, w: 38, h: 44, type: "image" },
     ],
     generate: (images) => {
-      const img1 = getImage(images, 0);
-      const img2 = getImage(images, 1);
-      const img3 = getImage(images, 2);
-      return [
-        makeImageElement(img1.id, img1.url, 1, 5, 58, 90, 1),
-        makeImageElement(img2.id, img2.url, 61, 5, 38, 44, 2),
-        makeImageElement(img3.id, img3.url, 61, 51, 38, 44, 3),
-      ];
+      const slots: [number, number, number, number, number][] = [[1, 5, 58, 90, 1], [61, 5, 38, 44, 2], [61, 51, 38, 44, 3]];
+      return slots.map(([x, y, w, h, z], i) => {
+        const img = getImage(images, i);
+        return img ? makeImageElement(img.id, img.url, x, y, w, h, z) : null;
+      }).filter((el): el is ShowcaseImageElement => el !== null);
     },
   },
   {
@@ -172,12 +169,11 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 51, y: 51, w: 48, h: 48, type: "image" },
     ],
     generate: (images) => {
-      return [
-        makeImageElement(getImage(images, 0).id, getImage(images, 0).url, 1, 1, 48, 48, 1),
-        makeImageElement(getImage(images, 1).id, getImage(images, 1).url, 51, 1, 48, 48, 2),
-        makeImageElement(getImage(images, 2).id, getImage(images, 2).url, 1, 51, 48, 48, 3),
-        makeImageElement(getImage(images, 3).id, getImage(images, 3).url, 51, 51, 48, 48, 4),
-      ];
+      const slots: [number, number, number, number, number][] = [[1, 1, 48, 48, 1], [51, 1, 48, 48, 2], [1, 51, 48, 48, 3], [51, 51, 48, 48, 4]];
+      return slots.map(([x, y, w, h, z], i) => {
+        const img = getImage(images, i);
+        return img ? makeImageElement(img.id, img.url, x, y, w, h, z) : null;
+      }).filter((el): el is ShowcaseImageElement => el !== null);
     },
   },
   {
@@ -189,11 +185,11 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 10, y: 65, w: 80, h: 10, type: "text" },
     ],
     generate: (images) => {
+      const els: ShowcaseElement[] = [];
       const img = getImage(images, 0);
-      return [
-        makeImageElement(img.id, img.url, 0, 0, 100, 60, 1),
-        makeTextElement("Your Title Here", 10, 65, 80, 10, 2, 32),
-      ];
+      if (img) els.push(makeImageElement(img.id, img.url, 0, 0, 100, 60, 1));
+      els.push(makeTextElement("Your Title Here", 10, 65, 80, 10, 2, 32));
+      return els;
     },
   },
   {
@@ -207,13 +203,13 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 60, y: 55, w: 38, h: 20, type: "meta" },
     ],
     generate: (images) => {
+      const els: ShowcaseElement[] = [];
       const img = getImage(images, 0);
-      return [
-        makeImageElement(img.id, img.url, 2, 5, 55, 70, 1),
-        makeTextElement("Your Title Here", 60, 5, 38, 8, 2, 28),
-        makeTextElement("Describe your build process, techniques, and inspiration here...", 60, 16, 38, 15, 3, 14),
-        makeMetadataElement(60, 55, 38, 20, 4, "compact"),
-      ];
+      if (img) els.push(makeImageElement(img.id, img.url, 2, 5, 55, 70, 1));
+      els.push(makeTextElement("Your Title Here", 60, 5, 38, 8, 2, 28));
+      els.push(makeTextElement("Describe your build process, techniques, and inspiration here...", 60, 16, 38, 15, 3, 14));
+      els.push(makeMetadataElement(60, 55, 38, 20, 4, "compact"));
+      return els;
     },
   },
   {
@@ -227,12 +223,13 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 67, y: 16, w: 32, h: 78, type: "image" },
     ],
     generate: (images) => {
-      return [
-        makeTextElement("Your Title Here", 5, 2, 90, 10, 4, 36),
-        makeImageElement(getImage(images, 0).id, getImage(images, 0).url, 1, 16, 32, 78, 1),
-        makeImageElement(getImage(images, 1).id, getImage(images, 1).url, 34, 16, 32, 78, 2),
-        makeImageElement(getImage(images, 2).id, getImage(images, 2).url, 67, 16, 32, 78, 3),
-      ];
+      const els: ShowcaseElement[] = [makeTextElement("Your Title Here", 5, 2, 90, 10, 4, 36)];
+      const slots: [number, number, number, number, number][] = [[1, 16, 32, 78, 1], [34, 16, 32, 78, 2], [67, 16, 32, 78, 3]];
+      for (let i = 0; i < slots.length; i++) {
+        const img = getImage(images, i);
+        if (img) els.push(makeImageElement(img.id, img.url, ...slots[i]));
+      }
+      return els;
     },
   },
   {
@@ -245,11 +242,11 @@ const TEMPLATES: LayoutTemplate[] = [
       { x: 67, y: 15, w: 31, h: 70, type: "image" },
     ],
     generate: (images) => {
-      return [
-        makeImageElement(getImage(images, 0).id, getImage(images, 0).url, 1, 15, 31, 70, 1),
-        makeImageElement(getImage(images, 1).id, getImage(images, 1).url, 34, 15, 31, 70, 2),
-        makeImageElement(getImage(images, 2).id, getImage(images, 2).url, 67, 15, 31, 70, 3),
-      ];
+      const slots: [number, number, number, number, number][] = [[1, 15, 31, 70, 1], [34, 15, 31, 70, 2], [67, 15, 31, 70, 3]];
+      return slots.map(([x, y, w, h, z], i) => {
+        const img = getImage(images, i);
+        return img ? makeImageElement(img.id, img.url, x, y, w, h, z) : null;
+      }).filter((el): el is ShowcaseImageElement => el !== null);
     },
   },
 ];

@@ -1,28 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+
+const subscribe = () => () => {};
+function useIsMounted() {
+  return useSyncExternalStore(subscribe, () => true, () => false);
+}
 
 interface ImageLightboxProps {
   imageUrl: string;
   alt: string;
   onClose: () => void;
+  /** Optional: all sibling image URLs for swipe navigation */
+  images?: { url: string; alt: string }[];
+  /** Index of the current image in the images array */
+  initialIndex?: number;
 }
 
-export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
-  const [mounted, setMounted] = useState(false);
+export function ImageLightbox({ imageUrl, alt, onClose, images, initialIndex = 0 }: ImageLightboxProps) {
+  const mounted = useIsMounted();
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeThreshold = 50;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const hasMultiple = images && images.length > 1;
+  const currentImage = hasMultiple ? images[currentIndex] : { url: imageUrl, alt };
+
+  const imageCount = images?.length ?? 0;
+
+  const goNext = useCallback(() => {
+    if (imageCount <= 1) return;
+    setCurrentIndex((i) => (i + 1) % imageCount);
+  }, [imageCount]);
+
+  const goPrev = useCallback(() => {
+    if (imageCount <= 1) return;
+    setCurrentIndex((i) => (i - 1 + imageCount) % imageCount);
+  }, [imageCount]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onClose();
-      }
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") goNext();
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") goPrev();
     }
 
     document.addEventListener("keydown", handleKeyDown);
@@ -32,7 +55,26 @@ export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, goNext, goPrev]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || !hasMultiple) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    // Only horizontal swipes (ignore vertical)
+    if (Math.abs(dx) > swipeThreshold && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+  }, [hasMultiple, goNext, goPrev]);
 
   if (!mounted) return null;
 
@@ -46,6 +88,8 @@ export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={onClose}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Close button */}
         <button
@@ -57,10 +101,33 @@ export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
           <X className="h-6 w-6" />
         </button>
 
-        {/* Image — sized to its natural dimensions, capped at viewport */}
+        {/* Nav arrows */}
+        {hasMultiple && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-colors"
+              style={{ zIndex: 10000 }}
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-colors"
+              style={{ zIndex: 10000 }}
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          </>
+        )}
+
+        {/* Image */}
         <motion.img
-          src={imageUrl}
-          alt={alt}
+          key={currentImage.url}
+          src={currentImage.url}
+          alt={currentImage.alt}
           className="max-w-[90vw] max-h-[90vh] object-contain"
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
@@ -71,6 +138,21 @@ export function ImageLightbox({ imageUrl, alt, onClose }: ImageLightboxProps) {
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.2 }}
         />
+
+        {/* Dot indicators */}
+        {hasMultiple && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5" style={{ zIndex: 10000 }}>
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === currentIndex ? "bg-white w-4" : "bg-white/40 hover:bg-white/60"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </motion.div>
     </AnimatePresence>,
     document.body

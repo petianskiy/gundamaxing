@@ -51,7 +51,8 @@ export function TextElement({ element, isEditing, onContentChange }: TextElement
   }, [isEditing, element.content]);
 
   const baseClassName = cn(
-    "w-full h-full leading-relaxed whitespace-pre-wrap break-words overflow-hidden",
+    // min-h-[1em] ensures a tappable area even with empty/short text
+    "w-full h-full leading-relaxed whitespace-pre-wrap break-words overflow-hidden min-h-[1em]",
     textAlignMap[element.textAlign],
     fontFamilyMap[element.fontFamily] || "font-sans",
     element.bold && "font-bold",

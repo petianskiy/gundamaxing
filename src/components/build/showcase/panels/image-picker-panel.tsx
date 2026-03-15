@@ -32,7 +32,7 @@ export function ImagePickerPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { upload, uploadMultiple, isUploading } = useR2Upload({ type: "image" });
-  const { removeBg, isRemoving, progress, stage, queueSize, queuePosition } = useRemoveBackground();
+  const { removeBg, finishRemoval, isRemoving, progress, stage, queueSize, queuePosition } = useRemoveBackground();
 
   const handleUpload = useCallback(
     async (files: File[]) => {
@@ -40,6 +40,16 @@ export function ImagePickerPanel({
       if (!result) return;
 
       for (const file of result) {
+        // Preload the image to ensure it's available at the CDN before adding
+        await new Promise<void>((resolve) => {
+          const img = new window.Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // still add even if preload fails
+          img.src = file.url;
+          // Timeout after 5s to not block forever
+          setTimeout(resolve, 5000);
+        });
+
         const fd = new FormData();
         fd.append("buildId", buildId);
         fd.append("url", file.url);
@@ -89,13 +99,15 @@ export function ImagePickerPanel({
             toast.success("Background removed");
           }
         }
+        finishRemoval();
       } catch {
         toast.error("Background removal failed");
+        finishRemoval();
       } finally {
         setRemovingBgId(null);
       }
     },
-    [buildId, removeBg, upload, onImageUploaded],
+    [buildId, removeBg, finishRemoval, upload, onImageUploaded],
   );
 
   const handleFileChange = useCallback(
@@ -222,48 +234,54 @@ export function ImagePickerPanel({
         {/* Image grid */}
         {images.length > 0 ? (
           <div className="grid grid-cols-3 gap-2">
-            {images.map((img) => (
-              <button
-                key={img.id || img.url}
-                onClick={() => onSelect(img.id || img.url, img.url)}
-                className="relative aspect-square rounded-lg overflow-hidden border border-zinc-700 hover:border-blue-500 transition-colors group"
-              >
-                <Image
-                  src={img.url}
-                  alt={img.alt || "Build image"}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform"
-                />
-                {/* Overlay */}
-                <div className={cn(
-                  "absolute inset-0 transition-colors",
-                  removingBgId === (img.id || img.url) ? "bg-black/70" : "bg-black/0 group-hover:bg-black/40"
-                )} />
-                {removingBgId === (img.id || img.url) && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 text-white animate-spin" />
-                  </div>
-                )}
-                {img.id && removingBgId !== (img.id || img.url) && (
-                  <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={(e) => handleDelete(e, img.id!)}
-                      className="p-1 rounded bg-red-600/80 text-white hover:bg-red-500 transition-all"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={(e) => handleRemoveBg(e, img)}
-                      disabled={isRemoving}
-                      className="p-1 rounded bg-purple-600/80 text-white hover:bg-purple-500 transition-all disabled:opacity-50"
-                      title="Remove background"
-                    >
-                      <Eraser className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </button>
-            ))}
+            {images.map((img) => {
+              const imgKey = img.id || img.url;
+              const isBgRemoving = removingBgId === imgKey;
+              return (
+                <div
+                  key={imgKey}
+                  className="relative aspect-square rounded-lg overflow-hidden border border-zinc-700 hover:border-blue-500 transition-colors"
+                >
+                  {/* Main click area — select image */}
+                  <button
+                    onClick={() => onSelect(img.id || img.url, img.url)}
+                    className="absolute inset-0 z-0"
+                  >
+                    <Image
+                      src={img.url}
+                      alt={img.alt || "Build image"}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                  {/* Loading overlay */}
+                  {isBgRemoving && (
+                    <div className="absolute inset-0 z-10 bg-black/70 flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    </div>
+                  )}
+                  {/* Action buttons — always visible in corner, not hover-dependent */}
+                  {img.id && !isBgRemoving && (
+                    <div className="absolute top-1 right-1 z-10 flex flex-col gap-1">
+                      <button
+                        onClick={(e) => handleDelete(e, img.id!)}
+                        className="p-1.5 rounded-full bg-black/60 text-white hover:bg-red-600 transition-all backdrop-blur-sm"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => handleRemoveBg(e, img)}
+                        disabled={isRemoving}
+                        className="p-1.5 rounded-full bg-black/60 text-white hover:bg-purple-600 transition-all backdrop-blur-sm disabled:opacity-50"
+                        title="Remove background"
+                      >
+                        <Eraser className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           !isUploading && (

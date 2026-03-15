@@ -72,21 +72,21 @@ export function CropModal({ imageUrl, onComplete, onClose }: CropModalProps) {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl mx-4 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl mx-4 sm:mx-4 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 shrink-0">
           <h3 className="text-sm font-semibold text-white">Crop Image</h3>
           <button
             onClick={onClose}
             disabled={isUploading}
-            className="text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+            className="text-zinc-400 hover:text-white transition-colors disabled:opacity-50 p-1"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Crop area */}
-        <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+        {/* Crop area — touch-action:none prevents scroll/zoom interference on mobile */}
+        <div className="flex-1 overflow-auto p-2 sm:p-4 flex items-center justify-center" style={{ touchAction: "none" }}>
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
@@ -97,34 +97,38 @@ export function CropModal({ imageUrl, onComplete, onClose }: CropModalProps) {
               ref={imgRef}
               src={imageUrl}
               alt="Crop preview"
-              className="max-h-[60vh] max-w-full object-contain"
+              className="max-h-[50vh] sm:max-h-[60vh] max-w-full object-contain"
               crossOrigin="anonymous"
+              style={{ touchAction: "none" }}
             />
           </ReactCrop>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-zinc-700 shrink-0">
+        {/* Actions — larger touch targets on mobile */}
+        <div
+          className="flex items-center justify-end gap-2 px-4 py-3 sm:py-3 border-t border-zinc-700 shrink-0"
+          style={{ paddingBottom: `max(0.75rem, env(safe-area-inset-bottom))` }}
+        >
           <button
             onClick={onClose}
             disabled={isUploading}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-lg text-sm sm:text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleApply}
             disabled={isUploading || !completedCrop}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gx-red text-white text-xs font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-lg bg-gx-red text-white text-sm sm:text-xs font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
           >
             {isUploading ? (
               <>
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <Loader2 className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
                 Uploading...
               </>
             ) : (
               <>
-                <Check className="h-3 w-3" />
+                <Check className="h-4 w-4 sm:h-3 sm:w-3" />
                 Apply Crop
               </>
             )}

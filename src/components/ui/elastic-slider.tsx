@@ -169,9 +169,9 @@ export function ElasticSlider({
             style={{ width: `${percentage}%` }}
           />
 
-          {/* Thumb indicator */}
+          {/* Thumb indicator — larger on mobile for touch targets */}
           <div
-            className="pointer-events-none absolute h-4 w-4 rounded-full border-2 border-blue-500 bg-zinc-900 shadow-md"
+            className="pointer-events-none absolute h-6 w-6 sm:h-4 sm:w-4 rounded-full border-2 border-blue-500 bg-zinc-900 shadow-md"
             style={{
               left: `${percentage}%`,
               transform: `translateX(-50%) scale(${isDragging ? 1.2 : 1})`,

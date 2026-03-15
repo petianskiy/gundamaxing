@@ -80,7 +80,7 @@ const SHAPE_TOOLS = [
 ] as const;
 
 const sliderClass =
-  "h-1 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500";
+  "h-2 sm:h-1 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 sm:[&::-webkit-slider-thumb]:w-2.5 sm:[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500";
 
 function CompactSlider({
   label,
@@ -114,7 +114,7 @@ function CompactSlider({
         step={step ?? 1}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className={cn(sliderClass, "w-14 sm:w-20 flex-shrink-0")}
+        className={cn(sliderClass, "flex-1 sm:flex-none w-full sm:w-20 min-w-0")}
       />
       <span className="text-[10px] text-zinc-400 w-8 flex-shrink-0 tabular-nums">
         {displayValue}
@@ -456,11 +456,11 @@ export function PencilToolbar({
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: -4, scaleY: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="mt-1.5 px-3 py-2.5 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl max-w-[calc(100vw-1rem)] overflow-x-auto"
+            className="mt-1.5 px-3 py-2.5 rounded-xl bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/50 shadow-2xl w-[calc(100vw-1rem)] sm:w-auto sm:max-w-[calc(100vw-1rem)] overflow-y-auto sm:overflow-y-visible overflow-x-hidden sm:overflow-x-auto max-h-[50vh] sm:max-h-none"
             style={{ scrollbarWidth: "none", transformOrigin: "top center" }}
           >
-            {/* Desktop: single horizontal row. Mobile: vertical stack */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+            {/* Desktop: single horizontal row. Mobile: vertical stack with proper spacing */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3">
               {/* Color picker + hex input */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <input
@@ -470,7 +470,7 @@ export function PencilToolbar({
                     onColorChange(e.target.value);
                     setHexInput(e.target.value);
                   }}
-                  className="w-7 h-7 rounded border border-zinc-700 cursor-pointer bg-transparent flex-shrink-0"
+                  className="w-8 h-8 sm:w-7 sm:h-7 rounded border border-zinc-700 cursor-pointer bg-transparent flex-shrink-0"
                 />
                 <input
                   type="text"
@@ -499,57 +499,61 @@ export function PencilToolbar({
               </div>
 
               <div className="hidden sm:block w-px h-5 bg-zinc-700/50 flex-shrink-0" />
+              <div className="sm:hidden h-px w-full bg-zinc-700/50" />
 
-              {/* Sliders */}
-              <CompactSlider
-                label="Size"
-                value={size}
-                min={1}
-                max={50}
-                onChange={onSizeChange}
-              />
-              <CompactSlider
-                label="Opacity"
-                value={opacity}
-                min={1}
-                max={100}
-                suffix="%"
-                onChange={onOpacityChange}
-              />
-              <CompactSlider
-                label="Grain"
-                value={texture}
-                min={0}
-                max={100}
-                onChange={onTextureChange}
-              />
-              <CompactSlider
-                label="Smooth"
-                value={smoothing}
-                min={0}
-                max={100}
-                onChange={onSmoothingChange}
-              />
-              <CompactSlider
-                label="Pressure"
-                value={pressureGamma}
-                min={0.5}
-                max={3.0}
-                step={0.1}
-                onChange={onPressureGammaChange}
-              />
+              {/* Sliders — on mobile, each gets full width in a grid */}
+              <div className="grid grid-cols-1 gap-2 sm:contents w-full">
+                <CompactSlider
+                  label="Size"
+                  value={size}
+                  min={1}
+                  max={50}
+                  onChange={onSizeChange}
+                />
+                <CompactSlider
+                  label="Opacity"
+                  value={opacity}
+                  min={1}
+                  max={100}
+                  suffix="%"
+                  onChange={onOpacityChange}
+                />
+                <CompactSlider
+                  label="Grain"
+                  value={texture}
+                  min={0}
+                  max={100}
+                  onChange={onTextureChange}
+                />
+                <CompactSlider
+                  label="Smooth"
+                  value={smoothing}
+                  min={0}
+                  max={100}
+                  onChange={onSmoothingChange}
+                />
+                <CompactSlider
+                  label="Pressure"
+                  value={pressureGamma}
+                  min={0.5}
+                  max={3.0}
+                  step={0.1}
+                  onChange={onPressureGammaChange}
+                />
+              </div>
 
               <div className="hidden sm:block w-px h-5 bg-zinc-700/50 flex-shrink-0" />
+              <div className="sm:hidden h-px w-full bg-zinc-700/50" />
 
               {/* Tilt shading toggle */}
-              <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 select-none">
+              <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 select-none py-1 sm:py-0">
                 <input
                   type="checkbox"
                   checked={tiltShading}
                   onChange={(e) => onTiltShadingChange(e.target.checked)}
-                  className="w-3 h-3 rounded border-zinc-600 bg-zinc-800 text-blue-500 focus:ring-blue-500/50 focus:ring-1 cursor-pointer"
+                  className="w-4 h-4 sm:w-3 sm:h-3 rounded border-zinc-600 bg-zinc-800 text-blue-500 focus:ring-blue-500/50 focus:ring-1 cursor-pointer"
                 />
-                <span className="text-[9px] text-zinc-400">Tilt shading</span>
+                <span className="text-xs sm:text-[9px] text-zinc-400">Tilt shading</span>
               </label>
             </div>
           </motion.div>

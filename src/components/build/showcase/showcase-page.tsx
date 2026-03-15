@@ -50,20 +50,37 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 10);
 }
 
-function generateInitialLayout(images: BuildImage[]): ShowcaseLayout {
-  const maxAutoLoad = Math.min(images.length, 4);
-  const elements: ShowcaseImageElement[] = [];
-
-  const positions = [
+function computeGridPositions(count: number): { x: number; y: number; w: number; h: number }[] {
+  // Predefined layouts for 1-4 images
+  const presets = [
     [{ x: 5, y: 5, w: 90, h: 90 }],
     [{ x: 2, y: 10, w: 47, h: 80 }, { x: 51, y: 10, w: 47, h: 80 }],
     [{ x: 2, y: 5, w: 55, h: 90 }, { x: 59, y: 5, w: 39, h: 44 }, { x: 59, y: 51, w: 39, h: 44 }],
     [{ x: 2, y: 2, w: 47, h: 47 }, { x: 51, y: 2, w: 47, h: 47 }, { x: 2, y: 51, w: 47, h: 47 }, { x: 51, y: 51, w: 47, h: 47 }],
   ];
 
-  const grid = positions[maxAutoLoad - 1] || positions[0];
+  if (count <= 4) return presets[count - 1] || presets[0];
 
-  for (let i = 0; i < maxAutoLoad; i++) {
+  // Dynamic grid for 5+ images
+  const cols = count <= 6 ? 2 : count <= 9 ? 3 : Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  const gap = 2;
+  const cellW = (100 - gap * (cols + 1)) / cols;
+  const cellH = (100 - gap * (rows + 1)) / rows;
+  return Array.from({ length: count }, (_, i) => ({
+    x: gap + (i % cols) * (cellW + gap),
+    y: gap + Math.floor(i / cols) * (cellH + gap),
+    w: cellW,
+    h: cellH,
+  }));
+}
+
+function generateInitialLayout(images: BuildImage[]): ShowcaseLayout {
+  const count = Math.min(images.length, 25);
+  const elements: ShowcaseImageElement[] = [];
+  const grid = computeGridPositions(count);
+
+  for (let i = 0; i < count; i++) {
     const img = images[i];
     const pos = grid[i];
     elements.push({
@@ -141,7 +158,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
   if (isEditing && isOwner) {
     return (
       <>
-        <div className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="pt-4 pb-32 px-4 sm:px-6 lg:px-8" style={{ overscrollBehaviorX: "none" }}>
           <div className="mx-auto max-w-6xl">
             <ShowcaseEditor
               build={build}
@@ -652,26 +669,49 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
               Cover Image Focal Point
             </label>
             <p className="text-[10px] text-muted-foreground mb-2">Click on the image to set where it should be centered when cropped on cards.</p>
-            <div className="relative w-full max-w-sm aspect-[4/3] rounded-lg overflow-hidden border border-border/50 cursor-crosshair group" onClick={handleFocalPointClick}>
-              <Image
-                src={primaryImage.url}
-                alt={primaryImage.alt}
-                fill
-                className="object-cover"
-                style={{ objectPosition: focalPoint }}
-              />
-              {/* Focal point marker */}
-              <div
-                className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ left: focalPoint.split(" ")[0], top: focalPoint.split(" ")[1] }}
-              >
-                <Crosshair className="w-6 h-6 text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
-              </div>
-              {isSavingFocal && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <span className="text-white text-xs">Saving...</span>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Focal point editor */}
+              <div className="relative w-full sm:w-2/3 max-w-sm aspect-[4/3] rounded-lg overflow-hidden border border-border/50 cursor-crosshair group shrink-0" onClick={handleFocalPointClick}>
+                <Image
+                  src={primaryImage.url}
+                  alt={primaryImage.alt}
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: focalPoint }}
+                />
+                {/* Focal point marker */}
+                <div
+                  className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ left: focalPoint.split(" ")[0], top: focalPoint.split(" ")[1] }}
+                >
+                  <Crosshair className="w-6 h-6 text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
                 </div>
-              )}
+                {isSavingFocal && (
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <span className="text-white text-xs">Saving...</span>
+                  </div>
+                )}
+              </div>
+              {/* Live card thumbnail preview */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Card Preview</span>
+                <div className="w-40 rounded-lg border border-border/50 bg-card overflow-hidden shadow-sm">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                    <Image
+                      src={primaryImage.url}
+                      alt={primaryImage.alt}
+                      fill
+                      sizes="160px"
+                      className="object-cover"
+                      style={{ objectPosition: focalPoint }}
+                    />
+                  </div>
+                  <div className="px-2 py-1.5">
+                    <p className="text-[10px] font-semibold text-foreground truncate">{build.title}</p>
+                    <p className="text-[9px] text-muted-foreground truncate">{build.kitName}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

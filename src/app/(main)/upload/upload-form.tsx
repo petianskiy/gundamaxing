@@ -175,6 +175,8 @@ export function UploadForm() {
     });
   }, []);
 
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
+
   function removeImage(index: number) {
     setPreviews((prev) => {
       URL.revokeObjectURL(prev[index].url);
@@ -186,6 +188,7 @@ export function UploadForm() {
       if (index < prev) return prev - 1;
       return prev;
     });
+    setConfirmDeleteIndex(null);
   }
 
   function toggleTechnique(tech: string) {
@@ -441,7 +444,16 @@ export function UploadForm() {
                       {previews.map((preview, i) => (
                         <div
                           key={preview.url}
-                          className="group/thumb relative aspect-square rounded-lg overflow-hidden border-2 border-transparent"
+                          className={cn(
+                            "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors cursor-pointer",
+                            i === primaryIndex
+                              ? "border-gx-red"
+                              : "border-transparent hover:border-border"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPrimaryIndex(i);
+                          }}
                         >
                           <img
                             src={preview.url}
@@ -456,31 +468,36 @@ export function UploadForm() {
                             </div>
                           )}
 
-                          {/* Hover overlay */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
-                            {i !== primaryIndex && (
+                          {/* Delete button — always visible in corner */}
+                          {confirmDeleteIndex === i ? (
+                            <div
+                              className="absolute top-1 right-1 flex items-center gap-1 z-10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPrimaryIndex(i);
-                                }}
-                                className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-white/20 text-white hover:bg-white/30 transition-colors"
+                                onClick={() => removeImage(i)}
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-600 text-white"
                               >
-                                <Star className="h-3 w-3" />
-                                {t("upload.setPrimary")}
+                                Delete
                               </button>
-                            )}
+                              <button
+                                onClick={() => setConfirmDeleteIndex(null)}
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-700 text-white"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                removeImage(i);
+                                setConfirmDeleteIndex(i);
                               }}
-                              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-red-500/30 text-white hover:bg-red-500/50 transition-colors"
+                              className="absolute top-1 right-1 z-10 p-1 rounded-full bg-black/50 text-white hover:bg-red-600 transition-colors backdrop-blur-sm"
                             >
-                              <X className="h-3 w-3" />
-                              {t("upload.removeImage")}
+                              <X className="h-3.5 w-3.5" />
                             </button>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </div>
