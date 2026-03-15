@@ -41,6 +41,7 @@ export function FeaturedBuildsSection({ builds }: FeaturedBuildsSectionProps) {
           {builds.map((build, i) => (
             <motion.div
               key={build.id}
+              className="h-full"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}

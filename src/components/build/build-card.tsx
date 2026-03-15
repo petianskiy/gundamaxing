@@ -12,8 +12,8 @@ import type { Build } from "@/lib/types";
 
 export function BuildCard({ build }: { build: Build }) {
   const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
-  const shownTechniques = build.techniques.slice(0, 3);
-  const remainingCount = build.techniques.length - 3;
+  const shownTechniques = build.techniques.slice(0, 2);
+  const remainingCount = build.techniques.length - 2;
 
   return (
     <Link href={`/builds/${build.slug}`} className="h-full">
@@ -76,19 +76,17 @@ export function BuildCard({ build }: { build: Build }) {
             </p>
           </div>
 
-          {/* Techniques — single line, no wrap */}
-          {shownTechniques.length > 0 && (
-            <div className="flex gap-1 overflow-hidden">
-              {shownTechniques.map((tech) => (
-                <TechniqueChip key={tech} technique={tech} size="sm" />
-              ))}
-              {remainingCount > 0 && (
-                <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
-                  +{remainingCount}
-                </span>
-              )}
-            </div>
-          )}
+          {/* Techniques — max 2 full tags + overflow count */}
+          <div className="flex gap-1 items-center min-h-[22px]">
+            {shownTechniques.map((tech) => (
+              <TechniqueChip key={tech} technique={tech} size="sm" />
+            ))}
+            {remainingCount > 0 && (
+              <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
+                +{remainingCount}
+              </span>
+            )}
+          </div>
 
           {/* Footer — pinned to bottom */}
           <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">

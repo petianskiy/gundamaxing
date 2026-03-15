@@ -274,6 +274,7 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
               {authorBuilds.map((b, i) => (
                 <motion.div
                   key={b.id}
+                  className="h-full"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
