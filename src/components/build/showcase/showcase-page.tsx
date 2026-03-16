@@ -344,19 +344,6 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
             <span className="text-xs text-muted-foreground/60 hidden sm:inline">&middot; {build.createdAt}</span>
           </Link>
 
-          {/* Techniques tags */}
-          {build.techniques.length > 0 && !layout.elements.some((el) => el.type === "metadata") && (
-            <div className="flex flex-wrap gap-1.5 justify-end shrink-0">
-              {build.techniques.map((tech) => (
-                <span
-                  key={tech}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
