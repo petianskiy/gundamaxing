@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -89,14 +89,23 @@ function GalleryLayout({ builds, pinnedBuildIds }: { builds: Build[]; pinnedBuil
 const MAX_SPHERE_BUILDS = 30;
 
 function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Build[]; accentColor: string; domeSettings?: DomeGallerySettings | null }) {
-  const images = useMemo(() => {
-    const selectedIds = domeSettings?.selectedBuildIds;
-    const pool = selectedIds && selectedIds.length > 0
-      ? selectedIds
-          .map((id) => builds.find((b) => b.id === id))
-          .filter(Boolean) as Build[]
-      : builds;
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  const pool = useMemo(() => {
+    const selectedIds = domeSettings?.selectedBuildIds;
+    return selectedIds && selectedIds.length > 0
+      ? selectedIds.map((id) => builds.find((b) => b.id === id)).filter(Boolean) as Build[]
+      : builds;
+  }, [builds, domeSettings?.selectedBuildIds]);
+
+  const images = useMemo(() => {
     return pool
       .slice(0, MAX_SPHERE_BUILDS)
       .map((build) => {
@@ -105,7 +114,7 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
         return { src: primary.url, alt: build.title, href: `/builds/${build.slug}` };
       })
       .filter(Boolean) as { src: string; alt: string; href: string }[];
-  }, [builds, domeSettings?.selectedBuildIds]);
+  }, [pool]);
 
   if (images.length === 0) {
     return (
@@ -115,11 +124,93 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
     );
   }
 
-  const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
-  const sphereSize = domeSettings?.sphereSize ?? "medium";
   const glowColor = domeSettings?.glowColor ?? accentColor;
   const showStars = domeSettings?.showStars ?? true;
   const sphereTitle = domeSettings?.sphereTitle ?? "";
+
+  // On mobile: show a beautiful horizontal scrollable card strip instead of the 3D sphere
+  if (isMobile) {
+    return (
+      <div className="relative w-full">
+        {showStars && <DomeStars />}
+
+        {/* Glow */}
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl pointer-events-none z-[1]"
+          style={{
+            width: "80%",
+            paddingBottom: "40%",
+            background: `radial-gradient(circle, ${glowColor}25 0%, ${glowColor}08 60%, transparent 100%)`,
+          }}
+        />
+
+        {/* Title */}
+        {sphereTitle && (
+          <div className="text-center z-[10] relative mb-4">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] drop-shadow-lg" style={{ color: glowColor }}>
+              {sphereTitle}
+            </p>
+          </div>
+        )}
+
+        {/* Horizontal scrollable cards */}
+        <div
+          className="relative z-[4] flex gap-3 overflow-x-auto px-2 pb-4 snap-x snap-mandatory"
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+        >
+          {pool.slice(0, MAX_SPHERE_BUILDS).map((build) => {
+            const primary = build.images.find((img) => img.isPrimary) || build.images[0];
+            if (!primary) return null;
+            return (
+              <Link
+                key={build.id}
+                href={`/builds/${build.slug}`}
+                className="flex-shrink-0 snap-center w-[72vw] max-w-[280px]"
+              >
+                <motion.div
+                  className="group rounded-xl border border-white/10 bg-zinc-900/60 backdrop-blur-sm overflow-hidden"
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <Image
+                      src={primary.url}
+                      alt={primary.alt || build.title}
+                      fill
+                      sizes="280px"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      style={primary.objectPosition ? { objectPosition: primary.objectPosition } : undefined}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <GradeBadge grade={build.grade} size="sm" />
+                        <span className="text-[9px] font-mono text-zinc-300">{build.scale}</span>
+                      </div>
+                      <h3 className="text-sm font-bold text-white leading-tight line-clamp-2">{build.title}</h3>
+                      <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">{build.kitName}</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                      <span className="flex items-center gap-0.5"><Heart className="h-3 w-3" />{build.likes}</span>
+                      <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" />{build.comments}</span>
+                    </div>
+                    {build.verification !== "unverified" && (
+                      <VerificationBadge tier={build.verification} size="sm" />
+                    )}
+                  </div>
+                </motion.div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: full 3D dome gallery
+  const autoRotateSpeed = domeSettings?.autoSpin ? (domeSettings.spinSpeed ?? 1) : 0;
+  const sphereSize = domeSettings?.sphereSize ?? "medium";
 
   const sizeMap = {
     small: { height: "min(55vh, 450px)", fit: 0.35, minRadius: 200 },
@@ -130,10 +221,8 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
 
   return (
     <div className="relative w-full" style={{ height: sz.height }}>
-      {/* Star field */}
       {showStars && <DomeStars />}
 
-      {/* Glow behind sphere */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl pointer-events-none z-[1]"
         style={{
@@ -143,19 +232,14 @@ function DomeGalleryLayout({ builds, accentColor, domeSettings }: { builds: Buil
         }}
       />
 
-      {/* Sphere title */}
       {sphereTitle && (
         <div className="absolute top-4 left-0 right-0 text-center z-[10] pointer-events-none">
-          <p
-            className="text-sm font-bold uppercase tracking-[0.3em] drop-shadow-lg"
-            style={{ color: glowColor }}
-          >
+          <p className="text-sm font-bold uppercase tracking-[0.3em] drop-shadow-lg" style={{ color: glowColor }}>
             {sphereTitle}
           </p>
         </div>
       )}
 
-      {/* Dome Gallery */}
       <div className="relative z-[4]" style={{ height: "100%" }}>
         <DomeGallery
           images={images}
