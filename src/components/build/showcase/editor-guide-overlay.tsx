@@ -141,7 +141,12 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
     if (!step) return;
     const el = document.querySelector(step.selector);
     if (el) {
-      setTargetRect(el.getBoundingClientRect());
+      // Scroll the dock so the target tool is visible on mobile
+      el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      // Small delay to let scroll complete before measuring
+      requestAnimationFrame(() => {
+        setTargetRect(el.getBoundingClientRect());
+      });
     } else {
       setTargetRect(null);
       const nextValid = findValidStep(currentStep + 1, "forward");
@@ -243,7 +248,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
     ? window.innerHeight - spotTop + 12
     : undefined;
   // Center the bubble over the spotlight area
-  const bubbleCenterX = (spotLeft + spotRight) / 2;
+  const bubbleCenterX = Math.max(170, Math.min(window.innerWidth - 170, (spotLeft + spotRight) / 2));
 
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;

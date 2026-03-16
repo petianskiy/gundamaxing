@@ -308,7 +308,7 @@ export function PencilToolbar({
         {/* 4. Shape / Eyedropper / Fill tools */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
-            onClick={() => onToolChange("shape")}
+            onClick={() => onToolChange(activeTool === "shape" ? "pencil" : "shape")}
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
               activeTool === "shape"
@@ -320,7 +320,7 @@ export function PencilToolbar({
             <Pentagon className="h-4 w-4" />
           </button>
           <button
-            onClick={() => onToolChange("eyedropper")}
+            onClick={() => onToolChange(activeTool === "eyedropper" ? "pencil" : "eyedropper")}
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
               activeTool === "eyedropper"
@@ -332,7 +332,7 @@ export function PencilToolbar({
             <Pipette className="h-4 w-4" />
           </button>
           <button
-            onClick={() => onToolChange("fill")}
+            onClick={() => onToolChange(activeTool === "fill" ? "pencil" : "fill")}
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
               activeTool === "fill"

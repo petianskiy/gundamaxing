@@ -992,6 +992,14 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     setEditingTextId(null);
   }, [currentPageIndex, layout, pagesState, dispatch, currentPageBg]);
 
+  // ─── Prevent pull-to-refresh while editing ──────
+  useEffect(() => {
+    document.body.style.overscrollBehavior = "none";
+    return () => {
+      document.body.style.overscrollBehavior = "";
+    };
+  }, []);
+
   // ─── Page swipe navigation (two-finger swipe on canvas) ──────
   const pageTouchRef = useRef<{ x: number; y: number; time: number } | null>(null);
   useEffect(() => {
@@ -1227,7 +1235,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   // ─── Editor mode ──────────────────────────────────────────────
 
   return (
-    <div className="relative" style={{ overscrollBehaviorX: "none" }}>
+    <div className="relative" style={{ overscrollBehavior: "none" }}>
       {/* ── Save & Exit buttons ── */}
       <div className="flex justify-end gap-2 mb-2">
         <button

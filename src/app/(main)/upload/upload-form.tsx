@@ -15,6 +15,7 @@ import {
   X,
   Star,
   Loader2,
+  Crosshair,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -130,6 +131,7 @@ export function UploadForm() {
   // Image state
   const [previews, setPreviews] = useState<Preview[]>([]);
   const [primaryIndex, setPrimaryIndex] = useState(0);
+  const [focalPoints, setFocalPoints] = useState<Record<number, string>>({});
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -188,6 +190,15 @@ export function UploadForm() {
       if (index === prev) return 0;
       if (index < prev) return prev - 1;
       return prev;
+    });
+    setFocalPoints((prev) => {
+      const next: Record<number, string> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        const ki = Number(k);
+        if (ki === index) continue;
+        next[ki < index ? ki : ki - 1] = v;
+      }
+      return next;
     });
     setConfirmDeleteIndex(null);
   }
@@ -258,6 +269,15 @@ export function UploadForm() {
       if (intentStatement) formData.set("intentStatement", intentStatement);
       formData.set("imageUrls", JSON.stringify(imageUrls));
       formData.set("primaryIndex", String(primaryIndex));
+
+      // Include focal points (objectPosition) for each image
+      const objectPositions: Record<number, string> = {};
+      for (const [idx, pos] of Object.entries(focalPoints)) {
+        objectPositions[Number(idx)] = pos;
+      }
+      if (Object.keys(objectPositions).length > 0) {
+        formData.set("objectPositions", JSON.stringify(objectPositions));
+      }
 
       const result = await createBuild(formData);
       setSubmitting(false);
@@ -440,19 +460,26 @@ export function UploadForm() {
                   <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
                       {previews.length} / 15 {t("upload.photos").toLowerCase()}
+                      <span className="ml-2 text-muted-foreground/50">
+                        — Tap image to set cover, click within to set focal point
+                      </span>
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {previews.map((preview, i) => (
                         <div
                           key={preview.url}
                           className={cn(
-                            "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors cursor-pointer",
+                            "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors cursor-crosshair group",
                             i === primaryIndex
                               ? "border-gx-red"
                               : "border-transparent hover:border-border"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                            const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+                            setFocalPoints((prev) => ({ ...prev, [i]: `${x}% ${y}%` }));
                             setPrimaryIndex(i);
                           }}
                         >
@@ -460,7 +487,30 @@ export function UploadForm() {
                             src={preview.url}
                             alt={`Preview ${i + 1}`}
                             className="w-full h-full object-cover"
+                            style={{ objectPosition: focalPoints[i] || "50% 50%" }}
                           />
+
+                          {/* Focal point crosshair indicator */}
+                          {focalPoints[i] && (
+                            <div
+                              className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
+                              style={{
+                                left: focalPoints[i].split(" ")[0],
+                                top: focalPoints[i].split(" ")[1],
+                              }}
+                            >
+                              <Crosshair className="w-5 h-5 text-white drop-shadow-[0_0_3px_rgba(0,0,0,0.9)]" />
+                            </div>
+                          )}
+
+                          {/* Focal point hint (show on hover when no focal point set) */}
+                          {!focalPoints[i] && (
+                            <div className="absolute inset-0 flex items-end justify-center pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                Click to set focal point
+                              </span>
+                            </div>
+                          )}
 
                           {/* Primary badge */}
                           {i === primaryIndex && (

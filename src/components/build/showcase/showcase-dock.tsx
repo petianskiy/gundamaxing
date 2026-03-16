@@ -134,12 +134,12 @@ export function ShowcaseDock({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[600] bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-700/50"
+      className="fixed bottom-0 left-0 right-0 z-[600] bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-700/50 sm:bottom-4 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:w-auto sm:rounded-2xl sm:border sm:border-zinc-700/50 sm:bg-zinc-900/90 sm:backdrop-blur-xl sm:shadow-2xl sm:max-w-[calc(100vw-4rem)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       onMouseLeave={() => setTooltip(null)}
     >
       <div
-        className="flex items-stretch gap-1 px-2 py-2 overflow-x-auto"
+        className="flex items-stretch gap-1 px-2 py-2 overflow-x-auto sm:gap-0.5 sm:px-3 sm:py-2.5"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
       >
         {/* History group */}
@@ -248,8 +248,8 @@ function ToolButton({
       }}
       onMouseLeave={onHideTooltip}
     >
-      <Icon className={`w-5 h-5 ${Icon === Loader2 ? "animate-spin" : ""}`} />
-      <span className="text-[10px] leading-tight whitespace-nowrap">{item.shortLabel}</span>
+      <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${Icon === Loader2 ? "animate-spin" : ""}`} />
+      <span className="text-[10px] leading-tight whitespace-nowrap sm:hidden">{item.shortLabel}</span>
     </button>
   );
 }

@@ -149,6 +149,8 @@ export async function createBuild(formData: FormData) {
     }
 
     const primaryIdx = data.primaryIndex ?? 0;
+    const objectPositionsRaw = formData.get("objectPositions") as string | null;
+    const objectPositions: Record<number, string> = objectPositionsRaw ? JSON.parse(objectPositionsRaw) : {};
     const slug = await uniqueSlug(generateSlug(data.title));
 
     // Check if this is the user's first build (for editor guide overlay)
@@ -182,6 +184,7 @@ export async function createBuild(formData: FormData) {
           isPrimary: i === primaryIdx,
           order: i,
           buildId: newBuild.id,
+          ...(objectPositions[i] ? { objectPosition: objectPositions[i] } : {}),
         })),
       });
 

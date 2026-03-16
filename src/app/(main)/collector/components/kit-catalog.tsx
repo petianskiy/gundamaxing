@@ -115,7 +115,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
         <div className="animate-page-content flex justify-center mb-6">
           <button
             onClick={() => setShowSuggestModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gx-red/40 bg-gx-red/10 text-sm text-red-400 hover:bg-gx-red/20 transition-colors"
           >
             <Plus className="h-4 w-4" />
             {t("collector.suggestKit")}
@@ -132,7 +132,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder={t("collector.searchPlaceholder")}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border/50 bg-card text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20"
             />
           </div>
 
@@ -142,7 +142,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             <select
               value={gradeFilter}
               onChange={(e) => handleFilterChange(setGradeFilter, e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-card text-sm text-foreground focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20"
             >
               <option value="">{t("collector.allGrades")}</option>
               {grades.map((grade) => (
@@ -156,7 +156,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             <select
               value={seriesFilter}
               onChange={(e) => handleFilterChange(setSeriesFilter, e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-card text-sm text-foreground focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20"
             >
               <option value="">{t("collector.allSeries")}</option>
               {seriesList.map((series) => (
@@ -170,7 +170,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value as SortOption); setPage(1); }}
-              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
+              className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-card text-sm text-foreground focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20"
             >
               <option value="name">{t("collector.sortName")}</option>
               <option value="rating">{t("collector.sortRating")}</option>

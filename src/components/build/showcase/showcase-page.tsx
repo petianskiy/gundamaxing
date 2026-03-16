@@ -120,6 +120,7 @@ function PageViewer({
   onEdit: () => void;
 }) {
   const [currentPage, setCurrentPage] = useState(0);
+  const [animating, setAnimating] = useState(false);
   const touchRef = useRef<{ x: number; time: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -137,7 +138,11 @@ function PageViewer({
   }, []);
 
   const goTo = (index: number) => {
-    setCurrentPage(Math.max(0, Math.min(pages.length - 1, index)));
+    const target = Math.max(0, Math.min(pages.length - 1, index));
+    if (target === currentPage) return;
+    setAnimating(true);
+    setCurrentPage(target);
+    setTimeout(() => setAnimating(false), 350);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -156,24 +161,31 @@ function PageViewer({
     else goTo(currentPage - 1);
   };
 
-  const page = pages[currentPage];
-
   return (
     <div
       ref={containerRef}
-      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none"
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none overflow-hidden"
       style={{ overscrollBehaviorX: "contain" }}
       onContextMenu={(e) => e.preventDefault()}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Current page canvas */}
       <div className="relative">
-        <ShowcaseCanvas
-          layout={{ ...layout, elements: page.elements }}
-          build={build}
-          pageBackground={page.background}
-        />
+        {/* Render all pages side-by-side, slide via translateX — no unmount = no black flash */}
+        <div
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${currentPage * 100}%)` }}
+        >
+          {pages.map((page, i) => (
+            <div key={page.id} className="w-full flex-shrink-0">
+              <ShowcaseCanvas
+                layout={{ ...layout, elements: page.elements }}
+                build={build}
+                pageBackground={page.background}
+              />
+            </div>
+          ))}
+        </div>
 
         {/* Edit button for owner */}
         {isOwner && (
