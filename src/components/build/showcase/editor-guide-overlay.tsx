@@ -12,7 +12,7 @@ interface GuideStep {
   selector: string;
   title: string;
   description: string;
-  tip: string;
+  tip: string | null;
 }
 
 const STEPS: GuideStep[] = [
@@ -100,25 +100,44 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [ready, setReady] = useState(false);
   const measureTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [steps, setSteps] = useState<GuideStep[]>(STEPS);
+
+  // Fetch dynamic steps from API, fall back to hardcoded STEPS
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/guide-steps")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: GuideStep[] | null) => {
+        if (!cancelled && data && data.length > 0) {
+          setSteps(data);
+        }
+      })
+      .catch(() => {
+        // Silently fall back to hardcoded steps
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Find the next valid step index in a direction.
   const findValidStep = useCallback(
     (startIndex: number, direction: "forward" | "backward"): number | null => {
       const step = direction === "forward" ? 1 : -1;
       let index = startIndex;
-      while (index >= 0 && index < STEPS.length) {
-        const el = document.querySelector(STEPS[index].selector);
+      while (index >= 0 && index < steps.length) {
+        const el = document.querySelector(steps[index].selector);
         if (el) return index;
         index += step;
       }
       return null;
     },
-    [],
+    [steps],
   );
 
   // Measure the target element for the current step
   const measureTarget = useCallback(() => {
-    const step = STEPS[currentStep];
+    const step = steps[currentStep];
     if (!step) return;
     const el = document.querySelector(step.selector);
     if (el) {
@@ -132,7 +151,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
         onDismiss();
       }
     }
-  }, [currentStep, findValidStep, onDismiss]);
+  }, [steps, currentStep, findValidStep, onDismiss]);
 
   // Delayed initial measurement — let dock animation settle first
   useEffect(() => {
@@ -183,7 +202,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   }, []);
 
   const handleNext = useCallback(() => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < steps.length - 1) {
       const nextValid = findValidStep(currentStep + 1, "forward");
       if (nextValid !== null) {
         setCurrentStep(nextValid);
@@ -193,7 +212,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
     } else {
       onDismiss();
     }
-  }, [currentStep, findValidStep, onDismiss]);
+  }, [steps, currentStep, findValidStep, onDismiss]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -226,9 +245,9 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
   // Center the bubble over the spotlight area
   const bubbleCenterX = (spotLeft + spotRight) / 2;
 
-  const isLastStep = currentStep === STEPS.length - 1;
+  const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
-  const step = STEPS[currentStep];
+  const step = steps[currentStep];
 
   // Don't render anything until measurement is ready
   if (!ready || !targetRect) {
@@ -332,7 +351,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
               {/* Step counter */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {currentStep + 1} of {STEPS.length}
+                  {currentStep + 1} of {steps.length}
                 </span>
                 <button
                   onClick={onDismiss}
@@ -350,9 +369,11 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
               <p className="text-sm text-muted-foreground leading-relaxed mb-2">{step.description}</p>
 
               {/* Tip */}
-              <p className="text-xs italic text-muted-foreground/70 leading-relaxed mb-3">
-                {"💡 Tip: "}{step.tip}
-              </p>
+              {step.tip && (
+                <p className="text-xs italic text-muted-foreground/70 leading-relaxed mb-3">
+                  {"💡 Tip: "}{step.tip}
+                </p>
+              )}
 
               {/* Navigation */}
               <div className="flex items-center gap-2">
@@ -374,7 +395,7 @@ export function EditorGuideOverlay({ onDismiss }: EditorGuideOverlayProps) {
 
               {/* Progress dots */}
               <div className="flex items-center justify-center gap-1.5 mt-3">
-                {STEPS.map((_, i) => (
+                {steps.map((_, i) => (
                   <div
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${

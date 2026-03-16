@@ -14,6 +14,8 @@ import {
   Target,
   MessageSquare,
   BookOpen,
+  HelpCircle,
+  LayoutTemplate,
 } from "lucide-react";
 
 const adminNav = [
@@ -27,6 +29,8 @@ const adminNav = [
   { href: "/admin/events", label: "Events", icon: Activity },
   { href: "/admin/missions", label: "Missions", icon: Target },
   { href: "/admin/collector", label: "Collector", icon: BookOpen },
+  { href: "/admin/guide", label: "Guide", icon: HelpCircle },
+  { href: "/admin/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ];
 

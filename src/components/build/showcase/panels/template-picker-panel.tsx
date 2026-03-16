@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BuildImage, ShowcaseElement, ShowcaseImageElement, ShowcaseTextElement, ShowcaseMetadataElement } from "@/lib/types";
@@ -135,7 +135,7 @@ function generateFromSlots(
 // Categories
 // ---------------------------------------------------------------------------
 
-const CATEGORIES = ["Basic", "Magazine", "Creative", "Multi", "With Text"] as const;
+const CATEGORIES = ["Basic", "Magazine", "Creative", "Multi", "With Text", "Custom"] as const;
 
 // ---------------------------------------------------------------------------
 // BASIC templates (10)
@@ -702,6 +702,44 @@ const TEMPLATE_CATEGORIES: Record<string, LayoutTemplate[]> = {
 };
 
 // ---------------------------------------------------------------------------
+// Custom template conversion
+// ---------------------------------------------------------------------------
+
+interface CustomTemplateAPI {
+  id: string;
+  name: string;
+  category: string;
+  imageCount: number;
+  slots: { x: number; y: number; w: number; h: number; type: "image" | "text" | "meta" }[];
+}
+
+function customToTemplate(t: CustomTemplateAPI): LayoutTemplate {
+  return {
+    id: t.id,
+    name: t.name,
+    category: "Custom",
+    imageCount: t.imageCount,
+    previewRects: t.slots,
+    generate: (images) => {
+      const els: ShowcaseElement[] = [];
+      let z = 1;
+      for (const slot of t.slots) {
+        if (slot.type === "image") {
+          const img = getImage(images, z - 1);
+          if (img) els.push(makeImageElement(img.id, img.url, slot.x, slot.y, slot.w, slot.h, z));
+        } else if (slot.type === "text") {
+          els.push(makeTextElement("Your Text", slot.x, slot.y, slot.w, slot.h, z));
+        } else if (slot.type === "meta") {
+          els.push(makeMetadataElement(slot.x, slot.y, slot.w, slot.h, z));
+        }
+        z++;
+      }
+      return els;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // SVG Preview component
 // ---------------------------------------------------------------------------
 
@@ -785,7 +823,27 @@ interface TemplatePickerPanelProps {
 export function TemplatePickerPanel({ buildImages, hasElements, onApply, onClose }: TemplatePickerPanelProps) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("Basic");
+  const [customTemplates, setCustomTemplates] = useState<LayoutTemplate[]>([]);
   const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Fetch custom templates on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCustom() {
+      try {
+        const res = await fetch("/api/custom-templates");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const converted = (data.templates ?? []).map(customToTemplate);
+        setCustomTemplates(converted);
+      } catch {
+        // Silently fail — custom templates are optional
+      }
+    }
+    fetchCustom();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSelect = (template: LayoutTemplate) => {
     if (hasElements && confirmId !== template.id) {
@@ -797,7 +855,9 @@ export function TemplatePickerPanel({ buildImages, hasElements, onApply, onClose
     setConfirmId(null);
   };
 
-  const templates = TEMPLATE_CATEGORIES[activeCategory] ?? [];
+  const templates = activeCategory === "Custom"
+    ? customTemplates
+    : (TEMPLATE_CATEGORIES[activeCategory] ?? []);
 
   return (
     <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:top-20 sm:right-4 z-[500] w-full sm:w-80 max-h-[70vh] sm:max-h-[80vh] bg-zinc-900 border-t sm:border border-zinc-700 sm:rounded-xl rounded-t-xl shadow-2xl flex flex-col">

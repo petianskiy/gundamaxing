@@ -975,3 +975,39 @@ model KitSuggestion {
   @@index([userId])
   @@index([createdAt])
 }
+
+// ─── EDITOR GUIDE ──────────────────────────────────────────────────
+
+model EditorGuideStep {
+  id          String   @id @default(cuid())
+  selector    String
+  title       String
+  description String   @db.Text
+  tip         String?  @db.Text
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isActive])
+}
+
+// ─── CUSTOM TEMPLATES ────────────────────────────────────────────
+
+model CustomTemplate {
+  id         String   @id @default(cuid())
+  name       String
+  category   String   @default("Custom")
+  imageCount Int
+  // JSON array of { x, y, w, h, type } objects for preview and generation
+  slots      Json
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+  @@index([sortOrder])
+}
