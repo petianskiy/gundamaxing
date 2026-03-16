@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { AchievementCategory as PrismaAchievementCategory } from "@prisma/client";
+import { checkLevelUpAndNotify } from "@/lib/level-up";
 
 // ─── Level Calculation ─────────────────────────────────────────
 
@@ -173,6 +174,8 @@ export async function checkAndAwardAchievements(
 
     // 4. Process each achievement
     let totalNewXp = 0;
+    let previousLevel = 0;
+    let newLevel = 0;
 
     await db.$transaction(async (tx) => {
       for (const achievement of achievements) {
@@ -215,12 +218,13 @@ export async function checkAndAwardAchievements(
       if (totalNewXp > 0) {
         const user = await tx.user.findUnique({
           where: { id: userId },
-          select: { xp: true },
+          select: { xp: true, level: true },
         });
 
         if (user) {
+          previousLevel = user.level;
           const newXp = user.xp + totalNewXp;
-          const newLevel = calculateLevel(newXp);
+          newLevel = calculateLevel(newXp);
 
           await tx.user.update({
             where: { id: userId },
@@ -229,6 +233,11 @@ export async function checkAndAwardAchievements(
         }
       }
     });
+
+    // 6. Send level-up notification (fire-and-forget, outside transaction)
+    if (newLevel > previousLevel) {
+      checkLevelUpAndNotify(userId, previousLevel).catch(() => {});
+    }
   } catch (error) {
     // Silently fail — achievement checking should never break primary actions
     console.error(`[achievements] Error checking ${category} for user ${userId}:`, error);

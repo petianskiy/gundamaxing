@@ -1,6 +1,9 @@
+"use client";
+
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { SidebarCard } from "./sidebar-card";
+import { useTranslation } from "@/lib/i18n/context";
 import type { ForumActivePilot } from "@/lib/types";
 
 function getInitials(displayName: string | null, username: string): string {
@@ -13,10 +16,11 @@ function getInitials(displayName: string | null, username: string): string {
 }
 
 export function ActivePilotsCard({ pilots }: { pilots: ForumActivePilot[] }) {
+  const { t } = useTranslation();
   if (pilots.length === 0) return null;
 
   return (
-    <SidebarCard title="Active Pilots">
+    <SidebarCard title={t("forum.sidebar.activePilots")}>
       <div className="space-y-2.5">
         {pilots.map((pilot) => (
           <Link

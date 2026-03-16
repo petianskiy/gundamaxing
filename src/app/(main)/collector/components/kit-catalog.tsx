@@ -118,7 +118,7 @@ export function KitCatalog({ kits, grades, seriesList, userStatuses }: KitCatalo
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Don&apos;t see your kit? Suggest one
+            {t("collector.suggestKit")}
           </button>
         </div>
 

@@ -67,4 +67,23 @@ export const upload = {
   "upload.removeImage": "移除",
   "upload.primaryBadge": "主圖",
   "upload.createPassport": "上傳你的作品",
+
+  // Status labels
+  "upload.status.WIP": "製作中",
+  "upload.status.Completed": "完成",
+  "upload.status.Abandoned": "中止",
+
+  // Description field
+  "upload.description": "描述",
+  "upload.descriptionHelper": "分享你的作品故事 — 靈感來源、使用的技法、遇到的挑戰等。",
+  "upload.descriptionPlaceholder": "分享你的作品故事⋯",
+
+  // Misc
+  "upload.optional": "選填",
+  "upload.optionalBadge": "選填",
+  "upload.deleteImage": "刪除",
+  "upload.cancelDelete": "取消",
+  "upload.imageUploadFailed": "圖片上傳失敗。請再試一次。",
+  "upload.createFailed": "建立作品失敗。",
+  "upload.unexpectedError": "發生意外錯誤。",
 } as const;

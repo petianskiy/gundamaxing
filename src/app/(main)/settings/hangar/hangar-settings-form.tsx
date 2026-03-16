@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import { toast } from "sonner";
 import { motion, Reorder } from "framer-motion";
@@ -57,12 +57,21 @@ interface HangarSettingsFormProps {
 
 /* ─── Config ──────────────────────────────────────────────────────── */
 
-const THEMES = [
+interface ThemeOption {
+  value: string;
+  label: string;
+  desc: string;
+  colors: string[];
+  unlockLevel: number;
+  badgeColor?: string;
+}
+
+const FALLBACK_THEMES: ThemeOption[] = [
   { value: "CYBER_BAY", label: "Cyber Bay", desc: "Neon-lit industrial hangar with holographic displays", colors: ["#0f172a", "#06b6d4", "#22d3ee", "#164e63"], unlockLevel: 3 },
   { value: "CLEAN_LAB", label: "Clean Lab", desc: "Pristine white workshop with clinical precision", colors: ["#f8fafc", "#e2e8f0", "#94a3b8", "#cbd5e1"], unlockLevel: 9 },
   { value: "DESERT_BATTLEFIELD", label: "Desert Battlefield", desc: "Sun-scorched warzone with sand-worn aesthetic", colors: ["#451a03", "#b45309", "#f59e0b", "#78350f"], unlockLevel: 15 },
   { value: "NEON_TOKYO", label: "Neon Tokyo", desc: "Cyberpunk cityscape dripping with neon glow", colors: ["#1a0025", "#d946ef", "#f0abfc", "#7c3aed"], unlockLevel: 20 },
-] as const;
+];
 
 const LAYOUTS = [
   { value: "GALLERY", label: "Gallery", desc: "Clean grid of cards", icon: Grid3X3 },
@@ -81,6 +90,34 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
   const [form, setForm] = useState<HangarFormData>(initialData);
   const [savingField, setSavingField] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [themes, setThemes] = useState<ThemeOption[]>(FALLBACK_THEMES);
+
+  // Fetch custom themes from API and merge with fallbacks
+  useEffect(() => {
+    async function fetchThemes() {
+      try {
+        const res = await fetch("/api/hangar-themes");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.themes && Array.isArray(data.themes) && data.themes.length > 0) {
+          const customThemes: ThemeOption[] = data.themes.map(
+            (t: { slug: string; name: string; badgeColor: string; unlockLevel: number; backgroundType: string }) => ({
+              value: t.slug,
+              label: t.name,
+              desc: `Custom theme - ${t.backgroundType === "video" ? "Video" : t.backgroundType === "carousel" ? "Carousel" : "Static"} background`,
+              colors: [t.badgeColor, t.badgeColor + "aa", t.badgeColor + "66", t.badgeColor + "33"],
+              unlockLevel: t.unlockLevel,
+              badgeColor: t.badgeColor,
+            })
+          );
+          setThemes([...FALLBACK_THEMES, ...customThemes]);
+        }
+      } catch {
+        // Keep fallback themes on error
+      }
+    }
+    fetchThemes();
+  }, []);
 
   // Auto-save a partial update immediately
   const autoSave = useCallback(async (patch: Partial<HangarFormData>, fieldName: string) => {
@@ -174,7 +211,7 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
             Unlock themes as you level up. Your current level: {userLevel}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {THEMES.map((theme) => {
+            {themes.map((theme) => {
               const isActive = form.hangarTheme === theme.value;
               const isLocked = userLevel < theme.unlockLevel;
               return (
@@ -212,6 +249,12 @@ export function HangarSettingsForm({ initialData, userLevel, builds }: HangarSet
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-medium text-foreground">{theme.label}</p>
+                      {theme.badgeColor && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: theme.badgeColor }}
+                        />
+                      )}
                       {isLocked && (
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-400">
                           LVL {theme.unlockLevel}

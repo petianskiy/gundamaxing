@@ -38,9 +38,9 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
       <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
         <p className="text-sm text-muted-foreground">
           <Link href="/login" className="text-gx-red hover:text-red-400 font-medium">
-            Sign in
+            {t("forum.signInToCreate")}
           </Link>{" "}
-          to create a thread.
+          {t("forum.signInToCreateSuffix")}
         </p>
       </div>
     );
@@ -85,7 +85,7 @@ export function ThreadForm({ categories, defaultCategoryId }: ThreadFormProps) {
     setLoading(false);
 
     if (result.error) {
-      setError(typeof result.error === "string" ? result.error : "Failed to create thread");
+      setError(typeof result.error === "string" ? result.error : t("toast.somethingWentWrong"));
     } else if (result.threadId) {
       router.push(`/thread/${result.threadId}`);
     }

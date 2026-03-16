@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { MessageSquare, FileText } from "lucide-react";
 import { SidebarCard } from "./sidebar-card";
+import { useTranslation } from "@/lib/i18n/context";
 import type { ForumRecentActivity } from "@/lib/types";
 
 function timeAgo(dateStr: string): string {
@@ -15,10 +18,11 @@ function timeAgo(dateStr: string): string {
 }
 
 export function RecentActivityCard({ activities }: { activities: ForumRecentActivity[] }) {
+  const { t } = useTranslation();
   if (activities.length === 0) return null;
 
   return (
-    <SidebarCard title="Recent Activity" accentColor="#8b5cf6">
+    <SidebarCard title={t("forum.sidebar.recentActivity")} accentColor="#8b5cf6">
       <div className="space-y-2.5">
         {activities.map((activity) => (
           <Link

@@ -5,17 +5,15 @@ import { useEffect, useRef, useState } from "react";
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
-    // Skip video on reduced-motion preference or narrow screens (saves 13MB download)
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const narrow = window.innerWidth < 768;
-    if (reducedMotion || narrow) return;
-
+    if (reducedMotion) return;
     setShowVideo(true);
   }, []);
 
-  if (!showVideo) {
+  if (!showVideo || videoFailed) {
     return (
       <div
         className="absolute inset-0"
@@ -34,7 +32,9 @@ export function HeroVideo() {
       muted
       loop
       playsInline
-      preload="none"
+      preload="auto"
+      poster="/images/hero-poster.jpg"
+      onError={() => setVideoFailed(true)}
       disablePictureInPicture
       controlsList="nodownload nofullscreen noremoteplayback"
       className="absolute inset-0 w-full h-full object-cover pointer-events-none"

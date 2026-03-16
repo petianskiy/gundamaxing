@@ -5,7 +5,7 @@ export const landing = {
   "hero.uploadBuild": "ビルドをアップロード",
   "hero.exploreBuilds": "ビルドを探索",
   "hero.buildOfWeek": "今週のビルド",
-  "featured.title": "注目のビルド",
+  "featured.title": "最新のビルド",
   "dna.title": "すべてのビルドには系譜がある",
   "dna.description": "ビルドをフォークしてバリエーションを探索。インスピレーションの連鎖を追跡。一つのキットから生まれるカスタム解釈のファミリーを可視化。Build DNAがあなたの創造的系譜を見えるようにします。",
   "dna.explore": "ビルドの系譜を探索",

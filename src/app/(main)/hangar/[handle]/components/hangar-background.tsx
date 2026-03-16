@@ -5,7 +5,7 @@ import { SmartImage as Image } from "@/components/ui/smart-image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { HangarLayout } from "@/lib/types";
 
-const BACKGROUNDS = [
+const DEFAULT_BACKGROUNDS = [
   "/hangar/backgrounds/bg-01.jpg",
   "/hangar/backgrounds/bg-02.jpg",
   "/hangar/backgrounds/bg-03.jpg",
@@ -18,24 +18,44 @@ const BACKGROUNDS = [
   "/hangar/backgrounds/bg-10.jpg",
 ];
 
-const INTERVAL = 8000;
+const DEFAULT_INTERVAL = 8000;
+
+export interface ThemeConfig {
+  backgroundType: string;
+  backgroundImages: string[] | null;
+  backgroundVideoUrl: string | null;
+  backgroundPosterUrl: string | null;
+  carouselInterval: number;
+  dimness: number;
+}
 
 interface HangarBackgroundProps {
   layout?: HangarLayout;
+  themeConfig?: ThemeConfig | null;
 }
 
-export function HangarBackground({ layout }: HangarBackgroundProps) {
+export function HangarBackground({ layout, themeConfig }: HangarBackgroundProps) {
+  const backgrounds = themeConfig?.backgroundImages?.length
+    ? themeConfig.backgroundImages
+    : DEFAULT_BACKGROUNDS;
+  const interval = themeConfig?.carouselInterval
+    ? themeConfig.carouselInterval * 1000
+    : DEFAULT_INTERVAL;
+  const dimness = themeConfig?.dimness ?? 0.6;
+  const bgType = themeConfig?.backgroundType ?? "carousel";
+
   const [idx, setIdx] = useState(0);
 
   const advance = useCallback(() => {
-    setIdx((p) => (p + 1) % BACKGROUNDS.length);
-  }, []);
+    setIdx((p) => (p + 1) % backgrounds.length);
+  }, [backgrounds.length]);
 
   useEffect(() => {
     if (layout === "DOME_GALLERY") return;
-    const t = setInterval(advance, INTERVAL);
+    if (bgType === "static" || bgType === "video") return;
+    const t = setInterval(advance, interval);
     return () => clearInterval(t);
-  }, [advance, layout]);
+  }, [advance, layout, bgType, interval]);
 
   // Dome Gallery layout: deep space background
   if (layout === "DOME_GALLERY") {
@@ -48,6 +68,68 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 z-[1]" />
+      </div>
+    );
+  }
+
+  // Video background
+  if (bgType === "video" && themeConfig?.backgroundVideoUrl) {
+    return (
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={themeConfig.backgroundPosterUrl || undefined}
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={themeConfig.backgroundVideoUrl} />
+        </video>
+
+        {/* Dimness overlay */}
+        <div
+          className="absolute inset-0 z-[1]"
+          style={{ backgroundColor: `rgba(0, 0, 0, ${dimness})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
+        <div
+          className="absolute inset-0 z-[2]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Static background
+  if (bgType === "static" && backgrounds.length > 0) {
+    return (
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+        <Image
+          src={backgrounds[0]}
+          alt=""
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+
+        {/* Dimness overlay */}
+        <div
+          className="absolute inset-0 z-[1]"
+          style={{ backgroundColor: `rgba(0, 0, 0, ${dimness})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
+        <div
+          className="absolute inset-0 z-[2]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
+          }}
+        />
       </div>
     );
   }
@@ -66,7 +148,7 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
           className="absolute inset-0"
         >
           <Image
-            src={BACKGROUNDS[idx]}
+            src={backgrounds[idx]}
             alt=""
             fill
             className="object-cover"
@@ -76,8 +158,11 @@ export function HangarBackground({ layout }: HangarBackgroundProps) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Overlay stack for readability */}
-      <div className="absolute inset-0 bg-black/60 z-[1]" />
+      {/* Dimness overlay */}
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{ backgroundColor: `rgba(0, 0, 0, ${dimness})` }}
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 z-[1]" />
       <div
         className="absolute inset-0 z-[2]"

@@ -34,7 +34,7 @@ export function ForumSearch({ initialQuery = "" }: { initialQuery?: string }) {
         type="submit"
         className="px-3 py-2 rounded-r-lg bg-gx-red/15 border border-l-0 border-forum-border text-[10px] font-bold uppercase tracking-wider text-gx-red hover:bg-gx-red/25 transition-colors"
       >
-        Scan
+        {t("forum.scan")}
       </button>
     </form>
   );

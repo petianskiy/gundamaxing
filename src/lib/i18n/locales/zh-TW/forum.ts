@@ -72,4 +72,25 @@ export const forum = {
 
   // Badge
   "forum.hot": "熱門",
+
+  // 側邊欄
+  "forum.sidebar.activePilots": "活躍駕駛員",
+  "forum.sidebar.topBuilders": "頂尖玩家",
+  "forum.sidebar.recentActivity": "最近活動",
+  "forum.sidebar.monthlyMission": "每月任務",
+  "forum.sidebar.submissions": "件投稿",
+  "forum.sidebar.timeLeft": "剩餘 {{days}}天 {{hours}}小時 {{minutes}}分",
+  "forum.sidebar.joinMission": "參加任務",
+  "forum.sidebar.likes": "按讚",
+
+  // 搜尋按鈕
+  "forum.scan": "掃描",
+
+  // 討論串認證
+  "forum.signInToCreate": "登入",
+  "forum.signInToCreateSuffix": "以建立討論串。",
+
+  // 留言連結移除
+  "forum.linkRemoved": "[連結已移除]",
+  "forum.linkRemovedTitle": "基於安全考量已移除連結",
 } as const;

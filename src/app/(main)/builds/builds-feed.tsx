@@ -220,11 +220,11 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
     });
   }
 
-  const timeRangeOptions: { value: "all" | "week" | "month" | "year"; label: string }[] = [
-    { value: "all", label: "All Time" },
-    { value: "week", label: "This Week" },
-    { value: "month", label: "This Month" },
-    { value: "year", label: "This Year" },
+  const timeRangeOptions: { value: "all" | "week" | "month" | "year"; labelKey: string }[] = [
+    { value: "all", labelKey: "builds.timeRange.all" },
+    { value: "week", labelKey: "builds.timeRange.week" },
+    { value: "month", labelKey: "builds.timeRange.month" },
+    { value: "year", labelKey: "builds.timeRange.year" },
   ];
 
   const viewOptions: { value: "grid" | "wall"; icon: typeof Grid3X3; label: string }[] = [
@@ -254,7 +254,7 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
         {/* Trending time range filter */}
         <div className="animate-page-content flex items-center gap-2 mb-4 flex-wrap">
           <Flame className="h-4 w-4 text-gx-red shrink-0" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Trending</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">{t("builds.trending")}</span>
           {timeRangeOptions.map((opt) => (
             <button
               key={opt.value}
@@ -266,7 +266,7 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
                   : "bg-card text-muted-foreground border border-border/50 hover:border-border hover:text-foreground"
               )}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>

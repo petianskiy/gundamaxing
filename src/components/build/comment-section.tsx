@@ -24,7 +24,7 @@ import type { Comment } from "@/lib/types";
 // URL detection regex — matches http(s)://, www., and bare domains ending in common TLDs
 const URL_PATTERN = /(?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
-function renderCommentContent(text: string) {
+function renderCommentContent(text: string, linkLabel: string, linkTitle: string) {
   // Split on URL matches, replace them with redacted blocks
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -41,10 +41,10 @@ function renderCommentContent(text: string) {
       <span
         key={match.index}
         className="inline-block bg-zinc-700 text-zinc-700 rounded px-1 select-none cursor-not-allowed"
-        title="Link removed for security"
+        title={linkTitle}
         aria-label="Redacted link"
       >
-        {"[link removed]"}
+        {linkLabel}
       </span>
     );
     lastIndex = match.index + match[0].length;
@@ -184,7 +184,7 @@ function CommentItem({
           </Link>
           <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
         </div>
-        <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content)}</p>
+        <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content, t("forum.linkRemoved"), t("forum.linkRemovedTitle"))}</p>
 
         {/* Action buttons */}
         <div className="flex items-center gap-3 mt-2">

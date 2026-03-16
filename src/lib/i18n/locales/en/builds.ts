@@ -103,6 +103,16 @@ export const builds = {
   "builds.toast.commentDeleted": "Comment deleted",
   "builds.confirm.deleteBuild": "Are you sure you want to delete this build? This cannot be undone.",
 
+  // Time range
+  "builds.trending": "Trending",
+  "builds.timeRange.all": "All Time",
+  "builds.timeRange.week": "This Week",
+  "builds.timeRange.month": "This Month",
+  "builds.timeRange.year": "This Year",
+
+  // Share
+  "builds.shareTitle": "Check out this build",
+
   // Sort (profile gallery)
   "builds.sort.newest": "Newest",
   "builds.sort.popular": "Popular",

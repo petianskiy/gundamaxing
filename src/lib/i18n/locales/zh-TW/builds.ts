@@ -103,6 +103,16 @@ export const builds = {
   "builds.toast.commentDeleted": "已刪除留言",
   "builds.confirm.deleteBuild": "確定要刪除此作品嗎？此操作無法復原。",
 
+  // Time range
+  "builds.trending": "熱門趨勢",
+  "builds.timeRange.all": "所有時間",
+  "builds.timeRange.week": "本週",
+  "builds.timeRange.month": "本月",
+  "builds.timeRange.year": "今年",
+
+  // Share
+  "builds.shareTitle": "看看這件作品",
+
   // Sort (profile gallery)
   "builds.sort.newest": "最新",
   "builds.sort.popular": "熱門",

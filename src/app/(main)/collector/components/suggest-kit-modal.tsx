@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { X, Send, Loader2, CheckCircle } from "lucide-react";
 import { submitKitSuggestion } from "@/lib/actions/kit-suggestion";
+import { useTranslation } from "@/lib/i18n/context";
 
 const GRADES = ["HG", "RG", "MG", "PG", "SD", "RE/100", "FM", "EG", "MGEX", "HiRM"];
 const SCALES = ["1/144", "1/100", "1/60", "Non-scale"];
@@ -14,6 +15,7 @@ interface SuggestKitModalProps {
 }
 
 export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalProps) {
+  const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -34,7 +36,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
 
     const finalSeries = seriesName === "__custom" ? customSeries.trim() : seriesName;
     if (!finalSeries) {
-      setError("Please select or enter a series name.");
+      setError(t("collector.suggestKit.seriesRequired"));
       return;
     }
 
@@ -83,10 +85,10 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div>
             <h2 className="text-lg font-bold text-foreground font-rajdhani">
-              Suggest a Kit
+              {t("collector.suggestKit.title")}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Don&apos;t see your kit here? Let us know what to add!
+              {t("collector.suggestKit.subtitle")}
             </p>
           </div>
           <button
@@ -102,15 +104,15 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
           {success ? (
             <div className="flex flex-col items-center py-8 text-center">
               <CheckCircle className="h-12 w-12 text-green-400 mb-4" />
-              <p className="text-foreground font-medium mb-1">Suggestion Submitted!</p>
+              <p className="text-foreground font-medium mb-1">{t("collector.suggestKit.success")}</p>
               <p className="text-sm text-muted-foreground mb-6">
-                Thank you! We&apos;ll review your suggestion and add it to the catalog if possible.
+                {t("collector.suggestKit.successMessage")}
               </p>
               <button
                 onClick={handleClose}
                 className="px-4 py-2 rounded-lg bg-gx-red/15 text-gx-red text-sm font-medium border border-gx-red/30 hover:bg-gx-red/25 transition-colors"
               >
-                Close
+                {t("collector.suggestKit.close")}
               </button>
             </div>
           ) : (
@@ -123,7 +125,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Kit Name <span className="text-red-400">*</span>
+                  {t("collector.suggestKit.kitName")} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -137,7 +139,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Series <span className="text-red-400">*</span>
+                  {t("collector.suggestKit.series")} <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={seriesName}
@@ -145,18 +147,18 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
                   required
                   className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
                 >
-                  <option value="">Select a series...</option>
+                  <option value="">{t("collector.suggestKit.selectSeries")}</option>
                   {seriesList.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  <option value="__custom">Other (type below)...</option>
+                  <option value="__custom">{t("collector.suggestKit.otherSeries")}</option>
                 </select>
                 {seriesName === "__custom" && (
                   <input
                     type="text"
                     value={customSeries}
                     onChange={(e) => setCustomSeries(e.target.value)}
-                    placeholder="Enter series name"
+                    placeholder={t("collector.suggestKit.enterSeries")}
                     className="w-full mt-2 px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50"
                   />
                 )}
@@ -165,7 +167,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Grade <span className="text-red-400">*</span>
+                    {t("collector.suggestKit.grade")} <span className="text-red-400">*</span>
                   </label>
                   <select
                     value={grade}
@@ -173,7 +175,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
                     required
                     className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
                   >
-                    <option value="">Select grade...</option>
+                    <option value="">{t("collector.suggestKit.selectGrade")}</option>
                     {GRADES.map((g) => (
                       <option key={g} value={g}>{g}</option>
                     ))}
@@ -182,14 +184,14 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
 
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Scale
+                    {t("collector.suggestKit.scale")}
                   </label>
                   <select
                     value={scale}
                     onChange={(e) => setScale(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground focus:outline-none focus:border-gx-red/50"
                   >
-                    <option value="">Select scale...</option>
+                    <option value="">{t("collector.suggestKit.selectScale")}</option>
                     {SCALES.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
@@ -199,7 +201,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Manufacturer / Brand
+                  {t("collector.suggestKit.manufacturer")}
                 </label>
                 <input
                   type="text"
@@ -209,20 +211,20 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
                   className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50"
                 />
                 <p className="mt-1 text-[10px] text-muted-foreground/60">
-                  For 3rd party kits, enter the brand name (e.g. Daban, SuperNova, MG Hobby)
+                  {t("collector.suggestKit.manufacturerHelper")}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Notes
+                  {t("collector.suggestKit.notes")}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
                   maxLength={500}
-                  placeholder="Any additional details, links, or context..."
+                  placeholder={t("collector.suggestKit.notesPlaceholder")}
                   className="w-full px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50 resize-none"
                 />
               </div>
@@ -237,7 +239,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                {isPending ? "Submitting..." : "Submit Suggestion"}
+                {isPending ? t("collector.suggestKit.submitting") : t("collector.suggestKit.submit")}
               </button>
             </form>
           )}

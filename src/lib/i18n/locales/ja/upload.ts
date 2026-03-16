@@ -67,4 +67,23 @@ export const upload = {
   "upload.removeImage": "削除",
   "upload.primaryBadge": "プライマリ",
   "upload.createPassport": "ビルドをアップロード",
+
+  // Status labels
+  "upload.status.WIP": "制作中",
+  "upload.status.Completed": "完成",
+  "upload.status.Abandoned": "中断",
+
+  // Description field
+  "upload.description": "説明",
+  "upload.descriptionHelper": "ビルドの背景を語ろう — インスピレーション、使用したテクニック、直面した課題など。",
+  "upload.descriptionPlaceholder": "ビルドのストーリーを共有...",
+
+  // Misc
+  "upload.optional": "任意",
+  "upload.optionalBadge": "任意",
+  "upload.deleteImage": "削除",
+  "upload.cancelDelete": "キャンセル",
+  "upload.imageUploadFailed": "画像のアップロードに失敗しました。もう一度お試しください。",
+  "upload.createFailed": "ビルドの作成に失敗しました。",
+  "upload.unexpectedError": "予期しないエラーが発生しました。",
 } as const;

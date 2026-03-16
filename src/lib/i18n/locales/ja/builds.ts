@@ -103,6 +103,16 @@ export const builds = {
   "builds.toast.commentDeleted": "コメントを削除しました",
   "builds.confirm.deleteBuild": "このビルドを削除してもよろしいですか？この操作は取り消せません。",
 
+  // Time range
+  "builds.trending": "トレンド",
+  "builds.timeRange.all": "全期間",
+  "builds.timeRange.week": "今週",
+  "builds.timeRange.month": "今月",
+  "builds.timeRange.year": "今年",
+
+  // Share
+  "builds.shareTitle": "このビルドをチェック",
+
   // Sort (profile gallery)
   "builds.sort.newest": "新しい順",
   "builds.sort.popular": "人気順",

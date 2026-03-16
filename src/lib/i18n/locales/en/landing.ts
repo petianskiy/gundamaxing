@@ -5,7 +5,7 @@ export const landing = {
   "hero.uploadBuild": "Upload a Build",
   "hero.exploreBuilds": "Explore Builds",
   "hero.buildOfWeek": "Build of the Week",
-  "featured.title": "Featured Builds",
+  "featured.title": "Latest Builds",
   "dna.title": "Every build has lineage",
   "dna.description": "Fork builds to explore variations. Track your inspiration chain. See how a single kit spawns an entire family of custom interpretations. Build DNA makes your creative lineage visible.",
   "dna.explore": "Explore build lineages",

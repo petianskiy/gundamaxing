@@ -1011,3 +1011,35 @@ model CustomTemplate {
   @@index([isActive])
   @@index([sortOrder])
 }
+
+// ─── HANGAR THEME CONFIGS ───────────────────────────────────────
+
+model HangarThemeConfig {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  slug          String   @unique
+  badgeColor    String   @default("#dc2626")
+  unlockLevel   Int      @default(1)
+
+  // Background
+  backgroundType    String  @default("carousel") // "static", "carousel", "video"
+  backgroundImages  Json?   // array of image URLs
+  backgroundVideoUrl  String?
+  backgroundPosterUrl String?
+  carouselInterval  Int     @default(8) // seconds
+  dimness           Float   @default(0.6) // 0-0.8
+
+  // Particles/Effects
+  effects       Json?   // array of { type, color, size, speed, density }
+
+  // Grid layout customization
+  gridConfig    Json?   // { topOffset, leftOffset, width, columns }
+
+  isPublished   Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isPublished])
+  @@index([sortOrder])
+}

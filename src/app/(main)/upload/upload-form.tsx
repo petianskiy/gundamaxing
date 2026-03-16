@@ -95,6 +95,7 @@ function FormField({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div>
       <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
@@ -102,7 +103,7 @@ function FormField({
         {required ? (
           <span className="text-gx-red ml-1">*</span>
         ) : (
-          <span className="ml-1.5 text-[10px] font-normal normal-case tracking-normal text-muted-foreground/40">optional</span>
+          <span className="ml-1.5 text-[10px] font-normal normal-case tracking-normal text-muted-foreground/40">{t("upload.optional")}</span>
         )}
       </label>
       {helper && <p className="text-[11px] text-muted-foreground/60 mb-2">{helper}</p>}
@@ -229,7 +230,7 @@ export function UploadForm() {
       setUploading(false);
 
       if (!uploadResult || uploadResult.length === 0) {
-        setError("Image upload failed. Please try again.");
+        setError(t("upload.imageUploadFailed"));
         return;
       }
 
@@ -262,7 +263,7 @@ export function UploadForm() {
       setSubmitting(false);
 
       if ("error" in result) {
-        setError(result.error ?? "Failed to create build.");
+        setError(result.error ?? t("upload.createFailed"));
         return;
       }
 
@@ -271,7 +272,7 @@ export function UploadForm() {
     } catch (err) {
       setUploading(false);
       setSubmitting(false);
-      setError("An unexpected error occurred.");
+      setError(t("upload.unexpectedError"));
       console.error(err);
     }
   }
@@ -383,16 +384,16 @@ export function UploadForm() {
                           : "border-border/50 bg-gx-surface text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {s}
+                      {t(`upload.status.${s}`)}
                     </button>
                   ))}
                 </div>
               </FormField>
 
-              <FormField label="Description" helper="Tell the story behind this build — what inspired you, what techniques you used, challenges you faced, etc.">
+              <FormField label={t("upload.description")} helper={t("upload.descriptionHelper")}>
                 <textarea
                   rows={4}
-                  placeholder="Share the story of your build..."
+                  placeholder={t("upload.descriptionPlaceholder")}
                   className={inputClass}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -438,7 +439,7 @@ export function UploadForm() {
                 {previews.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
-                      {previews.length} / 15 images
+                      {previews.length} / 15 {t("upload.photos").toLowerCase()}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {previews.map((preview, i) => (
@@ -478,13 +479,13 @@ export function UploadForm() {
                                 onClick={() => removeImage(i)}
                                 className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-600 text-white"
                               >
-                                Delete
+                                {t("upload.deleteImage")}
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteIndex(null)}
                                 className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-700 text-white"
                               >
-                                Cancel
+                                {t("upload.cancelDelete")}
                               </button>
                             </div>
                           ) : (
@@ -512,7 +513,7 @@ export function UploadForm() {
             title={t("upload.techniquesMaterials")}
             description={t("upload.techniquesMaterialsDesc")}
             icon={Paintbrush}
-            badge="Optional"
+            badge={t("upload.optionalBadge")}
           >
             <div className="space-y-4">
               <FormField label={t("upload.techniques")} helper={t("upload.techniquesHelper")}>
@@ -561,7 +562,7 @@ export function UploadForm() {
             title={t("upload.buildContext")}
             description={t("upload.buildContextDesc")}
             icon={FileText}
-            badge="Optional"
+            badge={t("upload.optionalBadge")}
           >
             <div className="space-y-4">
               <FormField label={t("upload.toolsUsed")} helper={t("upload.toolsHelper")}>

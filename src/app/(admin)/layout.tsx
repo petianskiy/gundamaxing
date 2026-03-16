@@ -16,6 +16,7 @@ import {
   BookOpen,
   HelpCircle,
   LayoutTemplate,
+  Palette,
 } from "lucide-react";
 
 const adminNav = [
@@ -31,6 +32,7 @@ const adminNav = [
   { href: "/admin/collector", label: "Collector", icon: BookOpen },
   { href: "/admin/guide", label: "Guide", icon: HelpCircle },
   { href: "/admin/templates", label: "Templates", icon: LayoutTemplate },
+  { href: "/admin/themes", label: "Themes", icon: Palette },
   { href: "/admin/settings", label: "Settings", icon: Settings2 },
 ];
 

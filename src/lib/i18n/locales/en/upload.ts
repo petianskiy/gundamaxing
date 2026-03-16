@@ -67,4 +67,23 @@ export const upload = {
   "upload.removeImage": "Remove",
   "upload.primaryBadge": "Primary",
   "upload.createPassport": "Upload Your Build",
+
+  // Status labels
+  "upload.status.WIP": "WIP",
+  "upload.status.Completed": "Completed",
+  "upload.status.Abandoned": "Abandoned",
+
+  // Description field
+  "upload.description": "Description",
+  "upload.descriptionHelper": "Tell the story behind this build — what inspired you, what techniques you used, challenges you faced, etc.",
+  "upload.descriptionPlaceholder": "Share the story of your build...",
+
+  // Misc
+  "upload.optional": "optional",
+  "upload.optionalBadge": "Optional",
+  "upload.deleteImage": "Delete",
+  "upload.cancelDelete": "Cancel",
+  "upload.imageUploadFailed": "Image upload failed. Please try again.",
+  "upload.createFailed": "Failed to create build.",
+  "upload.unexpectedError": "An unexpected error occurred.",
 } as const;

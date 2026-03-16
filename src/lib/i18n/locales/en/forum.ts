@@ -72,4 +72,25 @@ export const forum = {
 
   // Badge
   "forum.hot": "HOT",
+
+  // Sidebar
+  "forum.sidebar.activePilots": "Active Pilots",
+  "forum.sidebar.topBuilders": "Top Builders",
+  "forum.sidebar.recentActivity": "Recent Activity",
+  "forum.sidebar.monthlyMission": "Monthly Mission",
+  "forum.sidebar.submissions": "submissions",
+  "forum.sidebar.timeLeft": "{{days}}d {{hours}}h {{minutes}}m left",
+  "forum.sidebar.joinMission": "Join Mission",
+  "forum.sidebar.likes": "likes",
+
+  // Search button
+  "forum.scan": "Scan",
+
+  // Thread auth
+  "forum.signInToCreate": "Sign in",
+  "forum.signInToCreateSuffix": "to create a thread.",
+
+  // Comment link removal
+  "forum.linkRemoved": "[link removed]",
+  "forum.linkRemovedTitle": "Link removed for security",
 } as const;

@@ -72,4 +72,25 @@ export const forum = {
 
   // Badge
   "forum.hot": "HOT",
+
+  // サイドバー
+  "forum.sidebar.activePilots": "アクティブパイロット",
+  "forum.sidebar.topBuilders": "トップビルダー",
+  "forum.sidebar.recentActivity": "最近のアクティビティ",
+  "forum.sidebar.monthlyMission": "月間ミッション",
+  "forum.sidebar.submissions": "件の投稿",
+  "forum.sidebar.timeLeft": "残り{{days}}日{{hours}}時間{{minutes}}分",
+  "forum.sidebar.joinMission": "ミッションに参加",
+  "forum.sidebar.likes": "いいね",
+
+  // 検索ボタン
+  "forum.scan": "スキャン",
+
+  // スレッド認証
+  "forum.signInToCreate": "ログイン",
+  "forum.signInToCreateSuffix": "してスレッドを作成",
+
+  // コメントリンク除去
+  "forum.linkRemoved": "[リンク削除済]",
+  "forum.linkRemovedTitle": "セキュリティのためリンクを削除しました",
 } as const;

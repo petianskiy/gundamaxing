@@ -1,6 +1,9 @@
+"use client";
+
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { SidebarCard } from "./sidebar-card";
+import { useTranslation } from "@/lib/i18n/context";
 import type { ForumLeaderboardEntry } from "@/lib/types";
 
 const RANK_STYLES: Record<number, { color: string; label: string }> = {
@@ -19,10 +22,11 @@ function getInitials(displayName: string | null, username: string): string {
 }
 
 export function BuildersBoardCard({ entries }: { entries: ForumLeaderboardEntry[] }) {
+  const { t } = useTranslation();
   if (entries.length === 0) return null;
 
   return (
-    <SidebarCard title="Top Builders" accentColor="#d4a017">
+    <SidebarCard title={t("forum.sidebar.topBuilders")} accentColor="#d4a017">
       <div className="space-y-2">
         {entries.map((entry, i) => {
           const rank = RANK_STYLES[i];
@@ -57,7 +61,7 @@ export function BuildersBoardCard({ entries }: { entries: ForumLeaderboardEntry[
                 {entry.displayName ?? entry.username}
               </span>
               <span className="text-[10px] text-gray-600 font-share-tech-mono">
-                {entry.totalLikes.toLocaleString()} likes
+                {entry.totalLikes.toLocaleString()} {t("forum.sidebar.likes")}
               </span>
             </Link>
           );

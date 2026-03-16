@@ -5,7 +5,7 @@ export const landing = {
   "hero.uploadBuild": "上傳作品",
   "hero.exploreBuilds": "探索作品",
   "hero.buildOfWeek": "本週最佳作品",
-  "featured.title": "精選作品",
+  "featured.title": "最新作品",
   "dna.title": "每件作品都有族譜",
   "dna.description": "分支作品來探索變化。追蹤你的靈感來源。看看一款模型如何衍生出整個系列的改造作品。作品 DNA 讓你的創作族譜清晰可見。",
   "dna.explore": "探索作品族譜",

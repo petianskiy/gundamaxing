@@ -104,7 +104,7 @@ export function ActionsBar({
     const url = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Check out this build", url });
+        await navigator.share({ title: t("builds.shareTitle"), url });
       } catch {
         // User cancelled or share failed, try clipboard
         await navigator.clipboard.writeText(url);
