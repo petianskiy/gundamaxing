@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { getMyUnreadCount } from "@/lib/actions/notification";
 
+const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes (was 30 seconds)
+
 export function NotificationBell() {
   const [count, setCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const refresh = useCallback(() => {
     getMyUnreadCount().then(setCount).catch(() => {});
@@ -14,8 +17,23 @@ export function NotificationBell() {
 
   useEffect(() => {
     refresh();
-    const interval = setInterval(refresh, 30_000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(refresh, POLL_INTERVAL);
+
+    // Pause polling when tab is not visible
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      } else {
+        refresh();
+        intervalRef.current = setInterval(refresh, POLL_INTERVAL);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [refresh]);
 
   return (
