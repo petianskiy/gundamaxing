@@ -356,7 +356,7 @@ export const mockCategories: ForumCategory[] = [
   { id: "cat-2", name: "Techniques & Tutorials", description: "Learn and teach building techniques", icon: "\u{1F393}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#8b5cf6", image: "/images/categories/techniques-tutorials.webp", childCount: 6 },
   { id: "cat-3", name: "Kit Reviews", description: "In-depth reviews of Gunpla kits", icon: "\u{1F4E6}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#10b981", image: "/images/categories/kit-reviews.jpg", childCount: 0 },
   { id: "cat-4", name: "Tools & Supplies", description: "Discuss tools, paints, and supplies", icon: "\u{1F527}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#f59e0b", image: "/images/categories/tools-supplies.webp", childCount: 0 },
-  { id: "cat-5", name: "Trading Post", description: "Buy, sell, and trade kits and supplies", icon: "\u{1F4B1}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#ef4444", image: "/images/categories/trading.png", childCount: 0 },
+  { id: "cat-5", name: "Trading Post", description: "Buy, sell, and trade kits and supplies", icon: "\u{1F4B1}", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#ef4444", image: "/images/categories/trading.webp", childCount: 0 },
   { id: "cat-6", name: "Off-Topic Hangar", description: "General anime, manga, and Gundam discussion", icon: "\u2615", threadCount: 0, postCount: 0, lastActivity: "\u2014", color: "#6366f1", image: "/images/categories/off-topic.webp", childCount: 0 },
 ];
 

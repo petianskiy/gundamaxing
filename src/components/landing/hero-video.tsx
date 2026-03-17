@@ -10,6 +10,11 @@ export function HeroVideo() {
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) return;
+
+    // On slow connections, skip video to save bandwidth
+    const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+    if (conn?.effectiveType === "slow-2g" || conn?.effectiveType === "2g") return;
+
     setShowVideo(true);
   }, []);
 
@@ -32,7 +37,7 @@ export function HeroVideo() {
       muted
       loop
       playsInline
-      preload="auto"
+      preload="metadata"
       poster="/images/hero-poster.jpg"
       onError={() => setVideoFailed(true)}
       disablePictureInPicture

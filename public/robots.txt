@@ -2,10 +2,13 @@ User-agent: *
 Allow: /
 
 Disallow: /api/
+Disallow: /_next/image
 Disallow: /admin/
 Disallow: /mod/
 Disallow: /settings/
 Disallow: /notifications
 Disallow: /complete-profile
+Disallow: /bookmarks
+Disallow: /portfolio
 
 Sitemap: https://www.gundamaxing.com/sitemap.xml
