@@ -83,6 +83,156 @@ function CollapsibleSection({
   );
 }
 
+// ─── Display Crop Modal ──────────────────────────────────────────
+
+function CropModal({
+  imageUrl,
+  initialPosition,
+  onKeep,
+  onCancel,
+  onReset,
+}: {
+  imageUrl: string;
+  initialPosition: string;
+  onKeep: (position: string) => void;
+  onCancel: () => void;
+  onReset: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [cropY, setCropY] = useState(() => {
+    const parts = initialPosition.split(" ");
+    return parseInt(parts[1] || "50", 10);
+  });
+  const startYRef = useRef(0);
+  const startCropYRef = useRef(0);
+
+  // The crop box represents a 4:3 window on the full image
+  // User drags it vertically to choose which part of the image is visible on the card
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setDragging(true);
+    startYRef.current = e.clientY;
+    startCropYRef.current = cropY;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragging || !containerRef.current) return;
+    const containerH = containerRef.current.getBoundingClientRect().height;
+    const dy = e.clientY - startYRef.current;
+    const pctChange = (dy / containerH) * 100;
+    const newY = Math.max(0, Math.min(100, startCropYRef.current + pctChange));
+    setCropY(Math.round(newY));
+  };
+
+  const handlePointerUp = () => {
+    setDragging(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[900] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 overflow-hidden max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+          <span className="text-sm font-medium text-white">Display crop</span>
+          <button onClick={onCancel} className="text-zinc-400 hover:text-white p-1">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Image with crop overlay */}
+        <div
+          ref={containerRef}
+          className="relative cursor-ns-resize select-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          style={{ touchAction: "none" }}
+        >
+          <img
+            src={imageUrl}
+            alt="Crop preview"
+            className="w-full"
+            draggable={false}
+          />
+
+          {/* Dimmed areas outside crop */}
+          <div
+            className="absolute inset-x-0 top-0 bg-black/50 pointer-events-none transition-all"
+            style={{ height: `${Math.max(0, cropY - 20)}%` }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 bg-black/50 pointer-events-none transition-all"
+            style={{ height: `${Math.max(0, 100 - cropY - 20)}%` }}
+          />
+
+          {/* Crop rectangle with grid lines */}
+          <div
+            className="absolute inset-x-0 border-2 border-white/70 pointer-events-none transition-all"
+            style={{ top: `${Math.max(0, cropY - 20)}%`, bottom: `${Math.max(0, 100 - cropY - 20)}%` }}
+          >
+            {/* Rule of thirds grid */}
+            <div className="absolute inset-0">
+              <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30" />
+              <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30" />
+              <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30" />
+              <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30" />
+            </div>
+
+            {/* Corner handles */}
+            <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-white" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-white" />
+            <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white" />
+
+            {/* Drag handle dots */}
+            <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-0.5 w-1 h-6 rounded-full bg-white/80" />
+            <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-0.5 w-1 h-6 rounded-full bg-white/80" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-0.5 w-6 h-1 rounded-full bg-white/80" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-0.5 w-6 h-1 rounded-full bg-white/80" />
+          </div>
+
+          {/* Crosshair cursor indicator */}
+          <div
+            className="absolute w-4 h-4 pointer-events-none z-10"
+            style={{
+              left: "50%",
+              top: `${cropY}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div className="w-full h-px bg-white/50 absolute top-1/2" />
+            <div className="h-full w-px bg-white/50 absolute left-1/2" />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-zinc-700">
+          <button
+            onClick={onReset}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white transition-colors"
+          >
+            <span className="text-sm">↺</span> return
+          </button>
+          <button
+            onClick={onCancel}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium border border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+          >
+            cancel
+          </button>
+          <button
+            onClick={() => onKeep(`50% ${cropY}%`)}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+          >
+            keep
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormField({
   label,
   helper,
@@ -190,6 +340,7 @@ export function UploadForm() {
   }, []);
 
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
+  const [cropIndex, setCropIndex] = useState<number | null>(null);
 
   function removeImage(index: number) {
     setPreviews((prev) => {
@@ -475,31 +626,25 @@ export function UploadForm() {
                   />
                 </div>
 
-                {/* Image preview grid — card-style */}
+                {/* Image preview grid */}
                 {previews.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-3">
                       {previews.length} / 15 {t("upload.photos").toLowerCase()}
-                      <span className="ml-2 text-muted-foreground/50">
-                        — Click to set focal point &amp; cover image
-                      </span>
+                      <span className="ml-2 text-muted-foreground/50">— Tap to set as cover, long-press to crop</span>
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {previews.map((preview, i) => (
                         <div
                           key={preview.url}
                           className={cn(
-                            "relative aspect-[4/3] rounded-xl overflow-hidden border-2 cursor-crosshair group transition-all",
+                            "relative aspect-square rounded-lg overflow-hidden border-2 group transition-all cursor-pointer",
                             i === primaryIndex
-                              ? "border-gx-red shadow-[0_0_12px_rgba(220,38,38,0.3)]"
+                              ? "border-gx-red shadow-[0_0_10px_rgba(220,38,38,0.3)]"
                               : "border-zinc-700/50 hover:border-zinc-500"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                            const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                            setFocalPoints((prev) => ({ ...prev, [i]: `${x}% ${y}%` }));
                             setPrimaryIndex(i);
                           }}
                         >
@@ -510,93 +655,110 @@ export function UploadForm() {
                             style={{ objectPosition: focalPoints[i] || "50% 50%" }}
                           />
 
-                          {/* Focal point dot indicator */}
-                          {focalPoints[i] && (
-                            <div
-                              className="absolute w-3 h-3 rounded-full bg-gx-red ring-2 ring-white shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
-                              style={{
-                                left: focalPoints[i].split(" ")[0],
-                                top: focalPoints[i].split(" ")[1],
-                              }}
-                            />
-                          )}
-
-                          {/* Hover hint when no focal point set */}
-                          {!focalPoints[i] && (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/20">
-                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md backdrop-blur-sm">
-                                Click to set focal point
-                              </span>
+                          {/* Crop indicator */}
+                          {focalPoints[i] && focalPoints[i] !== "50% 50%" && (
+                            <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded text-[7px] font-medium bg-blue-500/80 text-white">
+                              Cropped
                             </div>
                           )}
 
-                          {/* COVER badge on primary */}
+                          {/* COVER badge */}
                           {i === primaryIndex && (
-                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-gx-red text-white">
-                              COVER
+                            <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider bg-gx-red text-white">
+                              Cover
                             </div>
                           )}
 
-                          {/* Number badge */}
-                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/70 text-[9px] font-bold text-white flex items-center justify-center">
+                          {/* Number */}
+                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-black/60 text-[8px] font-bold text-white flex items-center justify-center">
                             {i + 1}
                           </div>
 
-                          {/* Delete button */}
-                          {confirmDeleteIndex === i ? (
-                            <div
-                              className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-center gap-1 z-10"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onClick={() => removeImage(i)}
-                                className="px-2 py-1 rounded text-[9px] font-bold bg-red-600 text-white"
-                              >
-                                {t("upload.deleteImage")}
-                              </button>
-                              <button
-                                onClick={() => setConfirmDeleteIndex(null)}
-                                className="px-2 py-1 rounded text-[9px] font-bold bg-zinc-700 text-white"
-                              >
-                                {t("upload.cancelDelete")}
-                              </button>
-                            </div>
-                          ) : (
+                          {/* Action buttons on hover */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setConfirmDeleteIndex(i);
+                                setCropIndex(i);
                               }}
-                              className="absolute bottom-1.5 right-1.5 z-10 p-1 rounded-full bg-black/50 text-white hover:bg-red-600 transition-colors backdrop-blur-sm opacity-0 group-hover:opacity-100"
+                              className="px-2 py-1 rounded text-[9px] font-bold bg-white/90 text-black hover:bg-white"
                             >
-                              <X className="h-3 w-3" />
+                              Crop
                             </button>
-                          )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirmDeleteIndex === i) {
+                                  removeImage(i);
+                                } else {
+                                  setConfirmDeleteIndex(i);
+                                  setTimeout(() => setConfirmDeleteIndex(null), 2000);
+                                }
+                              }}
+                              className={cn(
+                                "px-2 py-1 rounded text-[9px] font-bold",
+                                confirmDeleteIndex === i
+                                  ? "bg-red-600 text-white"
+                                  : "bg-white/90 text-black hover:bg-white"
+                              )}
+                            >
+                              {confirmDeleteIndex === i ? "Confirm" : "Delete"}
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
 
-                    {/* Card Preview — shows how cover image will appear on a build card */}
+                    {/* Card Preview */}
                     {primaryIndex !== null && previews[primaryIndex] && (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs text-muted-foreground">Card Preview</p>
-                        <div className="w-48 rounded-xl border border-border/50 bg-card overflow-hidden">
-                          <div className="aspect-[4/3] overflow-hidden">
-                            <img
-                              src={previews[primaryIndex].url}
-                              alt="Card preview"
-                              className="w-full h-full object-cover"
-                              style={{ objectPosition: focalPoints[primaryIndex] || "50% 50%" }}
-                            />
-                          </div>
-                          <div className="p-2">
-                            <p className="text-[10px] font-medium text-foreground truncate">{title || "Build Title"}</p>
-                            <p className="text-[9px] text-muted-foreground truncate">{kitName || "Kit Name"}</p>
+                      <div className="mt-4 flex items-start gap-3">
+                        <div className="w-36 shrink-0">
+                          <p className="text-[10px] text-muted-foreground mb-1.5">Card Preview</p>
+                          <div className="rounded-lg border border-border/50 bg-card overflow-hidden">
+                            <div className="aspect-[4/3] overflow-hidden">
+                              <img
+                                src={previews[primaryIndex].url}
+                                alt="Card preview"
+                                className="w-full h-full object-cover"
+                                style={{ objectPosition: focalPoints[primaryIndex] || "50% 50%" }}
+                              />
+                            </div>
+                            <div className="p-1.5">
+                              <p className="text-[9px] font-medium text-foreground truncate">{title || "Build Title"}</p>
+                              <p className="text-[8px] text-muted-foreground truncate">{kitName || "Kit Name"}</p>
+                            </div>
                           </div>
                         </div>
+                        <button
+                          onClick={() => setCropIndex(primaryIndex)}
+                          className="mt-6 px-3 py-1.5 rounded-lg border border-border/50 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                        >
+                          Adjust crop
+                        </button>
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Display Crop Modal */}
+                {cropIndex !== null && previews[cropIndex] && (
+                  <CropModal
+                    imageUrl={previews[cropIndex].url}
+                    initialPosition={focalPoints[cropIndex] || "50% 50%"}
+                    onKeep={(pos) => {
+                      setFocalPoints((prev) => ({ ...prev, [cropIndex!]: pos }));
+                      setCropIndex(null);
+                    }}
+                    onCancel={() => setCropIndex(null)}
+                    onReset={() => {
+                      setFocalPoints((prev) => {
+                        const next = { ...prev };
+                        delete next[cropIndex!];
+                        return next;
+                      });
+                      setCropIndex(null);
+                    }}
+                  />
                 )}
               </FormField>
             </div>
