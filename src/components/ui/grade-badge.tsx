@@ -2,7 +2,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Grade } from "@/lib/types";
 
-const gradeEmblem: Record<Grade, string> = {
+const gradeEmblem: Partial<Record<Grade, string>> = {
   HG: "/images/grades/hg.jpg",
   RG: "/images/grades/rg.jpg",
   MG: "/images/grades/mg.jpg",

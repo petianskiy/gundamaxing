@@ -10,6 +10,20 @@ import { TechniqueChip } from "@/components/ui/technique-chip";
 import { GradeBadge } from "@/components/ui/grade-badge";
 import type { Build } from "@/lib/types";
 
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1d ago";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+  return `${Math.floor(diffDays / 365)}y ago`;
+}
+
 export function BuildCard({ build }: { build: Build }) {
   const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
   const shownTechniques = build.techniques.slice(0, 2);
@@ -92,25 +106,31 @@ export function BuildCard({ build }: { build: Build }) {
 
           {/* Footer — pinned to bottom */}
           <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">
-            {/* User */}
-            <Link
-              href={`/u/${build.userHandle}`}
-              className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative w-[18px] h-[18px] rounded-full overflow-hidden shrink-0">
-                <Image
-                  src={build.userAvatar}
-                  alt={build.username}
-                  fill
-                  sizes="18px"
-                  className="object-cover"
-                />
-              </div>
-              <span className="text-xs text-muted-foreground truncate">
-                {build.username}
+            {/* User + Date */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Link
+                href={`/u/${build.userHandle}`}
+                className="flex items-center gap-1.5 min-w-0 hover:opacity-80 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative w-[18px] h-[18px] rounded-full overflow-hidden shrink-0">
+                  <Image
+                    src={build.userAvatar}
+                    alt={build.username}
+                    fill
+                    sizes="18px"
+                    className="object-cover"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground truncate">
+                  {build.username}
+                </span>
+              </Link>
+              <span className="text-[10px] text-muted-foreground/50">&middot;</span>
+              <span className="text-[10px] text-muted-foreground/60 shrink-0">
+                {formatRelativeDate(build.createdAt)}
               </span>
-            </Link>
+            </div>
 
             {/* Stats */}
             <div className="flex items-center gap-3 text-muted-foreground shrink-0">

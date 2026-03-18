@@ -13,9 +13,7 @@ import {
   FileText,
   Upload,
   X,
-  Star,
   Loader2,
-  Crosshair,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -112,6 +110,19 @@ function FormField({
     </div>
   );
 }
+
+const GRADE_SCALE_MAP: Record<string, string> = {
+  HG: "1/144",
+  RG: "1/144",
+  EG: "1/144",
+  MG: "1/100",
+  MGEX: "1/100",
+  FM: "1/100",
+  HiRM: "1/100",
+  "RE/100": "1/60",
+  PG: "1/60",
+  SD: "Non-scale",
+};
 
 const inputClass =
   "w-full px-3 py-2.5 rounded-lg border border-border/50 bg-gx-surface text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 transition-colors";
@@ -355,7 +366,12 @@ export function UploadForm() {
                   <select
                     className={selectClass}
                     value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
+                    onChange={(e) => {
+                      const newGrade = e.target.value;
+                      setGrade(newGrade);
+                      const autoScale = GRADE_SCALE_MAP[newGrade];
+                      if (autoScale) setScale(autoScale);
+                    }}
                   >
                     <option value="" disabled>{t("upload.selectGrade")}</option>
                     {filterConfig.grades.map((g) => (
@@ -366,15 +382,19 @@ export function UploadForm() {
 
                 <FormField label={t("upload.scale")}>
                   <select
-                    className={selectClass}
+                    className={cn(selectClass, !!GRADE_SCALE_MAP[grade] && "opacity-60 cursor-not-allowed")}
                     value={scale}
                     onChange={(e) => setScale(e.target.value)}
+                    disabled={!!GRADE_SCALE_MAP[grade]}
                   >
                     <option value="" disabled>{t("upload.selectScale")}</option>
                     {filterConfig.scales.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  {!!GRADE_SCALE_MAP[grade] && (
+                    <p className="text-[10px] text-muted-foreground/50 mt-1">Auto-set from grade</p>
+                  )}
                 </FormField>
               </div>
 
@@ -455,24 +475,24 @@ export function UploadForm() {
                   />
                 </div>
 
-                {/* Image preview grid */}
+                {/* Image preview grid — card-style */}
                 {previews.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-xs text-muted-foreground mb-2">
+                    <p className="text-xs text-muted-foreground mb-3">
                       {previews.length} / 15 {t("upload.photos").toLowerCase()}
                       <span className="ml-2 text-muted-foreground/50">
-                        — Tap image to set cover, click within to set focal point
+                        — Click to set focal point &amp; cover image
                       </span>
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {previews.map((preview, i) => (
                         <div
                           key={preview.url}
                           className={cn(
-                            "relative aspect-square rounded-lg overflow-hidden border-2 transition-colors cursor-crosshair group",
+                            "relative aspect-[4/3] rounded-xl overflow-hidden border-2 cursor-crosshair group transition-all",
                             i === primaryIndex
-                              ? "border-gx-red"
-                              : "border-transparent hover:border-border"
+                              ? "border-gx-red shadow-[0_0_12px_rgba(220,38,38,0.3)]"
+                              : "border-zinc-700/50 hover:border-zinc-500"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -490,50 +510,53 @@ export function UploadForm() {
                             style={{ objectPosition: focalPoints[i] || "50% 50%" }}
                           />
 
-                          {/* Focal point crosshair indicator */}
+                          {/* Focal point dot indicator */}
                           {focalPoints[i] && (
                             <div
-                              className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
+                              className="absolute w-3 h-3 rounded-full bg-gx-red ring-2 ring-white shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
                               style={{
                                 left: focalPoints[i].split(" ")[0],
                                 top: focalPoints[i].split(" ")[1],
                               }}
-                            >
-                              <Crosshair className="w-5 h-5 text-white drop-shadow-[0_0_3px_rgba(0,0,0,0.9)]" />
-                            </div>
+                            />
                           )}
 
-                          {/* Focal point hint (show on hover when no focal point set) */}
+                          {/* Hover hint when no focal point set */}
                           {!focalPoints[i] && (
-                            <div className="absolute inset-0 flex items-end justify-center pb-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/20">
+                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md backdrop-blur-sm">
                                 Click to set focal point
                               </span>
                             </div>
                           )}
 
-                          {/* Primary badge */}
+                          {/* COVER badge on primary */}
                           {i === primaryIndex && (
-                            <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-gx-red text-white">
-                              {t("upload.primaryBadge")}
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-gx-red text-white">
+                              COVER
                             </div>
                           )}
 
-                          {/* Delete button — always visible in corner */}
+                          {/* Number badge */}
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/70 text-[9px] font-bold text-white flex items-center justify-center">
+                            {i + 1}
+                          </div>
+
+                          {/* Delete button */}
                           {confirmDeleteIndex === i ? (
                             <div
-                              className="absolute top-1 right-1 flex items-center gap-1 z-10"
+                              className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-center gap-1 z-10"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
                                 onClick={() => removeImage(i)}
-                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-600 text-white"
+                                className="px-2 py-1 rounded text-[9px] font-bold bg-red-600 text-white"
                               >
                                 {t("upload.deleteImage")}
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteIndex(null)}
-                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-zinc-700 text-white"
+                                className="px-2 py-1 rounded text-[9px] font-bold bg-zinc-700 text-white"
                               >
                                 {t("upload.cancelDelete")}
                               </button>
@@ -544,14 +567,35 @@ export function UploadForm() {
                                 e.stopPropagation();
                                 setConfirmDeleteIndex(i);
                               }}
-                              className="absolute top-1 right-1 z-10 p-1 rounded-full bg-black/50 text-white hover:bg-red-600 transition-colors backdrop-blur-sm"
+                              className="absolute bottom-1.5 right-1.5 z-10 p-1 rounded-full bg-black/50 text-white hover:bg-red-600 transition-colors backdrop-blur-sm opacity-0 group-hover:opacity-100"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <X className="h-3 w-3" />
                             </button>
                           )}
                         </div>
                       ))}
                     </div>
+
+                    {/* Card Preview — shows how cover image will appear on a build card */}
+                    {primaryIndex !== null && previews[primaryIndex] && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-xs text-muted-foreground">Card Preview</p>
+                        <div className="w-48 rounded-xl border border-border/50 bg-card overflow-hidden">
+                          <div className="aspect-[4/3] overflow-hidden">
+                            <img
+                              src={previews[primaryIndex].url}
+                              alt="Card preview"
+                              className="w-full h-full object-cover"
+                              style={{ objectPosition: focalPoints[primaryIndex] || "50% 50%" }}
+                            />
+                          </div>
+                          <div className="p-2">
+                            <p className="text-[10px] font-medium text-foreground truncate">{title || "Build Title"}</p>
+                            <p className="text-[9px] text-muted-foreground truncate">{kitName || "Kit Name"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </FormField>

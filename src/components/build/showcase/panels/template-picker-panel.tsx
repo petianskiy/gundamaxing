@@ -701,6 +701,18 @@ const TEMPLATE_CATEGORIES: Record<string, LayoutTemplate[]> = {
   "With Text": WITH_TEXT_TEMPLATES,
 };
 
+/** Flat list of all built-in templates (exported for template-chooser-overlay) */
+export const TEMPLATES: LayoutTemplate[] = [
+  ...BASIC_TEMPLATES,
+  ...MAGAZINE_TEMPLATES,
+  ...CREATIVE_TEMPLATES,
+  ...MULTI_TEMPLATES,
+  ...WITH_TEXT_TEMPLATES,
+];
+
+export { CATEGORIES };
+export type { LayoutTemplate };
+
 // ---------------------------------------------------------------------------
 // Custom template conversion
 // ---------------------------------------------------------------------------

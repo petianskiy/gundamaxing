@@ -1,7 +1,7 @@
 import { FilterConfig } from "../types";
 
 export const filterConfig: FilterConfig = {
-  grades: ["HG", "RG", "MG", "PG", "SD", "RE/100", "FM", "EG", "MGEX", "HiRM"],
+  grades: ["HG", "RG", "MG", "PG", "SD", "RE/100", "FM", "EG", "MGEX", "HiRM", "No grade"],
   timelines: [
     "Universal Century",
     "Cosmic Era",

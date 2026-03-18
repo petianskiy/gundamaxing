@@ -1,4 +1,4 @@
-export type Grade = "HG" | "RG" | "MG" | "PG" | "SD" | "RE/100" | "FM" | "EG" | "MGEX" | "HiRM";
+export type Grade = "HG" | "RG" | "MG" | "PG" | "SD" | "RE/100" | "FM" | "EG" | "MGEX" | "HiRM" | "No grade";
 
 export type Timeline =
   | "Universal Century"

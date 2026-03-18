@@ -13,6 +13,7 @@ import { LayersPanel } from "./panels/layers-panel";
 import { EffectsPanel } from "./panels/effects-panel";
 import { ShapePickerPanel } from "./panels/shape-picker-panel";
 import { TemplatePickerPanel } from "./panels/template-picker-panel";
+import { TemplateChooserOverlay } from "./template-chooser-overlay";
 import { DrawingOverlay } from "./drawing/drawing-overlay";
 import type { DrawingOverlayHandle } from "./drawing/drawing-overlay";
 import { EditorGuideOverlay } from "./editor-guide-overlay";
@@ -200,6 +201,9 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const [isSaving, setIsSaving] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
   const [showEditorGuide, setShowEditorGuide] = useState(false);
+  const [showTemplateChooser, setShowTemplateChooser] = useState(
+    () => safeInitial.elements.length === 0 && build.images.length > 0,
+  );
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
 
   // Multi-page state
@@ -1782,6 +1786,22 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
         maxVideos={MAX_VIDEOS}
       />
       </div>
+
+      {/* Template chooser overlay (first-time empty canvas) */}
+      {showTemplateChooser && (
+        <TemplateChooserOverlay
+          buildImages={buildImages}
+          onApply={(elements) => {
+            dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
+            setShowTemplateChooser(false);
+            setShowEditorGuide(true);
+          }}
+          onSkip={() => {
+            setShowTemplateChooser(false);
+            setShowEditorGuide(true);
+          }}
+        />
+      )}
 
       {/* Editor guide overlay (manual trigger) */}
       {showEditorGuide && (
