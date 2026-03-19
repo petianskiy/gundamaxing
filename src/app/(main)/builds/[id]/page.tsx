@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string; guide?: string }>;
+  searchParams: Promise<{ edit?: string; guide?: string; tpl?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -62,6 +62,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
   const isOwner = currentUserId === build.userId;
   const wantsEdit = sp.edit === "1";
   const wantsGuide = sp.guide === "1";
+  const templateId = sp.tpl || null;
 
   // Fetch engagement status if logged in
   const [isLiked, isBookmarked, likedCommentIds] = currentUserId
@@ -102,6 +103,7 @@ export default async function BuildPage({ params, searchParams }: Props) {
         startEditing={wantsEdit && isOwner}
         showGuide={showGuide}
         userLevel={userLevel}
+        initialTemplateId={templateId}
       />
     );
   }

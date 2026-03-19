@@ -5,7 +5,7 @@ import { X, ChevronLeft, ChevronRight, Sparkles, LayoutGrid } from "lucide-react
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { TEMPLATES, CATEGORIES, type LayoutTemplate } from "./panels/template-picker-panel";
-import type { BuildImage, ShowcaseElement } from "@/lib/types";
+import type { BuildImage } from "@/lib/types";
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ const FREESTYLE_TEMPLATE: LayoutTemplate = {
 // ─── Grid Icon ──────────────────────────────────────────────────
 
 function GridIcon({ template, active }: { template: LayoutTemplate; active: boolean }) {
-  const stroke = active ? "#f97316" : "rgba(255,255,255,0.35)";
+  const stroke = active ? "#dc2626" : "rgba(255,255,255,0.35)";
   const fill = active ? "rgba(249,115,22,0.08)" : "none";
 
   // Freestyle gets a special icon
@@ -153,7 +153,7 @@ const DISPLAY_CATEGORIES = ["Recommended", ...SUPPORTED_CATEGORIES] as const;
 
 interface TemplateChooserOverlayProps {
   buildImages: BuildImage[];
-  onApply: (elements: ShowcaseElement[], locked: boolean) => void;
+  onApply: (templateId: string) => void;
   onSkip: () => void;
 }
 
@@ -194,11 +194,11 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
   const handleApply = useCallback(() => {
     if (!selected) return;
     if (selected.id === "__freestyle__") {
-      onSkip(); // Freestyle = skip to blank canvas
+      onSkip();
       return;
     }
-    onApply(selected.generate(buildImages), false);
-  }, [selected, buildImages, onApply, onSkip]);
+    onApply(selected.id);
+  }, [selected, onApply, onSkip]);
 
   const scrollToSelected = useCallback((id: string) => {
     if (!railRef.current) return;
@@ -240,16 +240,22 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
         "fixed inset-0 z-[800] flex flex-col transition-all duration-500 ease-out",
         visible ? "opacity-100" : "opacity-0 translate-y-4",
       )}
-      style={{ background: "linear-gradient(180deg, #0a0a0f 0%, #111118 50%, #0d0d14 100%)" }}
+      style={{ background: "#09090b" }}
     >
-      {/* Decorative ambient glow */}
+      {/* Background image + darken */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none"
+        style={{ backgroundImage: "url('/images/builds-bg.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-black/70 pointer-events-none" />
+
+      {/* Subtle red accent glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gx-red/[0.03] blur-[100px] rounded-full" />
-        <div className="absolute bottom-0 left-1/4 w-[400px] h-[200px] bg-blue-500/[0.02] blur-[80px] rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[250px] bg-gx-red/[0.04] blur-[120px] rounded-full" />
       </div>
 
       {/* ── Top Bar ── */}
-      <div className="relative flex items-center justify-between px-4 py-3 shrink-0">
+      <div className="relative flex items-center justify-between px-4 shrink-0" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
         <button
           onClick={onSkip}
           className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-xs min-w-[60px]"
@@ -366,7 +372,7 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
                   <div
                     className={cn(
                       "aspect-square rounded-lg transition-all",
-                      isActive ? "ring-2 ring-orange-500 ring-offset-1 ring-offset-[#0d0d14]" : "",
+                      isActive ? "ring-2 ring-gx-red ring-offset-1 ring-offset-[#09090b]" : "",
                     )}
                   >
                     <GridIcon template={template} active={isActive} />

@@ -14,6 +14,7 @@ import { BuildCard } from "@/components/build/build-card";
 import { ShowcaseCanvas } from "./showcase-canvas";
 import { ShowcaseEditor } from "./showcase-editor";
 import { EditorGuideOverlay } from "./editor-guide-overlay";
+import { TEMPLATES } from "./panels/template-picker-panel";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
 import { updateBuildInfo, updateImagePosition } from "@/lib/actions/build";
@@ -256,18 +257,27 @@ interface ShowcasePageProps {
   startEditing?: boolean;
   showGuide?: boolean;
   userLevel?: number;
+  initialTemplateId?: string | null;
 }
 
-export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing, showGuide, userLevel = 1 }: ShowcasePageProps) {
+export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId, isLiked, isBookmarked, likedCommentIds, startEditing, showGuide, userLevel = 1, initialTemplateId }: ShowcasePageProps) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(!!startEditing);
   const isOwner = currentUserId === build.userId;
   const hasExistingLayout = !!build.showcaseLayout;
-  const layout = hasExistingLayout
-    ? (build.showcaseLayout as ShowcaseLayout)
-    : build.images.length > 0
-      ? generateInitialLayout(build.images)
-      : DEFAULT_LAYOUT;
+  const layout = (() => {
+    if (hasExistingLayout) return build.showcaseLayout as ShowcaseLayout;
+    // If a template was selected in the Design Studio, use it
+    if (initialTemplateId && initialTemplateId !== "__freestyle__" && build.images.length > 0) {
+      const tpl = TEMPLATES.find((t) => t.id === initialTemplateId);
+      if (tpl) {
+        const elements = tpl.generate(build.images);
+        return { ...DEFAULT_LAYOUT, elements };
+      }
+    }
+    // Default: auto-generate grid from images
+    return build.images.length > 0 ? generateInitialLayout(build.images) : DEFAULT_LAYOUT;
+  })();
   const pages = normalizePages(layout);
 
   // Editor guide state: show only if server says to AND localStorage hasn't dismissed it

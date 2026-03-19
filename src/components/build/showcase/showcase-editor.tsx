@@ -12,7 +12,7 @@ import { ElementPropsPanel } from "./panels/element-props-panel";
 import { LayersPanel } from "./panels/layers-panel";
 import { EffectsPanel } from "./panels/effects-panel";
 import { ShapePickerPanel } from "./panels/shape-picker-panel";
-import { TemplatePickerPanel } from "./panels/template-picker-panel";
+import { TemplatePickerPanel, TEMPLATES } from "./panels/template-picker-panel";
 import { TemplateChooserOverlay } from "./template-chooser-overlay";
 import { DrawingOverlay } from "./drawing/drawing-overlay";
 import type { DrawingOverlayHandle } from "./drawing/drawing-overlay";
@@ -1804,8 +1804,12 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1, is
       {showTemplateChooser && (
         <TemplateChooserOverlay
           buildImages={buildImages}
-          onApply={(elements) => {
-            dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
+          onApply={(templateId) => {
+            const tpl = TEMPLATES.find((t) => t.id === templateId);
+            if (tpl) {
+              const elements = tpl.generate(buildImages);
+              dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
+            }
             setShowTemplateChooser(false);
             setShowEditorGuide(true);
           }}

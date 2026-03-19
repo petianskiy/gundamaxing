@@ -474,7 +474,8 @@ export function UploadForm() {
       }
 
       const guideParam = result.isFirstBuild ? "&guide=1" : "";
-      router.push(`/builds/${result.slug}?edit=1${guideParam}`);
+      const tplParam = templateId ? `&tpl=${encodeURIComponent(templateId)}` : "";
+      router.push(`/builds/${result.slug}?edit=1${guideParam}${tplParam}`);
     } catch (err) {
       setSubmitting(false);
       setError(t("upload.unexpectedError"));
@@ -497,8 +498,8 @@ export function UploadForm() {
       <>
         <TemplateChooserOverlay
           buildImages={buildImagesForChooser}
-          onApply={() => {
-            finalizeUpload(null, false);
+          onApply={(templateId) => {
+            finalizeUpload(templateId, false);
           }}
           onSkip={() => {
             finalizeUpload(null, false);
