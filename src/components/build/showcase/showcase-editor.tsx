@@ -185,9 +185,10 @@ interface ShowcaseEditorProps {
   initialLayout: ShowcaseLayout;
   onExit: () => void;
   userLevel?: number;
+  isNewBuild?: boolean;
 }
 
-export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: ShowcaseEditorProps) {
+export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1, isNewBuild = false }: ShowcaseEditorProps) {
   // Migrate old layouts (fontSize enum→number, fontWeight→bold, etc.)
   const safeInitial = migrateShowcaseLayout(initialLayout);
 
@@ -202,7 +203,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
   const [showDrawing, setShowDrawing] = useState(false);
   const [showEditorGuide, setShowEditorGuide] = useState(false);
   const [showTemplateChooser, setShowTemplateChooser] = useState(
-    () => safeInitial.elements.length === 0 && build.images.length > 0,
+    () => isNewBuild || (safeInitial.elements.length === 0 && build.images.length > 0),
   );
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
