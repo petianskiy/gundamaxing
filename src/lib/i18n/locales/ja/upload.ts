@@ -68,6 +68,27 @@ export const upload = {
   "upload.primaryBadge": "プライマリ",
   "upload.createPassport": "ビルドをアップロード",
 
+  // Design Studio
+  "studio.label": "デザインスタジオ",
+  "studio.title": "レイアウトを選択",
+  "studio.apply": "適用",
+  "studio.skip": "スキップ",
+  "studio.skipBlank": "スキップ — 白紙のキャンバスで開始",
+  "studio.selectPrompt": "下からレイアウトを選択",
+  "studio.freestyle": "フリースタイル",
+  "studio.freestyleDesc": "グリッドなしで画像を自由に配置 — 完全な創造的コントロール",
+  "studio.freestyleHint": "白紙キャンバス",
+  "studio.photoSingular": "1枚",
+  "studio.photoPlural": "{{count}}枚",
+  "studio.text": "テキスト",
+  "studio.category.recommended": "おすすめ",
+  "studio.category.basic": "基本",
+  "studio.category.magazine": "マガジン",
+  "studio.category.creative": "クリエイティブ",
+  "studio.category.multi": "マルチ",
+  "studio.category.withtext": "テキスト付き",
+  "studio.category.mosaic": "モザイク",
+
   // Status labels
   "upload.status.WIP": "制作中",
   "upload.status.Completed": "完成",

@@ -68,6 +68,27 @@ export const upload = {
   "upload.primaryBadge": "Primary",
   "upload.createPassport": "Upload Your Build",
 
+  // Design Studio (template chooser step)
+  "studio.label": "Design Studio",
+  "studio.title": "Choose Your Layout",
+  "studio.apply": "Apply",
+  "studio.skip": "Skip",
+  "studio.skipBlank": "Skip — start with blank canvas",
+  "studio.selectPrompt": "Select a layout below",
+  "studio.freestyle": "Freestyle",
+  "studio.freestyleDesc": "Place images freely on a blank canvas — no grid, full creative control",
+  "studio.freestyleHint": "Blank canvas",
+  "studio.photoSingular": "1 photo",
+  "studio.photoPlural": "{{count}} photos",
+  "studio.text": "text",
+  "studio.category.recommended": "Recommended",
+  "studio.category.basic": "Basic",
+  "studio.category.magazine": "Magazine",
+  "studio.category.creative": "Creative",
+  "studio.category.multi": "Multi",
+  "studio.category.withtext": "With Text",
+  "studio.category.mosaic": "Mosaic",
+
   // Status labels
   "upload.status.WIP": "WIP",
   "upload.status.Completed": "Completed",

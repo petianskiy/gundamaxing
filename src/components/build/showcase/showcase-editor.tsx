@@ -1804,17 +1804,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1, is
       {showTemplateChooser && (
         <TemplateChooserOverlay
           buildImages={buildImages}
-          onApply={(elements, templateLocked) => {
+          onApply={(elements) => {
             dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
-            // When template is locked, lock all placed elements
-            if (templateLocked) {
-              const ids = elements.map((el) => el.id);
-              setLockedIds((prev) => {
-                const next = new Set(prev);
-                for (const id of ids) next.add(id);
-                return next;
-              });
-            }
             setShowTemplateChooser(false);
             setShowEditorGuide(true);
           }}

@@ -497,10 +497,8 @@ export function UploadForm() {
       <>
         <TemplateChooserOverlay
           buildImages={buildImagesForChooser}
-          onApply={(_elements, locked) => {
-            // We don't use the generated elements here — the editor will regenerate them.
-            // Instead we store the locked state and finalize.
-            finalizeUpload(null, locked);
+          onApply={() => {
+            finalizeUpload(null, false);
           }}
           onSkip={() => {
             finalizeUpload(null, false);

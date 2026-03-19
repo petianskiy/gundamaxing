@@ -68,6 +68,27 @@ export const upload = {
   "upload.primaryBadge": "主圖",
   "upload.createPassport": "上傳你的作品",
 
+  // Design Studio
+  "studio.label": "設計工作室",
+  "studio.title": "選擇版面配置",
+  "studio.apply": "套用",
+  "studio.skip": "跳過",
+  "studio.skipBlank": "跳過 — 從空白畫布開始",
+  "studio.selectPrompt": "從下方選擇版面配置",
+  "studio.freestyle": "自由模式",
+  "studio.freestyleDesc": "在空白畫布上自由放置圖片 — 無網格，完全創意控制",
+  "studio.freestyleHint": "空白畫布",
+  "studio.photoSingular": "1 張照片",
+  "studio.photoPlural": "{{count}} 張照片",
+  "studio.text": "文字",
+  "studio.category.recommended": "推薦",
+  "studio.category.basic": "基本",
+  "studio.category.magazine": "雜誌",
+  "studio.category.creative": "創意",
+  "studio.category.multi": "多圖",
+  "studio.category.withtext": "含文字",
+  "studio.category.mosaic": "馬賽克",
+
   // Status labels
   "upload.status.WIP": "製作中",
   "upload.status.Completed": "完成",

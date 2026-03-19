@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { X, Lock, Unlock, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Sparkles, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/context";
 import { TEMPLATES, CATEGORIES, type LayoutTemplate } from "./panels/template-picker-panel";
 import type { BuildImage, ShowcaseElement } from "@/lib/types";
 
@@ -13,27 +14,49 @@ function getImage(images: BuildImage[], index: number): BuildImage | null {
   return images[index % images.length] ?? null;
 }
 
-/** Group templates by image count for smart suggestions */
 function getRecommended(templates: LayoutTemplate[], imageCount: number): LayoutTemplate[] {
-  // Exact match first, then ±1, sorted by popularity (earlier = more popular)
   const exact = templates.filter((t) => t.imageCount === imageCount);
   const close = templates.filter((t) => Math.abs(t.imageCount - imageCount) === 1 && t.imageCount > 0);
   return [...exact.slice(0, 8), ...close.slice(0, 4)];
 }
 
-// ─── Compact Grid Icon ──────────────────────────────────────────
+// Filter out broken diagonal templates — the canvas only supports rectangular elements
+const SUPPORTED_TEMPLATES = TEMPLATES.filter((t) => t.category !== "Diagonal");
+const SUPPORTED_CATEGORIES = CATEGORIES.filter((c) => c !== "Diagonal" && c !== "Custom");
+
+// "Freestyle" pseudo-template — blank canvas, user places elements manually
+const FREESTYLE_TEMPLATE: LayoutTemplate = {
+  id: "__freestyle__",
+  name: "Freestyle",
+  category: "Basic",
+  imageCount: 0,
+  previewRects: [],
+  generate: () => [],
+};
+
+// ─── Grid Icon ──────────────────────────────────────────────────
 
 function GridIcon({ template, active }: { template: LayoutTemplate; active: boolean }) {
   const stroke = active ? "#f97316" : "rgba(255,255,255,0.35)";
   const fill = active ? "rgba(249,115,22,0.08)" : "none";
+
+  // Freestyle gets a special icon
+  if (template.id === "__freestyle__") {
+    return (
+      <svg viewBox="0 0 100 100" className="w-full aspect-square">
+        <rect x={1} y={1} width={98} height={98} fill={fill} stroke={stroke} strokeWidth={active ? 2 : 1} rx={4} />
+        <rect x={15} y={20} width={30} height={25} fill="none" stroke={stroke} strokeWidth={0.8} rx={2} transform="rotate(-8 30 32)" />
+        <rect x={55} y={15} width={28} height={22} fill="none" stroke={stroke} strokeWidth={0.8} rx={2} transform="rotate(5 69 26)" />
+        <rect x={25} y={55} width={50} height={30} fill="none" stroke={stroke} strokeWidth={0.8} rx={2} transform="rotate(2 50 70)" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 100 100" className="w-full aspect-square">
       <rect x={1} y={1} width={98} height={98} fill={fill} stroke={stroke} strokeWidth={active ? 2 : 1} rx={4} />
       {template.previewRects.map((r, i) => (
         <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="none" stroke={stroke} strokeWidth={0.8} rx={1} />
-      ))}
-      {template.previewLines?.map((l, i) => (
-        <line key={`l-${i}`} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={stroke} strokeWidth={0.6} strokeDasharray="3 2" />
       ))}
     </svg>
   );
@@ -41,19 +64,24 @@ function GridIcon({ template, active }: { template: LayoutTemplate; active: bool
 
 // ─── Live Preview ───────────────────────────────────────────────
 
-function LivePreview({
-  template,
-  images,
-}: {
-  template: LayoutTemplate;
-  images: BuildImage[];
-}) {
+function LivePreview({ template, images, t }: { template: LayoutTemplate; images: BuildImage[]; t: (key: string) => string }) {
+  // Freestyle preview — scattered images
+  if (template.id === "__freestyle__") {
+    return (
+      <div className="relative w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-700/50 flex items-center justify-center">
+        <div className="text-center px-6">
+          <LayoutGrid className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
+          <p className="text-xs text-zinc-500">{t("studio.freestyleDesc")}</p>
+        </div>
+      </div>
+    );
+  }
+
   const imageSlots = template.previewRects.filter((r) => r.type === "image");
   const textSlots = template.previewRects.filter((r) => r.type === "text" || r.type === "meta");
 
   return (
     <div className="relative w-full aspect-[4/5] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-700/50">
-      {/* Grid lines faint background */}
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -62,20 +90,13 @@ function LivePreview({
           backgroundSize: "10% 10%",
         }}
       />
-
-      {/* Image slots filled with actual images */}
       {imageSlots.map((slot, i) => {
         const img = getImage(images, i);
         return (
           <div
             key={i}
             className="absolute overflow-hidden rounded-sm"
-            style={{
-              left: `${slot.x}%`,
-              top: `${slot.y}%`,
-              width: `${slot.w}%`,
-              height: `${slot.h}%`,
-            }}
+            style={{ left: `${slot.x}%`, top: `${slot.y}%`, width: `${slot.w}%`, height: `${slot.h}%` }}
           >
             {img ? (
               <img
@@ -93,18 +114,11 @@ function LivePreview({
           </div>
         );
       })}
-
-      {/* Text/meta slot placeholders */}
       {textSlots.map((slot, i) => (
         <div
           key={`t-${i}`}
           className="absolute flex items-center justify-center"
-          style={{
-            left: `${slot.x}%`,
-            top: `${slot.y}%`,
-            width: `${slot.w}%`,
-            height: `${slot.h}%`,
-          }}
+          style={{ left: `${slot.x}%`, top: `${slot.y}%`, width: `${slot.w}%`, height: `${slot.h}%` }}
         >
           <div className="w-3/4 space-y-1">
             <div className="h-1.5 bg-zinc-700 rounded-full w-full" />
@@ -133,11 +147,9 @@ function ImageTray({ images }: { images: BuildImage[] }) {
   );
 }
 
-// ─── Category Pills ─────────────────────────────────────────────
-
-const DISPLAY_CATEGORIES = ["Recommended", ...CATEGORIES.filter((c) => c !== "Custom")] as const;
-
 // ─── Main Component ─────────────────────────────────────────────
+
+const DISPLAY_CATEGORIES = ["Recommended", ...SUPPORTED_CATEGORIES] as const;
 
 interface TemplateChooserOverlayProps {
   buildImages: BuildImage[];
@@ -146,9 +158,9 @@ interface TemplateChooserOverlayProps {
 }
 
 export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: TemplateChooserOverlayProps) {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("Recommended");
-  const [locked, setLocked] = useState(true);
   const [visible, setVisible] = useState(false);
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -156,16 +168,20 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  const recommended = useMemo(() => getRecommended(TEMPLATES, buildImages.length), [buildImages.length]);
+  const recommended = useMemo(() => getRecommended(SUPPORTED_TEMPLATES, buildImages.length), [buildImages.length]);
 
   const displayTemplates = useMemo(() => {
-    if (activeCategory === "Recommended") return recommended;
-    return TEMPLATES.filter((t) => t.category === activeCategory);
+    const base = activeCategory === "Recommended"
+      ? recommended
+      : SUPPORTED_TEMPLATES.filter((t) => t.category === activeCategory);
+    // Prepend Freestyle as first option in every category
+    return [FREESTYLE_TEMPLATE, ...base];
   }, [activeCategory, recommended]);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
-    return TEMPLATES.find((t) => t.id === selectedId) ?? null;
+    if (selectedId === "__freestyle__") return FREESTYLE_TEMPLATE;
+    return SUPPORTED_TEMPLATES.find((t) => t.id === selectedId) ?? null;
   }, [selectedId]);
 
   // Auto-select first recommended template
@@ -177,10 +193,13 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
 
   const handleApply = useCallback(() => {
     if (!selected) return;
-    onApply(selected.generate(buildImages), locked);
-  }, [selected, buildImages, locked, onApply]);
+    if (selected.id === "__freestyle__") {
+      onSkip(); // Freestyle = skip to blank canvas
+      return;
+    }
+    onApply(selected.generate(buildImages), false);
+  }, [selected, buildImages, onApply, onSkip]);
 
-  // Scroll template rail to selected item
   const scrollToSelected = useCallback((id: string) => {
     if (!railRef.current) return;
     const el = railRef.current.querySelector(`[data-template-id="${id}"]`);
@@ -192,12 +211,28 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
     scrollToSelected(id);
   }, [scrollToSelected]);
 
-  // Nav arrows for template rail
   const scrollRail = useCallback((dir: "left" | "right") => {
     if (!railRef.current) return;
     const amount = railRef.current.clientWidth * 0.6;
     railRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   }, []);
+
+  // Translated category names
+  const catLabel = (cat: string) => {
+    const key = `studio.category.${cat.toLowerCase().replace(/ /g, "")}`;
+    const translated = t(key);
+    return translated !== key ? translated : cat;
+  };
+
+  // Photo count label
+  const photoLabel = (template: LayoutTemplate): string => {
+    if (template.id === "__freestyle__") return t("studio.freestyleHint");
+    const count = template.imageCount;
+    const textCount = template.previewRects.filter((r) => r.type === "text").length;
+    const photoStr = count === 1 ? t("studio.photoSingular") : t("studio.photoPlural", { count: String(count) });
+    if (textCount > 0) return `${photoStr} + ${t("studio.text")}`;
+    return photoStr;
+  };
 
   return (
     <div
@@ -207,7 +242,7 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
       )}
       style={{ background: "linear-gradient(180deg, #0a0a0f 0%, #111118 50%, #0d0d14 100%)" }}
     >
-      {/* Subtle decorative elements */}
+      {/* Decorative ambient glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gx-red/[0.03] blur-[100px] rounded-full" />
         <div className="absolute bottom-0 left-1/4 w-[400px] h-[200px] bg-blue-500/[0.02] blur-[80px] rounded-full" />
@@ -217,78 +252,66 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
       <div className="relative flex items-center justify-between px-4 py-3 shrink-0">
         <button
           onClick={onSkip}
-          className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-xs"
+          className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-xs min-w-[60px]"
         >
           <X className="h-4 w-4" />
-          <span className="hidden sm:inline">Skip</span>
+          <span className="hidden sm:inline">{t("studio.skip")}</span>
         </button>
 
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gx-red/70 font-medium">Design Studio</p>
-          <h2 className="text-sm font-bold text-white font-rajdhani">Choose Your Layout</h2>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gx-red/70 font-medium">
+            {t("studio.label")}
+          </p>
+          <h2 className="text-sm font-bold text-white font-rajdhani">
+            {t("studio.title")}
+          </h2>
         </div>
 
         <button
           onClick={handleApply}
           disabled={!selectedId}
           className={cn(
-            "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+            "px-4 py-1.5 rounded-lg text-xs font-bold transition-all min-w-[60px]",
             selectedId
               ? "bg-gx-red text-white hover:bg-red-500 shadow-lg shadow-red-500/20"
               : "text-zinc-600 cursor-not-allowed",
           )}
         >
-          Apply
+          {t("studio.apply")}
         </button>
       </div>
 
       {/* ── Main Content ── */}
       <div className="relative flex-1 flex flex-col min-h-0 px-4">
-        {/* Live Preview Area */}
-        <div className="flex-shrink-0 max-w-[320px] sm:max-w-[360px] mx-auto w-full mb-3">
+        {/* Live Preview */}
+        <div className="flex-shrink-0 max-w-[280px] sm:max-w-[340px] mx-auto w-full mb-2">
           {selected ? (
-            <LivePreview template={selected} images={buildImages} />
+            <LivePreview template={selected} images={buildImages} t={t} />
           ) : (
             <div className="w-full aspect-[4/5] bg-zinc-950 rounded-2xl border border-zinc-800 flex items-center justify-center">
-              <p className="text-xs text-zinc-600">Select a layout below</p>
+              <p className="text-xs text-zinc-600">{t("studio.selectPrompt")}</p>
             </div>
           )}
         </div>
 
-        {/* Template info + lock toggle */}
+        {/* Template name + photo count */}
         {selected && (
-          <div className="flex items-center justify-between mb-2 max-w-[360px] mx-auto w-full">
-            <div>
-              <p className="text-xs font-medium text-white">{selected.name}</p>
-              <p className="text-[10px] text-zinc-500">
-                {selected.imageCount} {selected.imageCount === 1 ? "photo" : "photos"}
-                {selected.previewRects.filter((r) => r.type === "text").length > 0 && " + text"}
-              </p>
-            </div>
-            <button
-              onClick={() => setLocked(!locked)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-colors",
-                locked
-                  ? "bg-zinc-800 text-zinc-400 border border-zinc-700"
-                  : "bg-orange-500/15 text-orange-400 border border-orange-500/30",
-              )}
-              title={locked ? "Layout frames are locked. Images can be repositioned inside frames." : "Layout is unlocked. Frames can be moved freely."}
-            >
-              {locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-              {locked ? "Locked" : "Unlocked"}
-            </button>
+          <div className="text-center mb-2">
+            <p className="text-xs font-medium text-white">
+              {selected.id === "__freestyle__" ? t("studio.freestyle") : selected.name}
+            </p>
+            <p className="text-[10px] text-zinc-500">{photoLabel(selected)}</p>
           </div>
         )}
 
         {/* Image Tray */}
         {buildImages.length > 0 && (
-          <div className="max-w-[360px] mx-auto w-full mb-3">
+          <div className="max-w-[340px] mx-auto w-full mb-2">
             <ImageTray images={buildImages} />
           </div>
         )}
 
-        {/* ── Category Pills ── */}
+        {/* Category Pills */}
         <div className="flex gap-1.5 mb-2 overflow-x-auto shrink-0" style={{ scrollbarWidth: "none" }}>
           {DISPLAY_CATEGORIES.map((cat) => (
             <button
@@ -302,14 +325,13 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
               )}
             >
               {cat === "Recommended" && <Sparkles className="h-2.5 w-2.5 inline mr-1 -mt-px" />}
-              {cat}
+              {catLabel(cat)}
             </button>
           ))}
         </div>
 
-        {/* ── Template Rail ── */}
+        {/* Template Rail */}
         <div className="relative flex-1 min-h-0">
-          {/* Desktop nav arrows */}
           <button
             onClick={() => scrollRail("left")}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors backdrop-blur-sm"
@@ -328,18 +350,6 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
             className="flex gap-2 overflow-x-auto pb-3 h-full items-start sm:px-8"
             style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch", scrollSnapType: "x proximity" }}
           >
-            {/* Free Style option */}
-            <button
-              onClick={onSkip}
-              className="w-16 shrink-0 scroll-snap-align-center"
-            >
-              <div className="aspect-square rounded-lg border border-zinc-700 flex items-center justify-center hover:border-zinc-500 transition-colors bg-zinc-900/50">
-                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider text-center leading-tight">
-                  Free<br />Style
-                </span>
-              </div>
-            </button>
-
             {displayTemplates.map((template) => {
               const isActive = selectedId === template.id;
               return (
@@ -348,16 +358,15 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
                   data-template-id={template.id}
                   onClick={() => handleSelect(template.id)}
                   className={cn(
-                    "w-16 shrink-0 scroll-snap-align-center transition-all",
+                    "w-16 shrink-0 transition-all",
                     isActive ? "scale-110" : "hover:scale-105",
                   )}
+                  style={{ scrollSnapAlign: "center" }}
                 >
                   <div
                     className={cn(
                       "aspect-square rounded-lg transition-all",
-                      isActive
-                        ? "ring-2 ring-orange-500 ring-offset-1 ring-offset-[#0d0d14]"
-                        : "",
+                      isActive ? "ring-2 ring-orange-500 ring-offset-1 ring-offset-[#0d0d14]" : "",
                     )}
                   >
                     <GridIcon template={template} active={isActive} />
@@ -369,13 +378,10 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
         </div>
       </div>
 
-      {/* Bottom safe area + skip */}
+      {/* Bottom skip link */}
       <div className="shrink-0 px-4 pb-4 pt-1 text-center" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
-        <button
-          onClick={onSkip}
-          className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors"
-        >
-          Skip — start with blank canvas
+        <button onClick={onSkip} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
+          {t("studio.skipBlank")}
         </button>
       </div>
     </div>
