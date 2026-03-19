@@ -205,6 +205,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     () => safeInitial.elements.length === 0 && build.images.length > 0,
   );
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
+  const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
 
   // Multi-page state
   const [pagesState, setPagesState] = useState<ShowcasePageType[]>(() => normalizePages(safeInitial));
@@ -439,6 +440,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     (elementId: string, e: React.PointerEvent) => {
       // Don't start drag if editing text
       if (editingTextId === elementId) return;
+      // Don't drag locked elements
+      if (lockedIds.has(elementId)) return;
       e.preventDefault();
       e.stopPropagation();
       const el = layout.elements.find((el) => el.id === elementId);
@@ -482,6 +485,8 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
     (elementId: string, handle: HandlePos, e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      // Don't resize locked elements
+      if (lockedIds.has(elementId)) return;
       const el = layout.elements.find((el) => el.id === elementId);
       if (!el) return;
       dispatch({ type: "BEGIN_BATCH" });
@@ -1721,6 +1726,15 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
           onSelect={(id) => setSelectedIds([id])}
           onReorder={(id, dir) => dispatch({ type: "REORDER_Z", id, direction: dir })}
           onClose={() => setActivePanel(null)}
+          lockedIds={lockedIds}
+          onToggleLock={(id) => {
+            setLockedIds((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
         />
       )}
       {activePanel === "effects" && (
@@ -1791,8 +1805,17 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1 }: 
       {showTemplateChooser && (
         <TemplateChooserOverlay
           buildImages={buildImages}
-          onApply={(elements) => {
+          onApply={(elements, templateLocked) => {
             dispatch({ type: "APPLY_TEMPLATE", layout: { ...layout, elements } });
+            // When template is locked, lock all placed elements
+            if (templateLocked) {
+              const ids = elements.map((el) => el.id);
+              setLockedIds((prev) => {
+                const next = new Set(prev);
+                for (const id of ids) next.add(id);
+                return next;
+              });
+            }
             setShowTemplateChooser(false);
             setShowEditorGuide(true);
           }}
