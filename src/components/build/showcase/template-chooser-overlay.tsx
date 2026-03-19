@@ -277,25 +277,21 @@ export function TemplateChooserOverlay({ buildImages, onApply, onSkip }: Templat
           </div>
 
           {/* ── Template Grid (4 columns, wrapping) ── */}
-          <div className="grid grid-cols-4 gap-2 pb-20">
+          <div className="grid grid-cols-4 gap-2.5 pb-20">
             {displayTemplates.map((template) => {
               const isActive = selectedId === template.id;
               return (
                 <button
                   key={template.id}
                   onClick={() => setSelectedId(template.id)}
-                  className="relative"
+                  className={cn(
+                    "aspect-square rounded-lg border-2 transition-colors duration-150",
+                    isActive
+                      ? "border-gx-red bg-gx-red/[0.06]"
+                      : "border-transparent hover:border-white/15",
+                  )}
                 >
-                  <div
-                    className={cn(
-                      "aspect-square rounded-lg transition-all duration-200",
-                      isActive
-                        ? "ring-2 ring-gx-red shadow-[0_0_12px_rgba(220,38,38,0.25)]"
-                        : "ring-1 ring-white/[0.06] hover:ring-white/20",
-                    )}
-                  >
-                    <GridIcon template={template} active={isActive} />
-                  </div>
+                  <GridIcon template={template} active={isActive} />
                 </button>
               );
             })}
