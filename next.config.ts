@@ -2,20 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // CDN images (cdn.gundamaxing.com) are served unoptimized via SmartImage
-    // to avoid Vercel image transformation costs. Only OAuth avatars and
-    // UploadThing URLs still use Vercel optimization.
     remotePatterns: [
+      { protocol: "https", hostname: "cdn.gundamaxing.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "cdn.discordapp.com" },
       { protocol: "https", hostname: "*.ufs.sh" },
       { protocol: "https", hostname: "*.uploadthing.com" },
       { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "static.wikia.nocookie.net" },
     ],
-    // Reduce device sizes to limit transformation variants
-    deviceSizes: [640, 1080, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
   async headers() {
     return [
