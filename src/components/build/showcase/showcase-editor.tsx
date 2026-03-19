@@ -202,9 +202,7 @@ export function ShowcaseEditor({ build, initialLayout, onExit, userLevel = 1, is
   const [isSaving, setIsSaving] = useState(false);
   const [showDrawing, setShowDrawing] = useState(false);
   const [showEditorGuide, setShowEditorGuide] = useState(false);
-  const [showTemplateChooser, setShowTemplateChooser] = useState(
-    () => isNewBuild || (safeInitial.elements.length === 0 && build.images.length > 0),
-  );
+  const [showTemplateChooser, setShowTemplateChooser] = useState(false);
   const [buildImages, setBuildImages] = useState<BuildImage[]>(build.images);
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
 

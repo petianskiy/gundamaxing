@@ -302,10 +302,9 @@ export function ShowcasePage({ build, comments, authorBuilds = [], currentUserId
           <div className="mx-auto max-w-6xl">
             <ShowcaseEditor
               build={build}
-              initialLayout={hasExistingLayout ? layout : { ...layout, elements: [] }}
+              initialLayout={layout}
               onExit={handleExit}
               userLevel={userLevel}
-              isNewBuild={!hasExistingLayout && build.images.length > 0}
             />
           </div>
         </div>

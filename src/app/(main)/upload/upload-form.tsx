@@ -20,6 +20,8 @@ import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { createBuild } from "@/lib/actions/build";
+import { TemplateChooserOverlay } from "@/components/build/showcase/template-chooser-overlay";
+import type { BuildImage } from "@/lib/types";
 
 function CollapsibleSection({
   title,
@@ -316,6 +318,12 @@ export function UploadForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Design Studio step
+  const [step, setStep] = useState<"form" | "design-studio">("form");
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [templateLocked, setTemplateLocked] = useState(true);
+
   const { uploadMultiple, isUploading: uploading2 } = useR2Upload({ type: "image" });
 
   // Cleanup preview URLs on unmount
@@ -391,12 +399,12 @@ export function UploadForm() {
 
   const canSubmit = previews.length > 0 && title.trim() && kitName.trim() && grade;
 
+  // Step 1: Upload images, then show Design Studio
   async function handleSubmit() {
     if (!canSubmit) return;
     setError(null);
 
     try {
-      // Step 1: Upload images
       setUploading(true);
       const files = previews.map((p) => p.file);
       const uploadResult = await uploadMultiple(files);
@@ -407,9 +415,19 @@ export function UploadForm() {
         return;
       }
 
-      const imageUrls = uploadResult.map((r) => r.url);
+      setUploadedUrls(uploadResult.map((r) => r.url));
+      // Show the Design Studio step instead of immediately creating the build
+      setStep("design-studio");
+    } catch (err) {
+      setUploading(false);
+      setError(t("upload.unexpectedError"));
+      console.error(err);
+    }
+  }
 
-      // Step 2: Create build
+  // Step 2: After template selection, create the build
+  async function finalizeUpload(templateId: string | null, locked: boolean) {
+    try {
       setSubmitting(true);
       const formData = new FormData();
       formData.set("title", title);
@@ -429,10 +447,9 @@ export function UploadForm() {
         formData.set("tools", JSON.stringify(tools.split(",").map((t) => t.trim()).filter(Boolean)));
       }
       if (intentStatement) formData.set("intentStatement", intentStatement);
-      formData.set("imageUrls", JSON.stringify(imageUrls));
+      formData.set("imageUrls", JSON.stringify(uploadedUrls));
       formData.set("primaryIndex", String(primaryIndex));
 
-      // Include focal points (objectPosition) for each image
       const objectPositions: Record<number, string> = {};
       for (const [idx, pos] of Object.entries(focalPoints)) {
         objectPositions[Number(idx)] = pos;
@@ -441,22 +458,64 @@ export function UploadForm() {
         formData.set("objectPositions", JSON.stringify(objectPositions));
       }
 
+      // Pass selected template info
+      if (templateId) {
+        formData.set("templateId", templateId);
+        formData.set("templateLocked", locked ? "1" : "0");
+      }
+
       const result = await createBuild(formData);
       setSubmitting(false);
 
       if ("error" in result) {
         setError(result.error ?? t("upload.createFailed"));
+        setStep("form");
         return;
       }
 
       const guideParam = result.isFirstBuild ? "&guide=1" : "";
       router.push(`/builds/${result.slug}?edit=1${guideParam}`);
     } catch (err) {
-      setUploading(false);
       setSubmitting(false);
       setError(t("upload.unexpectedError"));
+      setStep("form");
       console.error(err);
     }
+  }
+
+  // ─── Design Studio Step (after image upload, before build creation) ──
+  if (step === "design-studio") {
+    const buildImagesForChooser: BuildImage[] = uploadedUrls.map((url, i) => ({
+      id: `upload-${i}`,
+      url,
+      alt: `Image ${i + 1}`,
+      isPrimary: i === primaryIndex,
+      objectPosition: focalPoints[i] || undefined,
+    }));
+
+    return (
+      <>
+        <TemplateChooserOverlay
+          buildImages={buildImagesForChooser}
+          onApply={(_elements, locked) => {
+            // We don't use the generated elements here — the editor will regenerate them.
+            // Instead we store the locked state and finalize.
+            finalizeUpload(null, locked);
+          }}
+          onSkip={() => {
+            finalizeUpload(null, false);
+          }}
+        />
+        {submitting && (
+          <div className="fixed inset-0 z-[900] bg-black/80 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-gx-red" />
+              <p className="text-sm text-white font-medium">{t("upload.submitting")}</p>
+            </div>
+          </div>
+        )}
+      </>
+    );
   }
 
   return (
