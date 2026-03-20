@@ -61,6 +61,13 @@ export const buildInclude = {
     orderBy: { date: "asc" as const },
   },
   forks: { select: { id: true } },
+  supplies: {
+    select: {
+      supply: {
+        select: { id: true, brand: true, name: true, code: true, category: true, colorHex: true, slug: true },
+      },
+    },
+  },
 } as const;
 
 // ─── Transform ───────────────────────────────────────────────────
@@ -111,6 +118,17 @@ export function toUIBuild(b: any): Build {
         images: entry.images.map(toCdnUrl),
       }),
     ),
+    supplies: (b.supplies ?? []).length > 0
+      ? b.supplies.map((s: { supply: { id: string; brand: string; name: string; code: string | null; category: string; colorHex: string | null; slug: string } }) => ({
+          id: s.supply.id,
+          brand: s.supply.brand,
+          name: s.supply.name,
+          code: s.supply.code,
+          category: s.supply.category,
+          colorHex: s.supply.colorHex,
+          slug: s.supply.slug,
+        }))
+      : undefined,
     baseKit: b.baseKit ?? undefined,
     inspiredBy: b.inspiredByIds ?? [],
     forks: (b.forks ?? []).map((fork: { id: string }) => fork.id),

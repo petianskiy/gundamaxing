@@ -61,7 +61,7 @@ const mrHobby: SupplyEntry[] = [
   {
     brand: "Mr. Hobby", productLine: "Mr. Color", name: "Character Blue", code: "C110",
     category: "PAINT", finish: "Semi-Gloss", solventType: "Lacquer", colorHex: "#2255bb",
-    aliases: ["Mr. Color C110", "C110 Character Blue", "Mr. Color 110"],
+    aliases: ["Mr. Color C110", "C110 Character Blue", "Mr. Color 110", "mr color 110", "mr. color c-110", "Mr Hobby C110"],
   },
   {
     brand: "Mr. Hobby", productLine: "Mr. Color", name: "Character Red", code: "C112",
@@ -113,7 +113,7 @@ const mrHobby: SupplyEntry[] = [
   {
     brand: "Mr. Hobby", productLine: "Mr. Surfacer", name: "Mr. Surfacer 1500 Black", code: "SF288",
     category: "PRIMER", solventType: "Lacquer", colorHex: "#1a1a1a",
-    aliases: ["Mr. Surfacer 1500 Black", "SF288", "Mr. Hobby Black Surfacer"],
+    aliases: ["Mr. Surfacer 1500 Black", "SF288", "Mr. Hobby Black Surfacer", "black primer", "Mr Hobby black primer"],
   },
   // Mr. Cement
   {
@@ -162,33 +162,33 @@ const tamiya: SupplyEntry[] = [
   {
     brand: "Tamiya", productLine: "Panel Line Accent", name: "Panel Line Accent Color Black", code: "87131",
     category: "PANEL_LINER", solventType: "Enamel", colorHex: "#1a1a1a",
-    aliases: ["Tamiya Panel Line Black", "Tamiya 87131", "PLAC Black", "Tamiya Black Panel Liner", "Tamiya panel line accent"],
+    aliases: ["Tamiya Panel Line Black", "Tamiya 87131", "PLAC Black", "Tamiya Black Panel Liner", "Tamiya panel line accent", "panel liner black", "tamiya panel liner black"],
   },
   {
     brand: "Tamiya", productLine: "Panel Line Accent", name: "Panel Line Accent Color Brown", code: "87132",
     category: "PANEL_LINER", solventType: "Enamel", colorHex: "#5c3317",
-    aliases: ["Tamiya Panel Line Brown", "Tamiya 87132", "PLAC Brown"],
+    aliases: ["Tamiya Panel Line Brown", "Tamiya 87132", "PLAC Brown", "panel liner brown", "tamiya panel liner brown"],
   },
   {
     brand: "Tamiya", productLine: "Panel Line Accent", name: "Panel Line Accent Color Gray", code: "87133",
     category: "PANEL_LINER", solventType: "Enamel", colorHex: "#808080",
-    aliases: ["Tamiya Panel Line Gray", "Tamiya 87133", "PLAC Gray", "PLAC Grey"],
+    aliases: ["Tamiya Panel Line Gray", "Tamiya 87133", "PLAC Gray", "PLAC Grey", "panel liner gray", "panel liner grey", "tamiya panel liner gray"],
   },
   {
     brand: "Tamiya", productLine: "Panel Line Accent", name: "Panel Line Accent Color Dark Brown", code: "87140",
     category: "PANEL_LINER", solventType: "Enamel", colorHex: "#3b1e0a",
-    aliases: ["Tamiya Panel Line Dark Brown", "Tamiya 87140"],
+    aliases: ["Tamiya Panel Line Dark Brown", "Tamiya 87140", "panel liner dark brown", "tamiya panel liner dark brown"],
   },
   // Spray primers
   {
     brand: "Tamiya", name: "Surface Primer Gray", code: "87042",
     category: "PRIMER", colorHex: "#808080",
-    aliases: ["Tamiya Primer Gray", "Tamiya 87042", "Tamiya Gray Primer", "Tamiya Surface Primer"],
+    aliases: ["Tamiya Primer Gray", "Tamiya 87042", "Tamiya Gray Primer", "Tamiya Surface Primer", "gray primer", "grey primer"],
   },
   {
     brand: "Tamiya", name: "Surface Primer White", code: "87044",
     category: "PRIMER", colorHex: "#f0f0f0",
-    aliases: ["Tamiya Primer White", "Tamiya 87044", "Tamiya White Primer"],
+    aliases: ["Tamiya Primer White", "Tamiya 87044", "Tamiya White Primer", "white primer"],
   },
   {
     brand: "Tamiya", name: "Fine Surface Primer L (Light Gray)", code: "87054",
@@ -314,7 +314,7 @@ const tools: SupplyEntry[] = [
   {
     brand: "GodHand", name: "SPN-120 Ultimate Nipper", code: "SPN-120",
     category: "TOOL", subcategory: "Nippers",
-    aliases: ["Godhand Nipper", "SPN-120", "Godhand Ultimate Nipper", "GodHand SPN-120", "Godhand nippers"],
+    aliases: ["Godhand Nipper", "SPN-120", "SPN120", "Godhand Ultimate Nipper", "GodHand SPN-120", "godhand spn120", "Godhand nippers"],
   },
   {
     brand: "GodHand", name: "Kamiyasu Sanding Sponge #400", code: "GH-KS2-P400",

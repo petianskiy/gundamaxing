@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { GradeBadge } from "@/components/ui/grade-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
+import { SupplyChip } from "@/components/supply/supply-chip";
 import type { Build, ShowcaseMetadataElement } from "@/lib/types";
 
 interface MetadataElementProps {
@@ -230,16 +231,43 @@ function PaintCard({ build }: { build: Build }) {
 }
 
 function ToolsCard({ build }: { build: Build }) {
+  const hasSupplies = build.supplies && build.supplies.length > 0;
+  const hasTools = build.tools && build.tools.length > 0;
+
   return (
     <CardShell>
       <h4 className="uppercase tracking-widest text-zinc-500 font-bold" style={{ fontSize: cqi(10), marginBottom: cqi(10) }}>
         Tools & Techniques
       </h4>
-      {build.tools && build.tools.length > 0 && (
+
+      {/* Structured supplies (clickable with popover) */}
+      {hasSupplies && (
         <div style={{ marginBottom: cqi(12) }}>
-          <p className="text-zinc-500 uppercase tracking-wider" style={{ fontSize: cqi(9), marginBottom: cqi(6) }}>Tools Used</p>
+          <p className="text-zinc-500 uppercase tracking-wider" style={{ fontSize: cqi(9), marginBottom: cqi(6) }}>Supplies</p>
           <div className="flex flex-wrap" style={{ gap: cqi(4) }}>
-            {build.tools.map((tool) => (
+            {build.supplies!.map((supply) => (
+              <SupplyChip
+                key={supply.id}
+                supply={supply}
+                style={{
+                  padding: `${cqi(3)} ${cqi(8)}`,
+                  borderRadius: cqi(6),
+                  fontSize: cqi(11),
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Free-text tools (plain chips, backward compat) */}
+      {hasTools && (
+        <div style={{ marginBottom: cqi(12) }}>
+          <p className="text-zinc-500 uppercase tracking-wider" style={{ fontSize: cqi(9), marginBottom: cqi(6) }}>
+            {hasSupplies ? "Other Tools" : "Tools Used"}
+          </p>
+          <div className="flex flex-wrap" style={{ gap: cqi(4) }}>
+            {build.tools!.map((tool) => (
               <span
                 key={tool}
                 className="bg-zinc-800 text-zinc-300 border border-zinc-700"
@@ -251,6 +279,7 @@ function ToolsCard({ build }: { build: Build }) {
           </div>
         </div>
       )}
+
       {build.techniques.length > 0 && (
         <div>
           <p className="text-zinc-500 uppercase tracking-wider" style={{ fontSize: cqi(9), marginBottom: cqi(6) }}>Techniques</p>

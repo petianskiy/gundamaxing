@@ -63,6 +63,16 @@ export interface CalloutPin {
   description: string;
 }
 
+export interface BuildSupplyItem {
+  id: string;
+  brand: string;
+  name: string;
+  code: string | null;
+  category: string;
+  colorHex: string | null;
+  slug: string;
+}
+
 export interface Build {
   id: string;
   slug: string;
@@ -77,6 +87,7 @@ export interface Build {
   topcoat?: string;
   timeInvested?: string;
   tools?: string[];
+  supplies?: BuildSupplyItem[];
   description?: string;
   intentStatement?: string;
   images: BuildImage[];
