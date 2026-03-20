@@ -21,6 +21,7 @@ async function getSupplyCatalog() {
       solventType: true,
       colorHex: true,
       slug: true,
+      searchName: true,
       _count: { select: { buildSupplies: true } },
     },
     orderBy: [{ brand: "asc" }, { productLine: "asc" }, { name: "asc" }],

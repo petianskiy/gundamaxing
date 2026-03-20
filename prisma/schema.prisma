@@ -1072,6 +1072,9 @@ model Supply {
   category     SupplyCategory
   subcategory  String?
 
+  // Search-optimized name (deduped, no brand prefix, short)
+  searchName   String?
+
   // Optional rich metadata
   finish       String?
   solventType  String?

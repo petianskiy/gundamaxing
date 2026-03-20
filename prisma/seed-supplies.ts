@@ -419,6 +419,12 @@ export async function seedSupplies() {
       continue;
     }
 
+    // Derive searchName: strip brand prefix from name
+    let searchName = entry.name;
+    if (searchName.toLowerCase().startsWith(entry.brand.toLowerCase())) {
+      searchName = searchName.slice(entry.brand.length).trim();
+    }
+
     await prisma.supply.create({
       data: {
         brand: entry.brand,
@@ -430,6 +436,7 @@ export async function seedSupplies() {
         finish: entry.finish || null,
         solventType: entry.solventType || null,
         colorHex: entry.colorHex || null,
+        searchName,
         slug,
         aliases: {
           create: entry.aliases.map((alias) => ({ alias })),
