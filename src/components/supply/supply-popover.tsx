@@ -7,7 +7,7 @@ import {
   ExternalLink, X,
 } from "lucide-react";
 import { getStoreLinks } from "@/lib/supply/stores";
-import { resolveRegion, resolveLocaleRegion, getRegionPriority, type StoreRegion } from "@/lib/supply/regions";
+import { resolveLocaleRegion, getRegionPriority, type StoreRegion } from "@/lib/supply/regions";
 import type { BuildSupplyItem } from "@/lib/types";
 
 const CATEGORY_ICONS: Record<string, typeof Package> = {

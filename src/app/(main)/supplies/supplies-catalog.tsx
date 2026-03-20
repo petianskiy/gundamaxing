@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { SmartImage as Image } from "@/components/ui/smart-image";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   Search, Package, Paintbrush, Droplets, Layers, Wrench, Scissors,
-  ExternalLink,
+  ExternalLink, FlaskConical, ChevronRight,
 } from "lucide-react";
 import { getStoreLinks } from "@/lib/supply/stores";
 import { resolveLocaleRegion, getRegionPriority, type StoreRegion } from "@/lib/supply/regions";
+
+// ─── Types ───────────────────────────────────────────────────────
 
 interface Supply {
   id: string;
@@ -24,6 +27,8 @@ interface Supply {
   slug: string;
   buildCount: number;
 }
+
+// ─── Constants ───────────────────────────────────────────────────
 
 const CATEGORY_ICONS: Record<string, typeof Package> = {
   PAINT: Paintbrush, PRIMER: Layers, TOPCOAT: Layers, THINNER: Droplets,
@@ -43,11 +48,23 @@ const REGION_FLAGS: Record<StoreRegion, string> = {
   JP: "JP", CN: "CN", SEA: "SEA", EU: "EU", NA: "US", GLOBAL: "Global",
 };
 
+const BRAND_LOGOS: Record<string, string> = {
+  "Mr. Hobby": "/brands/mr-hobby.jpg",
+  "Tamiya": "/brands/tamiya.jpg",
+  "Gaia Notes": "/brands/gaia-notes.jpg",
+  "GodHand": "/brands/godhand.jpg",
+  "DSPIAE": "/brands/dspiae.jpg",
+};
+
 const ALL_CATEGORIES = Object.keys(CATEGORY_LABELS);
+
+// ─── Helpers ─────────────────────────────────────────────────────
 
 function getUniqueBrands(supplies: Supply[]): string[] {
   return [...new Set(supplies.map((s) => s.brand))].sort();
 }
+
+// ─── Main Component ──────────────────────────────────────────────
 
 export function SupplyCatalogView({ supplies }: { supplies: Supply[] }) {
   const { t, locale } = useTranslation();
@@ -90,44 +107,87 @@ export function SupplyCatalogView({ supplies }: { supplies: Supply[] }) {
   const priority = getRegionPriority(region);
 
   return (
-    <div className="relative min-h-screen">
-      <div className="mx-auto max-w-5xl px-4 pt-24 pb-16">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t("supply.pageTitle")}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t("supply.pageSubtitle")}</p>
+    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+
+        {/* ─── Hero ─── */}
+        <div className="animate-page-header text-center mb-10">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <FlaskConical className="h-5 w-5 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              素材目録 &middot; Supply Catalog
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight font-rajdhani">
+            {t("supply.pageTitle")}
+          </h1>
+          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
+            {t("supply.pageSubtitle")}
+          </p>
         </div>
 
-        {/* Search + Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {/* ─── Brand Bar ─── */}
+        <div className="animate-page-content flex flex-wrap items-center justify-center gap-3 mb-8">
+          <button
+            onClick={() => setSelectedBrand(null)}
+            className={cn(
+              "px-4 py-2 rounded-lg border text-xs font-medium transition-all",
+              !selectedBrand
+                ? "border-gx-red/40 bg-gx-red/10 text-red-400"
+                : "border-border/30 bg-card/50 text-muted-foreground hover:text-foreground hover:border-border/60"
+            )}
+          >
+            {t("supply.allBrands")}
+          </button>
+          {brands.map((brand) => {
+            const logo = BRAND_LOGOS[brand];
+            return (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all",
+                  selectedBrand === brand
+                    ? "border-gx-red/40 bg-gx-red/10 ring-1 ring-gx-red/20"
+                    : "border-border/30 bg-card/50 hover:border-border/60"
+                )}
+              >
+                {logo ? (
+                  <Image
+                    src={logo}
+                    alt={brand}
+                    width={28}
+                    height={28}
+                    className="rounded object-contain"
+                  />
+                ) : null}
+                <span className={cn(
+                  "text-xs font-medium",
+                  selectedBrand === brand ? "text-red-400" : "text-muted-foreground"
+                )}>
+                  {brand}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ─── Search + Category Filter ─── */}
+        <div className="animate-page-content flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("supply.catalogSearchPlaceholder")}
-              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-border/50 bg-card text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20"
             />
           </div>
-
-          {/* Brand filter */}
-          <select
-            value={selectedBrand || ""}
-            onChange={(e) => setSelectedBrand(e.target.value || null)}
-            className="px-3 py-2.5 rounded-lg border border-border/50 bg-card text-foreground text-sm focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 transition-colors appearance-none"
-          >
-            <option value="">{t("supply.allBrands")}</option>
-            {brands.map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-
-          {/* Category filter */}
           <select
             value={selectedCategory || ""}
             onChange={(e) => setSelectedCategory(e.target.value || null)}
-            className="px-3 py-2.5 rounded-lg border border-border/50 bg-card text-foreground text-sm focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 transition-colors appearance-none"
+            className="px-3 py-2.5 rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm text-sm text-foreground focus:outline-none focus:border-gx-red/50 focus:ring-1 focus:ring-gx-red/20 appearance-none"
           >
             <option value="">{t("supply.allCategories")}</option>
             {ALL_CATEGORIES.map((c) => (
@@ -136,128 +196,188 @@ export function SupplyCatalogView({ supplies }: { supplies: Supply[] }) {
           </select>
         </div>
 
-        {/* Count */}
-        <p className="text-xs text-muted-foreground mb-4">
-          {filtered.length} {filtered.length === 1 ? "supply" : "supplies"}
+        {/* ─── Count + Clear ─── */}
+        <div className="animate-page-content flex items-center justify-between mb-6">
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} {filtered.length === 1 ? "supply" : "supplies"}
+          </p>
           {(selectedBrand || selectedCategory || search.trim()) && (
             <button
               onClick={() => { setSelectedBrand(null); setSelectedCategory(null); setSearch(""); }}
-              className="ml-2 text-gx-red hover:underline"
+              className="text-xs text-gx-red hover:underline"
             >
               {t("supply.clearFilters")}
             </button>
           )}
-        </p>
+        </div>
 
-        {/* Results grouped by brand */}
-        <div className="space-y-8">
-          {[...grouped.entries()].map(([brand, items]) => (
-            <div key={brand}>
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3 border-b border-border/30 pb-2">
-                {brand}
-                <span className="text-muted-foreground font-normal ml-2">({items.length})</span>
-              </h2>
-              <div className="grid gap-2">
-                {items.map((supply) => {
-                  const Icon = CATEGORY_ICONS[supply.category] || Package;
-                  const isExpanded = expandedId === supply.id;
-                  const storeLinks = isExpanded ? getStoreLinks(supply, priority) : [];
-
-                  return (
-                    <div key={supply.id}>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(isExpanded ? null : supply.id)}
-                        className={cn(
-                          "w-full text-left px-4 py-3 rounded-lg border transition-colors flex items-start gap-3 touch-manipulation",
-                          isExpanded
-                            ? "border-gx-red/30 bg-gx-red/5"
-                            : "border-border/30 bg-card hover:border-border/60"
-                        )}
-                      >
-                        {/* Color swatch or icon */}
-                        <div className="mt-0.5 shrink-0">
-                          {supply.colorHex ? (
-                            <span
-                              className="block h-5 w-5 rounded-full border border-border/50"
-                              style={{ backgroundColor: supply.colorHex }}
-                            />
-                          ) : (
-                            <Icon className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-foreground">{supply.name}</span>
-                            {supply.code && (
-                              <span className="text-xs font-mono text-muted-foreground">{supply.code}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {supply.productLine && (
-                              <span className="text-[10px] text-muted-foreground">{supply.productLine}</span>
-                            )}
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                              {CATEGORY_LABELS[supply.category] || supply.category}
-                            </span>
-                            {supply.solventType && (
-                              <span className="text-[10px] text-muted-foreground/70">{supply.solventType}</span>
-                            )}
-                            {supply.finish && (
-                              <span className="text-[10px] text-muted-foreground/70">{supply.finish}</span>
-                            )}
-                            {supply.buildCount > 0 && (
-                              <span className="text-[10px] text-muted-foreground/50">
-                                {supply.buildCount === 1
-                                  ? t("supply.usedInBuild")
-                                  : t("supply.usedInBuilds").replace("{count}", String(supply.buildCount))}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Expanded: store links */}
-                      {isExpanded && (
-                        <div className="ml-8 mt-2 mb-2 space-y-1.5">
-                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5">
-                            {t("supply.whereToBuy")}
-                          </p>
-                          {storeLinks.map((link) => (
-                            <a
-                              key={link.slug}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between px-3 py-2 rounded-md border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-border transition-colors group touch-manipulation"
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-[10px] font-mono text-muted-foreground/70 w-7 shrink-0">
-                                  {REGION_FLAGS[link.region]}
-                                </span>
-                                <span className="text-sm text-foreground truncate">{link.name}</span>
-                              </div>
-                              <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-gx-red transition-colors shrink-0" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
+        {/* ─── Product Grid by Brand ─── */}
+        <div className="animate-page-grid space-y-12">
+          {[...grouped.entries()].map(([brand, items]) => {
+            const logo = BRAND_LOGOS[brand];
+            return (
+              <section key={brand}>
+                {/* Brand header */}
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/30">
+                  {logo && (
+                    <div className="h-10 w-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
+                      <Image src={logo} alt={brand} width={32} height={32} className="object-contain" />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                  )}
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground">{brand}</h2>
+                    <p className="text-[10px] text-muted-foreground">{items.length} products</p>
+                  </div>
+                </div>
+
+                {/* Product cards grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {items.map((supply) => (
+                    <SupplyCard
+                      key={supply.id}
+                      supply={supply}
+                      brandLogo={logo}
+                      isExpanded={expandedId === supply.id}
+                      onToggle={() => setExpandedId(expandedId === supply.id ? null : supply.id)}
+                      regionPriority={priority}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
 
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <Package className="h-8 w-8 mx-auto mb-3 opacity-50" />
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <FlaskConical className="h-16 w-16 mb-6 opacity-20" />
               <p className="text-sm">{t("supply.noResults")}</p>
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Supply Card ─────────────────────────────────────────────────
+
+function SupplyCard({
+  supply,
+  brandLogo,
+  isExpanded,
+  onToggle,
+  regionPriority,
+}: {
+  supply: Supply;
+  brandLogo?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  regionPriority: StoreRegion[];
+}) {
+  const { t } = useTranslation();
+  const Icon = CATEGORY_ICONS[supply.category] || Package;
+  const storeLinks = isExpanded ? getStoreLinks(supply, regionPriority) : [];
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border backdrop-blur-sm transition-all overflow-hidden",
+        isExpanded
+          ? "border-gx-red/30 bg-card/90 shadow-lg shadow-gx-red/5"
+          : "border-border/30 bg-card/60 hover:bg-card/80 hover:border-border/50"
+      )}
+    >
+      {/* Card body */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full text-left p-3 flex items-start gap-3 touch-manipulation"
+      >
+        {/* Thumbnail area */}
+        <div className="w-10 h-10 rounded-lg bg-black/30 border border-border/30 flex items-center justify-center shrink-0 overflow-hidden">
+          {supply.colorHex ? (
+            <span
+              className="w-full h-full block"
+              style={{ backgroundColor: supply.colorHex }}
+            />
+          ) : supply.category === "TOOL" || supply.category === "ABRASIVE" ? (
+            brandLogo ? (
+              <Image src={brandLogo} alt={supply.brand} width={32} height={32} className="object-contain p-0.5" />
+            ) : (
+              <Icon className="h-5 w-5 text-muted-foreground" />
+            )
+          ) : (
+            <Icon className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm font-medium text-foreground truncate">{supply.name}</span>
+            {supply.code && (
+              <span className="text-[10px] font-mono text-muted-foreground shrink-0">{supply.code}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-border/20 text-muted-foreground">
+              {CATEGORY_LABELS[supply.category] || supply.category}
+            </span>
+            {supply.productLine && (
+              <span className="text-[9px] text-muted-foreground/60 truncate">{supply.productLine}</span>
+            )}
+            {supply.solventType && (
+              <span className="text-[9px] text-muted-foreground/50">{supply.solventType}</span>
+            )}
+            {supply.finish && (
+              <span className="text-[9px] text-muted-foreground/50">{supply.finish}</span>
+            )}
+          </div>
+          {supply.buildCount > 0 && (
+            <p className="text-[9px] text-muted-foreground/40 mt-1">
+              {supply.buildCount === 1
+                ? t("supply.usedInBuild")
+                : t("supply.usedInBuilds").replace("{count}", String(supply.buildCount))}
+            </p>
+          )}
+        </div>
+
+        {/* Expand indicator */}
+        <ChevronRight className={cn(
+          "h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-1 transition-transform",
+          isExpanded && "rotate-90 text-gx-red/60"
+        )} />
+      </button>
+
+      {/* Expanded store links */}
+      {isExpanded && (
+        <div className="px-3 pb-3 pt-0">
+          <div className="border-t border-border/20 pt-2.5">
+            <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mb-2">
+              {t("supply.whereToBuy")}
+            </p>
+            <div className="grid grid-cols-1 gap-1">
+              {storeLinks.map((link) => (
+                <a
+                  key={link.slug}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-white/[0.03] hover:bg-white/[0.06] border border-border/20 hover:border-border/40 transition-colors group touch-manipulation"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[9px] font-mono text-muted-foreground/50 w-5 shrink-0">
+                      {REGION_FLAGS[link.region]}
+                    </span>
+                    <span className="text-xs text-foreground/80 group-hover:text-foreground truncate">{link.name}</span>
+                  </div>
+                  <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/30 group-hover:text-gx-red transition-colors shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { SupplyCatalogView } from "./supplies-catalog";
 
 export const metadata = {
-  title: "Supplies | Gundamaxing",
+  title: "Supply Catalog | Gundamaxing",
   description: "Browse the Gunpla supply catalog — paints, tools, primers, cements, and more from Mr. Hobby, Tamiya, Gaia Notes, and other brands.",
 };
 
@@ -35,5 +35,14 @@ async function getSupplyCatalog() {
 export default async function SuppliesPage() {
   const supplies = await getSupplyCatalog();
 
-  return <SupplyCatalogView supplies={supplies} />;
+  return (
+    <div className="relative min-h-screen">
+      <div
+        className="fixed inset-0 -z-20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/brands/supplies-bg.jpg')" }}
+      />
+      <div className="fixed inset-0 -z-10 bg-black/70" />
+      <SupplyCatalogView supplies={supplies} />
+    </div>
+  );
 }

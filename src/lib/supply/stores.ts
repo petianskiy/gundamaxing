@@ -4,49 +4,55 @@ export interface StoreAdapter {
   slug: string;
   name: string;
   region: StoreRegion;
-  /** Generate a search URL for a given product query */
   searchUrl: (query: string) => string;
-  /** Generate a direct product URL if we have a code/identifier */
-  productUrl?: (code: string) => string;
 }
 
-function encodeSearch(q: string): string {
+function enc(q: string): string {
   return encodeURIComponent(q);
 }
 
 // ─── Store Adapters ──────────────────────────────────────────────
+// Each adapter generates a deterministic search URL. No fetching.
 
 const hlj: StoreAdapter = {
   slug: "hlj",
   name: "HobbyLink Japan",
   region: "JP",
-  searchUrl: (q) => `https://www.hlj.com/search/?q=${encodeSearch(q)}`,
+  // HLJ uses /search/QUERY format with + for spaces
+  searchUrl: (q) => `https://www.hlj.com/search/${q.replace(/\s+/g, "+")}`,
 };
 
 const amazonJp: StoreAdapter = {
   slug: "amazon-jp",
   name: "Amazon Japan",
   region: "JP",
-  searchUrl: (q) => `https://www.amazon.co.jp/s?k=${encodeSearch(q)}`,
+  searchUrl: (q) => `https://www.amazon.co.jp/s?k=${enc(q)}`,
 };
 
 const amazonUs: StoreAdapter = {
   slug: "amazon-us",
   name: "Amazon",
   region: "NA",
-  searchUrl: (q) => `https://www.amazon.com/s?k=${encodeSearch(q)}`,
+  searchUrl: (q) => `https://www.amazon.com/s?k=${enc(q)}`,
 };
 
-const hobbyFrontline: StoreAdapter = {
-  slug: "hobby-frontline",
-  name: "Hobby Frontline",
+const newtypeHq: StoreAdapter = {
+  slug: "newtype",
+  name: "Newtype HQ",
+  region: "NA",
+  searchUrl: (q) => `https://newtype.us/search?q=${enc(q)}`,
+};
+
+const amazonUk: StoreAdapter = {
+  slug: "amazon-uk",
+  name: "Amazon UK",
   region: "EU",
-  searchUrl: (q) => `https://www.hobbyfrontline.com/default/catalogsearch/result/?q=${encodeSearch(q)}`,
+  searchUrl: (q) => `https://www.amazon.co.uk/s?k=${enc(q)}`,
 };
 
 // ─── Registry ────────────────────────────────────────────────────
 
-const ALL_STORES: StoreAdapter[] = [hlj, amazonJp, amazonUs, hobbyFrontline];
+const ALL_STORES: StoreAdapter[] = [hlj, amazonJp, amazonUs, newtypeHq, amazonUk];
 
 const STORES_BY_REGION = new Map<StoreRegion, StoreAdapter[]>();
 for (const store of ALL_STORES) {
@@ -64,7 +70,7 @@ export interface StoreLink {
 
 /**
  * Build a search query string for a supply.
- * Combines brand + name + code for best search relevance.
+ * Uses brand + name (+ code if present) for best search relevance.
  */
 function buildSearchQuery(supply: {
   brand: string;
@@ -78,6 +84,7 @@ function buildSearchQuery(supply: {
 
 /**
  * Generate store links for a supply, ordered by region priority.
+ * Pure function — no external fetching, returns instantly.
  */
 export function getStoreLinks(
   supply: { brand: string; name: string; code?: string | null },
@@ -101,7 +108,7 @@ export function getStoreLinks(
     }
   }
 
-  // Ensure all stores appear (even outside the priority list)
+  // Include remaining stores not yet in the list
   for (const store of ALL_STORES) {
     if (seen.has(store.slug)) continue;
     seen.add(store.slug);
@@ -114,8 +121,4 @@ export function getStoreLinks(
   }
 
   return links;
-}
-
-export function getAllStores(): StoreAdapter[] {
-  return ALL_STORES;
 }
