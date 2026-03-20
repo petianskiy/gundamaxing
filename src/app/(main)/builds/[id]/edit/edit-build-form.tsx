@@ -526,6 +526,7 @@ export function EditBuildForm({ build }: { build: BuildData }) {
             title={t("upload.techniquesMaterials")}
             description={t("upload.techniquesMaterialsDesc")}
             icon={Paintbrush}
+            defaultOpen={true}
           >
             <div className="space-y-4">
               <FormField label={t("upload.techniques")} helper={t("upload.techniquesHelper")}>
@@ -566,6 +567,15 @@ export function EditBuildForm({ build }: { build: BuildData }) {
                   onChange={(e) => setTopcoat(e.target.value)}
                 />
               </FormField>
+
+              <FormField label={t("upload.toolsUsed")} helper={t("supply.searchHelper")}>
+                <SupplyCombobox
+                  selected={selectedSupplies}
+                  freeText={tools}
+                  onSelectedChange={setSelectedSupplies}
+                  onFreeTextChange={setTools}
+                />
+              </FormField>
             </div>
           </CollapsibleSection>
 
@@ -576,15 +586,6 @@ export function EditBuildForm({ build }: { build: BuildData }) {
             icon={FileText}
           >
             <div className="space-y-4">
-              <FormField label={t("upload.toolsUsed")} helper={t("supply.searchHelper")}>
-                <SupplyCombobox
-                  selected={selectedSupplies}
-                  freeText={tools}
-                  onSelectedChange={setSelectedSupplies}
-                  onFreeTextChange={setTools}
-                />
-              </FormField>
-
               <FormField label={t("upload.timeInvested")}>
                 <input
                   type="text"

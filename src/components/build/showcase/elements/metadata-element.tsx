@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { GradeBadge } from "@/components/ui/grade-badge";
 import { TechniqueChip } from "@/components/ui/technique-chip";
 import { SupplyChip } from "@/components/supply/supply-chip";
+import { SmartToolChip } from "@/components/supply/smart-tool-chip";
 import type { Build, ShowcaseMetadataElement } from "@/lib/types";
 
 interface MetadataElementProps {
@@ -260,7 +261,7 @@ function ToolsCard({ build }: { build: Build }) {
         </div>
       )}
 
-      {/* Free-text tools (plain chips, backward compat) */}
+      {/* Free-text tools (auto-matched against catalog when possible) */}
       {hasTools && (
         <div style={{ marginBottom: cqi(12) }}>
           <p className="text-zinc-500 uppercase tracking-wider" style={{ fontSize: cqi(9), marginBottom: cqi(6) }}>
@@ -268,13 +269,11 @@ function ToolsCard({ build }: { build: Build }) {
           </p>
           <div className="flex flex-wrap" style={{ gap: cqi(4) }}>
             {build.tools!.map((tool) => (
-              <span
+              <SmartToolChip
                 key={tool}
-                className="bg-zinc-800 text-zinc-300 border border-zinc-700"
+                tool={tool}
                 style={{ padding: `${cqi(3)} ${cqi(8)}`, borderRadius: cqi(6), fontSize: cqi(11) }}
-              >
-                {tool}
-              </span>
+              />
             ))}
           </div>
         </div>
