@@ -11,13 +11,14 @@ import {
   Palette,
   Layers,
   Clock,
-  Wrench,
   Calendar,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
 import { updateShowcaseLayout } from "@/lib/actions/build";
 import { toast } from "sonner";
+import { SupplyChip } from "@/components/supply/supply-chip";
+import { SmartToolChip } from "@/components/supply/smart-tool-chip";
 import type { ShowcaseLayout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -155,7 +156,6 @@ export function BuildPassport({
     { icon: Palette, label: t("builds.paintSystem"), value: build.paintSystem },
     { icon: Layers, label: t("builds.topcoat"), value: build.topcoat },
     { icon: Clock, label: t("builds.timeInvested"), value: build.timeInvested },
-    { icon: Wrench, label: t("builds.tools"), value: build.tools?.join(", ") },
   ].filter((row) => row.value);
 
   return (
@@ -396,6 +396,29 @@ export function BuildPassport({
               </div>
             ))}
           </div>
+
+          {/* Supplies & Tools */}
+          {(build.supplies?.length || build.tools?.length) ? (
+            <div className="mb-6">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">Supplies & Tools</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {build.supplies?.map((supply) => (
+                  <SupplyChip
+                    key={supply.id}
+                    supply={supply}
+                    style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "12px" }}
+                  />
+                ))}
+                {build.tools?.map((tool) => (
+                  <SmartToolChip
+                    key={tool}
+                    tool={tool}
+                    style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "12px" }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* Description */}
           {build.description && (

@@ -5,7 +5,7 @@ import { SmartImage as Image } from "@/components/ui/smart-image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, X, Upload, Grid3X3, MessageSquare, Warehouse, BookOpen } from "lucide-react";
+import { Menu, X, Upload, Grid3X3, MessageSquare, Warehouse, BookOpen, FlaskConical } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -17,6 +17,7 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 const baseNavLinks = [
   { href: "/builds", labelKey: "nav.builds", icon: Grid3X3, authOnly: false },
   { href: "/collector", labelKey: "nav.collector", icon: BookOpen, authOnly: false },
+  { href: "/supplies", labelKey: "nav.supplies", icon: FlaskConical, authOnly: false },
   { href: "/forum", labelKey: "nav.forum", icon: MessageSquare, authOnly: false },
   { href: "/upload", labelKey: "nav.upload", icon: Upload, authOnly: false },
 ];

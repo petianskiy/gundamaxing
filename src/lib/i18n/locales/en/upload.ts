@@ -108,6 +108,16 @@ export const upload = {
   "upload.createFailed": "Failed to create build.",
   "upload.unexpectedError": "An unexpected error occurred.",
 
+  // Supply nav & page
+  "nav.supplies": "Supplies",
+  "supply.pageTitle": "Supply Catalog",
+  "supply.pageSubtitle": "Browse paints, tools, primers, cements, and more from top Gunpla brands.",
+  "supply.catalogSearchPlaceholder": "Search by name, code, or brand...",
+  "supply.allBrands": "All Brands",
+  "supply.allCategories": "All Categories",
+  "supply.clearFilters": "Clear filters",
+  "supply.whereToBuy": "Where to Buy",
+
   // Supply combobox
   "supply.searchPlaceholder": "Search supplies or type freely...",
   "supply.searchHelper": "Search the catalog or type freely",

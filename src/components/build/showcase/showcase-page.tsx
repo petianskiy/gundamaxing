@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
-import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check, Crosshair, Move, ImageIcon } from "lucide-react";
+import { Pencil, ArrowRight, Package, Palette, Layers, Clock, X, Check, Crosshair, Move, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -17,6 +17,8 @@ import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { TEMPLATES } from "./panels/template-picker-panel";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
+import { SupplyChip } from "@/components/supply/supply-chip";
+import { SmartToolChip } from "@/components/supply/smart-tool-chip";
 import { updateBuildInfo, updateImagePosition, setPrimaryImage } from "@/lib/actions/build";
 import { toast } from "sonner";
 import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType, Grade, Scale, BuildStatus, Technique } from "@/lib/types";
@@ -474,7 +476,6 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
     { icon: Palette, label: "Paint System", value: isEditing ? undefined : (build.paintSystem || paintSystem) },
     { icon: Layers, label: "Topcoat", value: isEditing ? undefined : (build.topcoat || topcoat) },
     { icon: Clock, label: "Time Invested", value: isEditing ? undefined : (build.timeInvested || timeInvested) },
-    { icon: Wrench, label: "Tools", value: isEditing ? undefined : build.tools?.join(", ") },
   ].filter((row) => row.value);
 
   const displayDescription = isEditing ? undefined : (build.description || description);
@@ -806,6 +807,29 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
             ))}
           </div>
         )}
+
+        {/* Supplies & Tools (read-only view) */}
+        {!isEditing && (build.supplies?.length || build.tools?.length) ? (
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Supplies & Tools</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {build.supplies?.map((supply) => (
+                <SupplyChip
+                  key={supply.id}
+                  supply={supply}
+                  style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "12px" }}
+                />
+              ))}
+              {build.tools?.map((tool) => (
+                <SmartToolChip
+                  key={tool}
+                  tool={tool}
+                  style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "12px" }}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* Cover Image & Focal Point (edit mode only) */}
         {isEditing && primaryImage && (

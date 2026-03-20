@@ -108,6 +108,16 @@ export const upload = {
   "upload.createFailed": "建立作品失敗。",
   "upload.unexpectedError": "發生意外錯誤。",
 
+  // Supply nav & page
+  "nav.supplies": "用品",
+  "supply.pageTitle": "用品目錄",
+  "supply.pageSubtitle": "瀏覽各大品牌的鋼彈模型用品 — 塗料、工具、底漆、黏著劑等",
+  "supply.catalogSearchPlaceholder": "依名稱、代碼或品牌搜尋...",
+  "supply.allBrands": "所有品牌",
+  "supply.allCategories": "所有類別",
+  "supply.clearFilters": "清除篩選",
+  "supply.whereToBuy": "購買管道",
+
   // Supply combobox
   "supply.searchPlaceholder": "搜尋用品或自由輸入...",
   "supply.searchHelper": "搜尋目錄或自由輸入",

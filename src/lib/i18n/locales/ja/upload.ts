@@ -108,6 +108,16 @@ export const upload = {
   "upload.createFailed": "ビルドの作成に失敗しました。",
   "upload.unexpectedError": "予期しないエラーが発生しました。",
 
+  // Supply nav & page
+  "nav.supplies": "サプライ",
+  "supply.pageTitle": "サプライカタログ",
+  "supply.pageSubtitle": "塗料、ツール、サーフェイサー、セメントなど — 主要ブランドのガンプラ用品を閲覧",
+  "supply.catalogSearchPlaceholder": "名前、コード、ブランドで検索...",
+  "supply.allBrands": "すべてのブランド",
+  "supply.allCategories": "すべてのカテゴリー",
+  "supply.clearFilters": "フィルターをクリア",
+  "supply.whereToBuy": "購入先",
+
   // Supply combobox
   "supply.searchPlaceholder": "サプライを検索、または自由入力...",
   "supply.searchHelper": "カタログ検索またはフリーテキスト入力",
