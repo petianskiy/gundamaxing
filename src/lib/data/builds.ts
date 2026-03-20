@@ -200,19 +200,33 @@ export const getBuildById = cache(async (idOrSlug: string): Promise<Build | null
 });
 
 export const getBuildForEdit = cache(async (idOrSlug: string, userId: string) => {
+  const includeClause = {
+    images: { orderBy: { order: "asc" as const } },
+    supplies: {
+      select: {
+        rawText: true,
+        supply: {
+          select: {
+            id: true,
+            brand: true,
+            name: true,
+            code: true,
+            category: true,
+          },
+        },
+      },
+    },
+  };
+
   let build = await db.build.findUnique({
     where: { slug: idOrSlug },
-    include: {
-      images: { orderBy: { order: "asc" } },
-    },
+    include: includeClause,
   });
 
   if (!build) {
     build = await db.build.findUnique({
       where: { id: idOrSlug },
-      include: {
-        images: { orderBy: { order: "asc" } },
-      },
+      include: includeClause,
     });
   }
 
@@ -222,6 +236,14 @@ export const getBuildForEdit = cache(async (idOrSlug: string, userId: string) =>
   return {
     ...build,
     images: build.images.map((img) => ({ ...img, url: toCdnUrl(img.url) })),
+    supplies: build.supplies.map((s) => ({
+      id: s.supply.id,
+      brand: s.supply.brand,
+      name: s.supply.name,
+      code: s.supply.code,
+      category: s.supply.category,
+      rawText: s.rawText,
+    })),
   };
 });
 

@@ -107,4 +107,17 @@ export const upload = {
   "upload.imageUploadFailed": "画像のアップロードに失敗しました。もう一度お試しください。",
   "upload.createFailed": "ビルドの作成に失敗しました。",
   "upload.unexpectedError": "予期しないエラーが発生しました。",
+
+  // Supply combobox
+  "supply.searchPlaceholder": "サプライを検索、または自由入力...",
+  "supply.searchHelper": "カタログ検索またはフリーテキスト入力",
+  "supply.recognizedAs": "認識結果",
+  "supply.exactMatch": "完全一致",
+  "supply.strongMatch": "高い一致",
+  "supply.possibleMatch": "候補",
+  "supply.useCustom": "カスタムサプライとして追加",
+  "supply.notInCatalog": "カタログ未登録 — フリーテキストとして追加",
+  "supply.noResults": "該当するサプライが見つかりません。入力を続けるか、カスタムで追加してください。",
+  "supply.usedInBuilds": "{count}件のビルドで使用",
+  "supply.usedInBuild": "1件のビルドで使用",
 } as const;

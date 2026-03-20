@@ -260,6 +260,7 @@ model Build {
   eraAssignments BuildEraAssignment[]
   reactions      Reaction[]
   lineageNodes   LineageNode[]
+  supplies       BuildSupply[]
 
   commentsEnabled Boolean  @default(true)
   isFeaturedBuild Boolean  @default(false)
@@ -1042,4 +1043,76 @@ model HangarThemeConfig {
 
   @@index([isPublished])
   @@index([sortOrder])
+}
+
+// ─── SUPPLY CATALOG ──────────────────────────────────────────────
+
+enum SupplyCategory {
+  PAINT
+  PRIMER
+  TOPCOAT
+  THINNER
+  CEMENT
+  PUTTY
+  PANEL_LINER
+  MARKER
+  TOOL
+  ABRASIVE
+  MASKING
+  DECAL
+  OTHER
+}
+
+model Supply {
+  id           String         @id @default(cuid())
+  brand        String
+  productLine  String?
+  name         String
+  code         String?
+  category     SupplyCategory
+  subcategory  String?
+
+  // Optional rich metadata
+  finish       String?
+  solventType  String?
+  colorHex     String?
+  imageUrl     String?
+
+  slug         String         @unique
+  isActive     Boolean        @default(true)
+
+  aliases      SupplyAlias[]
+  buildSupplies BuildSupply[]
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([brand])
+  @@index([category])
+  @@index([brand, productLine])
+  @@index([isActive])
+}
+
+model SupplyAlias {
+  id        String  @id @default(cuid())
+  supplyId  String
+  supply    Supply  @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  alias     String
+  locale    String?
+
+  @@index([alias])
+  @@index([supplyId])
+}
+
+model BuildSupply {
+  id       String @id @default(cuid())
+  buildId  String
+  build    Build  @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  supplyId String
+  supply   Supply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  rawText  String?
+
+  @@unique([buildId, supplyId])
+  @@index([buildId])
+  @@index([supplyId])
 }

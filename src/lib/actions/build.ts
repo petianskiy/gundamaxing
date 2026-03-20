@@ -93,6 +93,7 @@ export async function createBuild(formData: FormData) {
     // Parse form data
     const techniquesRaw = formData.get("techniques") as string | null;
     const toolsRaw = formData.get("tools") as string | null;
+    const supplyIdsRaw = formData.get("supplyIds") as string | null;
     const imageUrlsRaw = formData.get("imageUrls") as string | null;
     const primaryIndexRaw = formData.get("primaryIndex") as string | null;
 
@@ -188,6 +189,18 @@ export async function createBuild(formData: FormData) {
         })),
       });
 
+      // Link structured supplies if provided
+      const supplyIds: string[] = supplyIdsRaw ? JSON.parse(supplyIdsRaw) : [];
+      if (supplyIds.length > 0) {
+        await tx.buildSupply.createMany({
+          data: supplyIds.map((supplyId) => ({
+            buildId: newBuild.id,
+            supplyId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
       return newBuild;
     });
 
@@ -246,6 +259,7 @@ export async function updateBuild(formData: FormData) {
     // Parse form data
     const techniquesRaw = formData.get("techniques") as string | null;
     const toolsRaw = formData.get("tools") as string | null;
+    const supplyIdsRaw = formData.get("supplyIds") as string | null;
     const imageUrlsRaw = formData.get("imageUrls") as string | null;
     const primaryIndexRaw = formData.get("primaryIndex") as string | null;
 
@@ -316,6 +330,21 @@ export async function updateBuild(formData: FormData) {
             buildId,
           })),
         });
+      }
+
+      // Update structured supplies if provided
+      const supplyIds: string[] = supplyIdsRaw ? JSON.parse(supplyIdsRaw) : [];
+      if (supplyIdsRaw) {
+        await tx.buildSupply.deleteMany({ where: { buildId } });
+        if (supplyIds.length > 0) {
+          await tx.buildSupply.createMany({
+            data: supplyIds.map((supplyId) => ({
+              buildId,
+              supplyId,
+            })),
+            skipDuplicates: true,
+          });
+        }
       }
     });
 

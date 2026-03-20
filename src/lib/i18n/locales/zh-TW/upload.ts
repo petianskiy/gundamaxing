@@ -107,4 +107,17 @@ export const upload = {
   "upload.imageUploadFailed": "圖片上傳失敗。請再試一次。",
   "upload.createFailed": "建立作品失敗。",
   "upload.unexpectedError": "發生意外錯誤。",
+
+  // Supply combobox
+  "supply.searchPlaceholder": "搜尋用品或自由輸入...",
+  "supply.searchHelper": "搜尋目錄或自由輸入",
+  "supply.recognizedAs": "識別為",
+  "supply.exactMatch": "完全匹配",
+  "supply.strongMatch": "高度匹配",
+  "supply.possibleMatch": "可能匹配",
+  "supply.useCustom": "作為自訂用品新增",
+  "supply.notInCatalog": "尚未收錄 — 以文字方式新增",
+  "supply.noResults": "找不到相關用品。請繼續輸入或以自訂方式新增。",
+  "supply.usedInBuilds": "被 {count} 個作品使用",
+  "supply.usedInBuild": "被 1 個作品使用",
 } as const;

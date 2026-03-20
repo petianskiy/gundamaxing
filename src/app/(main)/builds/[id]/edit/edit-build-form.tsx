@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
+import { SupplyCombobox, type SelectedSupply } from "@/components/supply/supply-combobox";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { updateBuild } from "@/lib/actions/build";
 import type { BuildStatus as PrismaBuildStatus } from "@prisma/client";
@@ -131,6 +132,7 @@ interface BuildData {
   description: string | null;
   intentStatement: string | null;
   images: { id: string; url: string; alt: string; isPrimary: boolean; order: number }[];
+  supplies?: { id: string; brand: string; name: string; code: string | null; category: string; rawText: string | null }[];
 }
 
 export function EditBuildForm({ build }: { build: BuildData }) {
@@ -160,6 +162,15 @@ export function EditBuildForm({ build }: { build: BuildData }) {
   const [topcoat, setTopcoat] = useState(build.topcoat ?? "");
   const [timeInvested, setTimeInvested] = useState(build.timeInvested ?? "");
   const [tools, setTools] = useState(build.tools.join(", "));
+  const [selectedSupplies, setSelectedSupplies] = useState<SelectedSupply[]>(
+    () => (build.supplies || []).map((s) => ({
+      id: s.id,
+      brand: s.brand,
+      name: s.name,
+      code: s.code,
+      category: s.category,
+    }))
+  );
   const [description, setDescription] = useState(build.description ?? "");
   const [intentStatement, setIntentStatement] = useState(build.intentStatement ?? "");
 
@@ -274,6 +285,9 @@ export function EditBuildForm({ build }: { build: BuildData }) {
       formData.set("timeInvested", timeInvested);
       if (tools.trim()) {
         formData.set("tools", JSON.stringify(tools.split(",").map((t) => t.trim()).filter(Boolean)));
+      }
+      if (selectedSupplies.length > 0) {
+        formData.set("supplyIds", JSON.stringify(selectedSupplies.map((s) => s.id)));
       }
       formData.set("intentStatement", intentStatement);
       formData.set("imageUrls", JSON.stringify(finalUrls));
@@ -562,13 +576,12 @@ export function EditBuildForm({ build }: { build: BuildData }) {
             icon={FileText}
           >
             <div className="space-y-4">
-              <FormField label={t("upload.toolsUsed")} helper={t("upload.toolsHelper")}>
-                <input
-                  type="text"
-                  placeholder={t("upload.toolsPlaceholder")}
-                  className={inputClass}
-                  value={tools}
-                  onChange={(e) => setTools(e.target.value)}
+              <FormField label={t("upload.toolsUsed")} helper={t("supply.searchHelper")}>
+                <SupplyCombobox
+                  selected={selectedSupplies}
+                  freeText={tools}
+                  onSelectedChange={setSelectedSupplies}
+                  onFreeTextChange={setTools}
                 />
               </FormField>
 

@@ -107,4 +107,17 @@ export const upload = {
   "upload.imageUploadFailed": "Image upload failed. Please try again.",
   "upload.createFailed": "Failed to create build.",
   "upload.unexpectedError": "An unexpected error occurred.",
+
+  // Supply combobox
+  "supply.searchPlaceholder": "Search supplies or type freely...",
+  "supply.searchHelper": "Search the catalog or type freely",
+  "supply.recognizedAs": "Recognized as",
+  "supply.exactMatch": "Exact match",
+  "supply.strongMatch": "Strong match",
+  "supply.possibleMatch": "Possible match",
+  "supply.useCustom": "Use as custom supply",
+  "supply.notInCatalog": "Not in catalog yet — add as free text",
+  "supply.noResults": "No supplies found. Keep typing to search or add as custom.",
+  "supply.usedInBuilds": "used in {count} builds",
+  "supply.usedInBuild": "used in 1 build",
 } as const;

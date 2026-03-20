@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { filterConfig } from "@/lib/config/filters";
+import { SupplyCombobox, type SelectedSupply } from "@/components/supply/supply-combobox";
 import { useR2Upload } from "@/lib/upload/use-r2-upload";
 import { createBuild } from "@/lib/actions/build";
 import { TemplateChooserOverlay } from "@/components/build/showcase/template-chooser-overlay";
@@ -310,6 +311,7 @@ export function UploadForm() {
   const [topcoat, setTopcoat] = useState("");
   const [timeInvested, setTimeInvested] = useState("");
   const [tools, setTools] = useState("");
+  const [selectedSupplies, setSelectedSupplies] = useState<SelectedSupply[]>([]);
   const [description, setDescription] = useState("");
   const [intentStatement, setIntentStatement] = useState("");
 
@@ -445,6 +447,9 @@ export function UploadForm() {
       if (timeInvested) formData.set("timeInvested", timeInvested);
       if (tools.trim()) {
         formData.set("tools", JSON.stringify(tools.split(",").map((t) => t.trim()).filter(Boolean)));
+      }
+      if (selectedSupplies.length > 0) {
+        formData.set("supplyIds", JSON.stringify(selectedSupplies.map((s) => s.id)));
       }
       if (intentStatement) formData.set("intentStatement", intentStatement);
       formData.set("imageUrls", JSON.stringify(uploadedUrls));
@@ -879,13 +884,12 @@ export function UploadForm() {
             badge={t("upload.optionalBadge")}
           >
             <div className="space-y-4">
-              <FormField label={t("upload.toolsUsed")} helper={t("upload.toolsHelper")}>
-                <input
-                  type="text"
-                  placeholder={t("upload.toolsPlaceholder")}
-                  className={inputClass}
-                  value={tools}
-                  onChange={(e) => setTools(e.target.value)}
+              <FormField label={t("upload.toolsUsed")} helper={t("supply.searchHelper")}>
+                <SupplyCombobox
+                  selected={selectedSupplies}
+                  freeText={tools}
+                  onSelectedChange={setSelectedSupplies}
+                  onFreeTextChange={setTools}
                 />
               </FormField>
 
