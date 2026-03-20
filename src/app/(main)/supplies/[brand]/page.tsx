@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { BrandCatalog } from "./brand-catalog";
 
 const BRAND_SLUGS: Record<string, string> = {
@@ -31,6 +32,11 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function BrandPage({ params }: Props) {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+    redirect("/");
+  }
+
   const { brand: slug } = await params;
   const brandName = BRAND_SLUGS[slug];
   if (!brandName) notFound();

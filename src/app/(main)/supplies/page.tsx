@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { FlaskConical } from "lucide-react";
 
 export const metadata = {
@@ -50,6 +52,11 @@ async function getBrandCounts() {
 }
 
 export default async function SuppliesPage() {
+  const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+    redirect("/");
+  }
+
   const brandCounts = await getBrandCounts();
   const brands = Object.keys(BRAND_CONFIG);
 
