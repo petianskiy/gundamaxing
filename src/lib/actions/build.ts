@@ -769,7 +769,7 @@ export async function setPrimaryImage(buildId: string, imageId: string) {
 
     const build = await db.build.findUnique({
       where: { id: buildId },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, slug: true, user: { select: { username: true } } },
     });
 
     if (!build || build.userId !== session.user.id) {
@@ -787,7 +787,11 @@ export async function setPrimaryImage(buildId: string, imageId: string) {
       });
     });
 
-    revalidatePath(`/builds/${buildId}`);
+    revalidatePath(`/builds/${build.slug}`);
+    revalidatePath("/builds");
+    if (build.user?.username) {
+      revalidatePath(`/u/${build.user.username}`);
+    }
     return { success: true };
   } catch (error) {
     console.error("setPrimaryImage error:", error);

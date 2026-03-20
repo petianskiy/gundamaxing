@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
-import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check, Crosshair, Move } from "lucide-react";
+import { Pencil, ArrowRight, Package, Palette, Layers, Clock, Wrench, X, Check, Crosshair, Move, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
@@ -17,7 +17,7 @@ import { EditorGuideOverlay } from "./editor-guide-overlay";
 import { TEMPLATES } from "./panels/template-picker-panel";
 import { ActionsBar } from "@/components/build/actions-bar";
 import { CommentSection } from "@/components/build/comment-section";
-import { updateBuildInfo, updateImagePosition } from "@/lib/actions/build";
+import { updateBuildInfo, updateImagePosition, setPrimaryImage } from "@/lib/actions/build";
 import { toast } from "sonner";
 import type { Build, BuildImage, Comment, ShowcaseLayout, ShowcaseImageElement, ShowcasePage as ShowcasePageType, Grade, Scale, BuildStatus, Technique } from "@/lib/types";
 
@@ -458,8 +458,14 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
   const [topcoat, setTopcoat] = useState(build.topcoat || "");
   const [timeInvested, setTimeInvested] = useState(build.timeInvested || "");
 
+  // Cover image selection state
+  const [selectedCoverId, setSelectedCoverId] = useState<string | undefined>(
+    () => (build.images.find((img) => img.isPrimary) || build.images[0])?.id
+  );
+  const [isSavingCover, setIsSavingCover] = useState(false);
+  const primaryImage = build.images.find((img) => img.id === selectedCoverId) || build.images.find((img) => img.isPrimary) || build.images[0];
+
   // Image focal point state
-  const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
   const [focalPoint, setFocalPoint] = useState(primaryImage?.objectPosition || "50% 50%");
   const [isSavingFocal, setIsSavingFocal] = useState(false);
 
@@ -542,7 +548,27 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
     setPaintSystem(build.paintSystem || "");
     setTopcoat(build.topcoat || "");
     setTimeInvested(build.timeInvested || "");
+    // Reset cover image selection to current primary
+    const currentPrimary = build.images.find((img) => img.isPrimary) || build.images[0];
+    setSelectedCoverId(currentPrimary?.id);
+    setFocalPoint(currentPrimary?.objectPosition || "50% 50%");
     setIsEditing(false);
+  }
+
+  async function handleCoverChange(image: BuildImage) {
+    if (!image.id || image.id === selectedCoverId) return;
+    setIsSavingCover(true);
+    const result = await setPrimaryImage(build.id, image.id);
+    setIsSavingCover(false);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Cover image updated!");
+      setSelectedCoverId(image.id);
+      setFocalPoint(image.objectPosition || "50% 50%");
+      // Update build.images in-place so the rest of the UI reflects the change
+      build.images.forEach((img) => { img.isPrimary = img.id === image.id; });
+    }
   }
 
   async function handleFocalPointClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -781,54 +807,100 @@ function BuildInfoSection({ build, isOwner }: { build: Build; isOwner: boolean }
           </div>
         )}
 
-        {/* Image Focal Point (edit mode only) */}
+        {/* Cover Image & Focal Point (edit mode only) */}
         {isEditing && primaryImage && (
-          <div>
-            <label className={labelClass}>
-              <Move className="h-3 w-3 inline mr-1" />
-              Cover Image Focal Point
-            </label>
-            <p className="text-[10px] text-muted-foreground mb-2">Click on the image to set where it should be centered when cropped on cards.</p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Focal point editor */}
-              <div className="relative w-full sm:w-2/3 max-w-sm aspect-[4/3] rounded-lg overflow-hidden border border-border/50 cursor-crosshair group shrink-0" onClick={handleFocalPointClick}>
-                <Image
-                  src={primaryImage.url}
-                  alt={primaryImage.alt}
-                  fill
-                  className="object-cover"
-                  style={{ objectPosition: focalPoint }}
-                />
-                {/* Focal point marker */}
-                <div
-                  className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ left: focalPoint.split(" ")[0], top: focalPoint.split(" ")[1] }}
-                >
-                  <Crosshair className="w-6 h-6 text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
+          <div className="space-y-4">
+            {/* Cover Image Selector */}
+            {build.images.length > 1 && (
+              <div>
+                <label className={labelClass}>
+                  <ImageIcon className="h-3 w-3 inline mr-1" />
+                  Cover Image
+                </label>
+                <p className="text-[10px] text-muted-foreground mb-2">Select which image appears as the cover on cards and feeds.</p>
+                <div className="flex flex-wrap gap-2">
+                  {build.images.map((img) => (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => handleCoverChange(img)}
+                      disabled={isSavingCover}
+                      className={cn(
+                        "relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all shrink-0",
+                        img.id === selectedCoverId
+                          ? "border-gx-red ring-1 ring-gx-red/50"
+                          : "border-border/50 hover:border-muted-foreground/50",
+                        isSavingCover && "opacity-60 cursor-wait"
+                      )}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={img.alt}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                      {img.id === selectedCoverId && (
+                        <div className="absolute inset-0 bg-gx-red/10 flex items-center justify-center">
+                          <div className="bg-gx-red rounded-full p-0.5">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
-                {isSavingFocal && (
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <span className="text-white text-xs">Saving...</span>
-                  </div>
-                )}
               </div>
-              {/* Live card thumbnail preview */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Card Preview</span>
-                <div className="w-40 rounded-lg border border-border/50 bg-card overflow-hidden shadow-sm">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                    <Image
-                      src={primaryImage.url}
-                      alt={primaryImage.alt}
-                      fill
-                      sizes="160px"
-                      className="object-cover"
-                      style={{ objectPosition: focalPoint }}
-                    />
+            )}
+
+            {/* Focal Point */}
+            <div>
+              <label className={labelClass}>
+                <Move className="h-3 w-3 inline mr-1" />
+                Cover Image Focal Point
+              </label>
+              <p className="text-[10px] text-muted-foreground mb-2">Click on the image to set where it should be centered when cropped on cards.</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Focal point editor */}
+                <div className="relative w-full sm:w-2/3 max-w-sm aspect-[4/3] rounded-lg overflow-hidden border border-border/50 cursor-crosshair group shrink-0" onClick={handleFocalPointClick}>
+                  <Image
+                    src={primaryImage.url}
+                    alt={primaryImage.alt}
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: focalPoint }}
+                  />
+                  {/* Focal point marker */}
+                  <div
+                    className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ left: focalPoint.split(" ")[0], top: focalPoint.split(" ")[1] }}
+                  >
+                    <Crosshair className="w-6 h-6 text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
                   </div>
-                  <div className="px-2 py-1.5">
-                    <p className="text-[10px] font-semibold text-foreground truncate">{build.title}</p>
-                    <p className="text-[9px] text-muted-foreground truncate">{build.kitName}</p>
+                  {(isSavingFocal || isSavingCover) && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <span className="text-white text-xs">Saving...</span>
+                    </div>
+                  )}
+                </div>
+                {/* Live card thumbnail preview */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Card Preview</span>
+                  <div className="w-40 rounded-lg border border-border/50 bg-card overflow-hidden shadow-sm">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                      <Image
+                        src={primaryImage.url}
+                        alt={primaryImage.alt}
+                        fill
+                        sizes="160px"
+                        className="object-cover"
+                        style={{ objectPosition: focalPoint }}
+                      />
+                    </div>
+                    <div className="px-2 py-1.5">
+                      <p className="text-[10px] font-semibold text-foreground truncate">{build.title}</p>
+                      <p className="text-[9px] text-muted-foreground truncate">{build.kitName}</p>
+                    </div>
                   </div>
                 </div>
               </div>
