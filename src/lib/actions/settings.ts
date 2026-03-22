@@ -360,9 +360,13 @@ export async function changeUsername(data: unknown) {
 
     revalidatePath(`/u/${oldUsername}`);
     revalidatePath(`/u/${newUsername}`);
+    revalidatePath(`/hangar/${oldUsername}`);
+    revalidatePath(`/hangar/${newUsername}`);
     revalidatePath("/settings/profile");
+    revalidatePath("/settings");
+    revalidatePath("/builds");
 
-    return { success: true };
+    return { success: true, newUsername };
   } catch (error) {
     console.error("changeUsername error:", error);
     return { error: "An unexpected error occurred." };

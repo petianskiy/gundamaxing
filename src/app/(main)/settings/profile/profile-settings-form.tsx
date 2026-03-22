@@ -137,6 +137,8 @@ export function ProfileSettingsForm({
         return;
       }
       setForm((prev) => ({ ...prev, username: newUsername }));
+      // Refresh session so navbar/hangar links use the new username
+      await updateSession();
     }
 
     const formData = new FormData();
