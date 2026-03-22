@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import { Heart } from "lucide-react";
@@ -79,16 +79,73 @@ export function ShowcaseView({ builds, likeCounts }: ShowcaseViewProps) {
   const allLikeCounts = sorted.map((b) => likeCounts[b.id] ?? b.likes);
   const thresholds = computeThresholds(allLikeCounts);
 
-  // Holographic tilt effect
-  const setupTilt = useCallback(() => {
+  // ── Smooth holographic tilt with lerp interpolation ──
+  useEffect(() => {
     if (!gridRef.current) return;
     const cards = gridRef.current.querySelectorAll<HTMLElement>(".showcase-card");
+    const cleanups: (() => void)[] = [];
 
     cards.forEach((card) => {
-      const inner = card.querySelector<HTMLElement>(".showcase-card-inner");
+      const innerEl = card.querySelector<HTMLElement>(".showcase-card-inner");
       const holo = card.querySelector<HTMLElement>(".showcase-card-holo");
       const border = card.querySelector<HTMLElement>(".showcase-card-border");
-      if (!inner) return;
+      if (!innerEl) return;
+      const inner = innerEl; // non-null for closures
+
+      // State for smooth interpolation
+      let targetRotX = 0;
+      let targetRotY = 0;
+      let targetScale = 1;
+      let currentRotX = 0;
+      let currentRotY = 0;
+      let currentScale = 1;
+      let holoAngle = 0;
+      let hovering = false;
+      let rafId: number | null = null;
+
+      const LERP_SPEED = 0.08; // lower = smoother, higher = more responsive
+      const MAX_TILT_Y = 12;
+      const MAX_TILT_X = 8;
+
+      function lerp(current: number, target: number, factor: number): number {
+        return current + (target - current) * factor;
+      }
+
+      function animate() {
+        currentRotX = lerp(currentRotX, targetRotX, LERP_SPEED);
+        currentRotY = lerp(currentRotY, targetRotY, LERP_SPEED);
+        currentScale = lerp(currentScale, targetScale, LERP_SPEED);
+
+        inner.style.transform =
+          `perspective(800px) rotateY(${currentRotY}deg) rotateX(${currentRotX}deg) scale3d(${currentScale},${currentScale},${currentScale})`;
+
+        // Keep animating if not settled
+        const settled =
+          Math.abs(currentRotX - targetRotX) < 0.01 &&
+          Math.abs(currentRotY - targetRotY) < 0.01 &&
+          Math.abs(currentScale - targetScale) < 0.001;
+
+        if (!settled || hovering) {
+          rafId = requestAnimationFrame(animate);
+        } else {
+          rafId = null;
+          // Snap to exact rest position
+          inner.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
+        }
+      }
+
+      function startLoop() {
+        if (rafId === null) {
+          rafId = requestAnimationFrame(animate);
+        }
+      }
+
+      const onEnter = () => {
+        hovering = true;
+        inner.classList.remove("returning");
+        targetScale = 1.04;
+        startLoop();
+      };
 
       const onMove = (e: MouseEvent) => {
         const rect = card.getBoundingClientRect();
@@ -96,41 +153,54 @@ export function ShowcaseView({ builds, likeCounts }: ShowcaseViewProps) {
         const cy = rect.top + rect.height / 2;
         const dx = (e.clientX - cx) / (rect.width / 2);
         const dy = (e.clientY - cy) / (rect.height / 2);
-        inner.style.transform = `perspective(800px) rotateY(${dx * 14}deg) rotateX(${-dy * 10}deg) scale3d(1.04,1.04,1.04)`;
 
-        const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
-        if (holo) holo.style.setProperty("--holo-angle", `${angle}deg`);
-        if (border) border.style.setProperty("--holo-angle", `${angle}deg`);
+        targetRotY = dx * MAX_TILT_Y;
+        targetRotX = -dy * MAX_TILT_X;
+
+        holoAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+        if (holo) holo.style.setProperty("--holo-angle", `${holoAngle}deg`);
+        if (border) border.style.setProperty("--holo-angle", `${holoAngle}deg`);
       };
 
       const onLeave = () => {
-        inner.style.transform = "";
-        inner.style.transition = "transform 0.4s cubic-bezier(0.23,1,0.32,1)";
-        setTimeout(() => { inner.style.transition = "transform 0.15s ease"; }, 400);
+        hovering = false;
+        targetRotX = 0;
+        targetRotY = 0;
+        targetScale = 1;
+        inner.classList.add("returning");
+        startLoop();
       };
 
+      card.addEventListener("mouseenter", onEnter);
       card.addEventListener("mousemove", onMove);
       card.addEventListener("mouseleave", onLeave);
 
-      // Legendary continuous holo animation
+      // Legendary: continuous holo rotation when idle
+      let legendRafId: number | null = null;
       if (card.dataset.rarity === "L" && holo && border) {
         let t = 0;
         const tick = () => {
-          t += 0.4;
-          holo.style.setProperty("--holo-angle", `${t}deg`);
-          border.style.setProperty("--holo-angle", `${t}deg`);
-          requestAnimationFrame(tick);
+          t += 0.3;
+          if (!hovering) {
+            holo.style.setProperty("--holo-angle", `${t}deg`);
+            border.style.setProperty("--holo-angle", `${t}deg`);
+          }
+          legendRafId = requestAnimationFrame(tick);
         };
-        requestAnimationFrame(tick);
+        legendRafId = requestAnimationFrame(tick);
       }
-    });
-  }, []);
 
-  useEffect(() => {
-    // Small delay to let cards render
-    const timer = setTimeout(setupTilt, 100);
-    return () => clearTimeout(timer);
-  }, [setupTilt, sorted.length]);
+      cleanups.push(() => {
+        card.removeEventListener("mouseenter", onEnter);
+        card.removeEventListener("mousemove", onMove);
+        card.removeEventListener("mouseleave", onLeave);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (legendRafId !== null) cancelAnimationFrame(legendRafId);
+      });
+    });
+
+    return () => cleanups.forEach((fn) => fn());
+  }, [sorted.length]);
 
   return (
     <div>
