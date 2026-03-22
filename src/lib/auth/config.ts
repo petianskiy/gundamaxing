@@ -489,27 +489,45 @@ const authConfig: NextAuthConfig = {
             token.isBanned = false;
           }
         } else {
-          token.id = user.id!;
-          token.role = (user as any).role ?? "USER";
-          token.username = (user as any).username ?? "";
-          token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
-          token.onboardingComplete = (user as any).onboardingComplete ?? false;
-          token.picture = user.image ?? "";
-          token.name = user.name ?? "";
-          token.isBanned = false;
+          // Credentials login — always read fresh from DB to catch username changes
+          const freshDbUser = await db.user.findUnique({
+            where: { id: user.id! },
+            select: { role: true, username: true, displayName: true, verificationTier: true, onboardingComplete: true, avatar: true, riskScore: true },
+          });
+          if (freshDbUser) {
+            token.id = user.id!;
+            token.role = freshDbUser.role;
+            token.username = freshDbUser.username;
+            token.verificationTier = freshDbUser.verificationTier;
+            token.onboardingComplete = freshDbUser.onboardingComplete;
+            token.picture = freshDbUser.avatar ? toCdnUrl(freshDbUser.avatar) : user.image ?? "";
+            token.name = freshDbUser.displayName ?? freshDbUser.username;
+            token.isBanned = freshDbUser.riskScore >= 100;
+          } else {
+            token.id = user.id!;
+            token.role = (user as any).role ?? "USER";
+            token.username = (user as any).username ?? "";
+            token.verificationTier = (user as any).verificationTier ?? "UNVERIFIED";
+            token.onboardingComplete = (user as any).onboardingComplete ?? false;
+            token.picture = user.image ?? "";
+            token.name = user.name ?? "";
+            token.isBanned = false;
+          }
         }
       }
 
-      // Periodic refresh (every 5 minutes) to catch admin-side changes + avatar updates + bans
+      // Periodic refresh (every 5 minutes) to catch admin-side changes + username changes + avatar updates + bans
       if (!user && trigger !== "update" && token.id) {
         const lastCheck = (token.lastRoleCheck as number) || 0;
         if (Date.now() - lastCheck > 5 * 60 * 1000) {
           const freshUser = await db.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, avatar: true, riskScore: true },
+            select: { role: true, username: true, displayName: true, avatar: true, riskScore: true },
           });
           if (freshUser) {
             token.role = freshUser.role;
+            token.username = freshUser.username;
+            token.name = freshUser.displayName ?? freshUser.username;
             token.picture = freshUser.avatar ? toCdnUrl(freshUser.avatar) : token.picture ?? "";
             token.isBanned = freshUser.riskScore >= 100;
           }

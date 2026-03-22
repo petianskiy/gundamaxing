@@ -126,6 +126,7 @@ function PageViewer({
   const [animating, setAnimating] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const didDragRef = useRef(false); // true if drag moved >5px (suppresses click)
   const dragRef = useRef<{ x: number; time: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -154,6 +155,7 @@ function PageViewer({
   // ── Unified pointer drag (mouse + touch) ──
   const handleDragStart = (clientX: number) => {
     dragRef.current = { x: clientX, time: Date.now() };
+    didDragRef.current = false;
     setIsDragging(true);
     setDragOffset(0);
   };
@@ -161,8 +163,9 @@ function PageViewer({
   const handleDragMove = (clientX: number) => {
     if (!dragRef.current || !containerRef.current) return;
     const dx = clientX - dragRef.current.x;
+    // Mark as real drag once moved >5px (suppresses click on child elements)
+    if (Math.abs(dx) > 5) didDragRef.current = true;
     const containerWidth = containerRef.current.offsetWidth;
-    // Convert pixel offset to percentage of container width
     const pct = (dx / containerWidth) * 100;
     setDragOffset(pct);
   };
@@ -216,6 +219,15 @@ function PageViewer({
     handleDragEnd(e.clientX);
   };
 
+  // Suppress click on children (lightbox, links) if user was dragging
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (didDragRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
+      didDragRef.current = false;
+    }
+  };
+
   // Compute transform: base page position + live drag offset
   const translateX = isDragging
     ? `calc(-${currentPage * 100}% + ${dragOffset}%)`
@@ -234,6 +246,7 @@ function PageViewer({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onClickCapture={handleClickCapture}
     >
       <div className="relative">
         {/* Pages side-by-side, translateX for position + drag offset */}
