@@ -38,7 +38,27 @@ export const achievements: Record<string, string> = {
   "achievements.admin.levelUpdated": "レベルが更新されました",
   "achievements.admin.xpUpdated": "XPが更新されました",
 
-  // Achievement names
+  // Achievement names (by DB slug)
+  "achievements.name.builder": "ビルダー",
+  "achievements.name.supporter": "サポーター",
+  "achievements.name.rising_star": "ライジングスター",
+  "achievements.name.forum_voice": "フォーラムボイス",
+  "achievements.name.genealogist": "系図学者",
+  "achievements.name.collector": "コレクター",
+  "achievements.name.critic": "評論家",
+  "achievements.name.community_pillar": "コミュニティの柱",
+
+  // Achievement descriptions (by DB slug)
+  "achievements.desc.builder": "ガンプラビルドをアップロード",
+  "achievements.desc.supporter": "ビルドにいいねしてコミュニティを応援",
+  "achievements.desc.rising_star": "ビルドにいいねをもらう",
+  "achievements.desc.forum_voice": "フォーラムに参加",
+  "achievements.desc.genealogist": "ビルドリネージュを作成",
+  "achievements.desc.collector": "キットをコレクションに追加",
+  "achievements.desc.critic": "キットレビューを執筆",
+  "achievements.desc.community_pillar": "コミュニティに貢献",
+
+  // Legacy tier-level names
   "achievements.name.first_build": "ファーストステップ",
   "achievements.name.five_builds": "ハンガービルダー",
   "achievements.name.ten_builds": "工房のベテラン",

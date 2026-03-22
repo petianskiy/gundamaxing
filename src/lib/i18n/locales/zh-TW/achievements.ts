@@ -38,7 +38,27 @@ export const achievements: Record<string, string> = {
   "achievements.admin.levelUpdated": "等級更新成功",
   "achievements.admin.xpUpdated": "經驗值更新成功",
 
-  // Achievement names
+  // Achievement names (by DB slug)
+  "achievements.name.builder": "建造者",
+  "achievements.name.supporter": "支持者",
+  "achievements.name.rising_star": "新星",
+  "achievements.name.forum_voice": "論壇之聲",
+  "achievements.name.genealogist": "族譜學家",
+  "achievements.name.collector": "收藏家",
+  "achievements.name.critic": "評論家",
+  "achievements.name.community_pillar": "社群之柱",
+
+  // Achievement descriptions (by DB slug)
+  "achievements.desc.builder": "上傳鋼彈模型作品到你的機庫",
+  "achievements.desc.supporter": "按讚支持社群中的作品",
+  "achievements.desc.rising_star": "你的作品獲得讚",
+  "achievements.desc.forum_voice": "參與論壇討論",
+  "achievements.desc.genealogist": "建立作品族譜",
+  "achievements.desc.collector": "將模型加入收藏",
+  "achievements.desc.critic": "撰寫模型評測",
+  "achievements.desc.community_pillar": "為社群做出貢獻",
+
+  // Legacy tier-level names
   "achievements.name.first_build": "第一步",
   "achievements.name.five_builds": "機庫建造者",
   "achievements.name.ten_builds": "工作坊老手",

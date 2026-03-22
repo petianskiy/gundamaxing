@@ -19,7 +19,7 @@ export function KitCard({
 
   return (
     <Link
-      href={`/collector/${kit.slug}`}
+      href={`/collector/gundams/${kit.slug}`}
       className="group relative flex flex-col rounded-xl border border-border/50 bg-card overflow-hidden transition-all hover:border-border hover:shadow-lg hover:shadow-black/20"
     >
       {/* Image */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/context";
 import Link from "next/link";
 import {
   Trophy,
@@ -145,6 +146,7 @@ export function AchievementsView({
   totalCount,
   isOwner,
 }: AchievementsViewProps) {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | "ALL">("ALL");
 
   const filtered =
@@ -242,7 +244,7 @@ export function AchievementsView({
                   : "text-muted-foreground hover:text-foreground border-border/50 hover:border-border"
               )}
             >
-              {config.label}
+              {t(`achievements.category.${cat}`)}
               {isOwner && ` (${earned}/${catAchievements.length})`}
               {!isOwner && ` (${earned})`}
             </button>
@@ -276,6 +278,7 @@ function DetailedAchievementCard({
   item: UserAchievementUI;
   isOwner: boolean;
 }) {
+  const { t } = useTranslation();
   const { achievement, tier, progress, nextTierThreshold } = item;
   const catConfig = categoryConfig[achievement.category];
   const IconComponent = (achievement.icon && iconMap[achievement.icon]) || Trophy;
@@ -339,7 +342,7 @@ function DetailedAchievementCard({
               isEarned ? "text-foreground" : "text-zinc-500"
             )}
           >
-            {achievement.name}
+            {t(`achievements.name.${achievement.slug}`) !== `achievements.name.${achievement.slug}` ? t(`achievements.name.${achievement.slug}`) : achievement.name}
           </h3>
           <p
             className={cn(
@@ -347,7 +350,7 @@ function DetailedAchievementCard({
               isEarned ? "text-muted-foreground" : "text-zinc-600"
             )}
           >
-            {achievement.description}
+            {t(`achievements.desc.${achievement.slug}`) !== `achievements.desc.${achievement.slug}` ? t(`achievements.desc.${achievement.slug}`) : achievement.description}
           </p>
         </div>
         <div className="text-right shrink-0">

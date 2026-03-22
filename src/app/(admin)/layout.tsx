@@ -17,6 +17,8 @@ import {
   HelpCircle,
   LayoutTemplate,
   Palette,
+  Layers,
+  Trophy,
 } from "lucide-react";
 
 const adminNav = [
@@ -30,6 +32,8 @@ const adminNav = [
   { href: "/admin/events", label: "Events", icon: Activity },
   { href: "/admin/missions", label: "Missions", icon: Target },
   { href: "/admin/collector", label: "Collector", icon: BookOpen },
+  { href: "/admin/cards", label: "Cards", icon: Layers },
+  { href: "/admin/achievements", label: "Achievements", icon: Trophy },
   { href: "/admin/guide", label: "Guide", icon: HelpCircle },
   { href: "/admin/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/admin/themes", label: "Themes", icon: Palette },

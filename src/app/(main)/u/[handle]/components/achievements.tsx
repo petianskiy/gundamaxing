@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/context";
 import Link from "next/link";
 import {
   Trophy,
@@ -112,6 +113,7 @@ export function Achievements({ achievements, isOwner, handle }: AchievementsProp
 // ─── Achievement Card ────────────────────────────────────────────
 
 function AchievementCard({ item }: { item: UserAchievementUI }) {
+  const { t } = useTranslation();
   const { achievement, tier, progress, nextTierThreshold } = item;
   const catColor = categoryColors[achievement.category];
   const IconComponent = (achievement.icon && iconMap[achievement.icon]) || Trophy;
@@ -161,7 +163,7 @@ function AchievementCard({ item }: { item: UserAchievementUI }) {
                 isEarned ? "text-foreground" : "text-zinc-500"
               )}
             >
-              {achievement.name}
+              {t(`achievements.name.${achievement.slug}`) !== `achievements.name.${achievement.slug}` ? t(`achievements.name.${achievement.slug}`) : achievement.name}
             </h3>
             {xpEarned > 0 && (
               <span className="text-[10px] font-bold text-gx-gold tracking-wider shrink-0">
@@ -176,7 +178,7 @@ function AchievementCard({ item }: { item: UserAchievementUI }) {
               isEarned ? "text-muted-foreground" : "text-zinc-600"
             )}
           >
-            {achievement.description}
+            {t(`achievements.desc.${achievement.slug}`) !== `achievements.desc.${achievement.slug}` ? t(`achievements.desc.${achievement.slug}`) : achievement.description}
           </p>
 
           {/* Tier Indicators */}

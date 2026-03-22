@@ -209,7 +209,7 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
       <div className="max-w-5xl mx-auto">
         {/* Back link */}
         <Link
-          href="/collector"
+          href="/collector/gundams"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

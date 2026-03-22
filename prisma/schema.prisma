@@ -1119,3 +1119,39 @@ model BuildSupply {
   @@index([buildId])
   @@index([supplyId])
 }
+
+// ─── COLLECTIBLE CARDS ──────────────────────────────────────────
+
+enum CardProductType {
+  STARTER_DECK
+  BOOSTER_PACK
+  PREMIUM_COLLECTION
+  ACCESSORIES
+  LIMITED
+}
+
+model CardProduct {
+  id            String          @id @default(cuid())
+  code          String          @unique            // "ST09", "GD04", "EVX02"
+  name          String                             // "Destiny Ignition"
+  type          CardProductType
+  description   String?         @db.Text
+  seriesTheme   String?                            // "Mobile Suit Gundam SEED DESTINY"
+  releaseDate   DateTime?
+  price         Decimal?        @db.Decimal(10, 2)
+  currency      String          @default("USD")
+  imageUrl      String?
+  officialUrl   String?                            // Link to official product page
+  isFeatured    Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  sortOrder     Int             @default(0)
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([sortOrder])
+  @@index([releaseDate])
+}

@@ -38,7 +38,27 @@ export const achievements: Record<string, string> = {
   "achievements.admin.levelUpdated": "Level updated successfully",
   "achievements.admin.xpUpdated": "XP updated successfully",
 
-  // Achievement names
+  // Achievement names (by DB slug)
+  "achievements.name.builder": "Builder",
+  "achievements.name.supporter": "Supporter",
+  "achievements.name.rising_star": "Rising Star",
+  "achievements.name.forum_voice": "Forum Voice",
+  "achievements.name.genealogist": "Genealogist",
+  "achievements.name.collector": "Collector",
+  "achievements.name.critic": "Critic",
+  "achievements.name.community_pillar": "Community Pillar",
+
+  // Achievement descriptions (by DB slug)
+  "achievements.desc.builder": "Upload Gunpla builds to your hangar",
+  "achievements.desc.supporter": "Support the community by liking builds",
+  "achievements.desc.rising_star": "Earn likes on your builds",
+  "achievements.desc.forum_voice": "Participate in forum discussions",
+  "achievements.desc.genealogist": "Create build lineages",
+  "achievements.desc.collector": "Add kits to your collection",
+  "achievements.desc.critic": "Write kit reviews",
+  "achievements.desc.community_pillar": "Engage with the community",
+
+  // Legacy tier-level names
   "achievements.name.first_build": "First Steps",
   "achievements.name.five_builds": "Hangar Builder",
   "achievements.name.ten_builds": "Workshop Veteran",
