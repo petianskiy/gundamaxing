@@ -243,7 +243,7 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-rajdhani">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               {kit.name}
             </h1>
 
@@ -277,7 +277,7 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
         {/* Collection Actions */}
         {isLoggedIn && (
           <div className="rounded-xl border border-border/50 bg-card p-6 mb-8">
-            <h2 className="text-lg font-semibold text-foreground font-rajdhani mb-4">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
               {entry ? t("collector.updateEntry") : t("collector.addToCollection")}
             </h2>
 
@@ -384,7 +384,7 @@ export function KitDetail({ kit, reviews, userEntry, isLoggedIn }: KitDetailProp
         <div className="rounded-xl border border-border/50 bg-card p-6">
           <div className="flex items-center gap-2 mb-6">
             <MessageSquare className="h-5 w-5 text-gx-red" />
-            <h2 className="text-lg font-semibold text-foreground font-rajdhani">
+            <h2 className="text-lg font-semibold text-foreground">
               {t("collector.communityReviews")}
             </h2>
             <span className="text-xs text-muted-foreground">({reviews.length})</span>

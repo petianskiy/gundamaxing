@@ -170,7 +170,7 @@ export function AchievementsView({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold font-rajdhani text-foreground">
+              <h1 className="text-2xl font-bold text-foreground">
                 {username}&apos;s Achievements
               </h1>
               <LevelBadge level={levelInfo.level} size="md" />
@@ -338,7 +338,7 @@ function DetailedAchievementCard({
         <div className="flex-1 min-w-0">
           <h3
             className={cn(
-              "text-base font-bold font-rajdhani leading-tight",
+              "text-base font-bold leading-tight",
               isEarned ? "text-foreground" : "text-zinc-500"
             )}
           >

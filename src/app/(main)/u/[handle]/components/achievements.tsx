@@ -159,7 +159,7 @@ function AchievementCard({ item }: { item: UserAchievementUI }) {
           <div className="flex items-center justify-between gap-2">
             <h3
               className={cn(
-                "text-sm font-bold font-rajdhani leading-tight",
+                "text-sm font-bold leading-tight",
                 isEarned ? "text-foreground" : "text-zinc-500"
               )}
             >

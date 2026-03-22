@@ -24,7 +24,7 @@ export default function CollectorGateway() {
                 収集家 &middot; Collector
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight font-rajdhani">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
               Choose Your Collection
             </h1>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
@@ -42,7 +42,7 @@ export default function CollectorGateway() {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
-                  src="/images/collector-bg.jpg"
+                  src="/images/collector-kits.jpg"
                   alt="Gunpla Collection"
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -57,7 +57,7 @@ export default function CollectorGateway() {
                       模型キット
                     </span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-rajdhani">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                     Gunpla Kits
                   </h2>
                   <p className="text-sm text-zinc-400 mt-2 max-w-xs">
@@ -78,16 +78,14 @@ export default function CollectorGateway() {
               href="/collector/cards"
               className="group relative rounded-2xl border border-white/[0.08] overflow-hidden transition-all hover:border-white/[0.2] hover:shadow-2xl hover:shadow-gx-red/10 hover:-translate-y-1"
             >
-              <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-indigo-950 via-zinc-900 to-black">
-                {/* Decorative card fan effect */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-30 transition-opacity">
-                  <div className="relative w-48 h-64">
-                    <div className="absolute inset-0 rounded-xl border border-white/20 bg-white/5 -rotate-12 translate-x-4" />
-                    <div className="absolute inset-0 rounded-xl border border-white/20 bg-white/5 rotate-6 -translate-x-2" />
-                    <div className="absolute inset-0 rounded-xl border border-white/30 bg-white/10" />
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <Image
+                  src="/images/collector-cards.jpg"
+                  alt="Gundam Collectible Cards"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
                 {/* Content overlay */}
                 <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
@@ -97,7 +95,7 @@ export default function CollectorGateway() {
                       カードゲーム
                     </span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-rajdhani">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                     Collectible Cards
                   </h2>
                   <p className="text-sm text-zinc-400 mt-2 max-w-xs">

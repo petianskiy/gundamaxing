@@ -79,7 +79,7 @@ export default async function SuppliesPage() {
                 素材目録 &middot; Supply Catalog
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight font-rajdhani">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
               Supply Catalog
             </h1>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">

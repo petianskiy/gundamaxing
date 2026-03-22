@@ -100,7 +100,7 @@ export function CardsCatalog({ products }: { products: CardProduct[] }) {
               カードゲーム &middot; Card Game
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight font-rajdhani">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
             Gundam Card Game
           </h1>
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto">

@@ -34,7 +34,7 @@ export function KitCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <div className="text-4xl text-muted-foreground/20 font-rajdhani font-bold">
+            <div className="text-4xl text-muted-foreground/20 font-bold">
               {kit.grade}
             </div>
           </div>
@@ -59,7 +59,7 @@ export function KitCard({
         </div>
 
         {/* Name */}
-        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 font-rajdhani">
+        <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
           {kit.name}
         </h3>
 

@@ -84,7 +84,7 @@ export function SuggestKitModal({ open, onClose, seriesList }: SuggestKitModalPr
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div>
-            <h2 className="text-lg font-bold text-foreground font-rajdhani">
+            <h2 className="text-lg font-bold text-foreground">
               {t("collector.suggestKit.title")}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
