@@ -68,6 +68,10 @@
 
 .showcase-card:hover .showcase-card-holo { opacity: 0.35; }
 .showcase-card:hover .showcase-card-border { opacity: 1; }
+
+/* Common cards: no holographic effect */
+.showcase-card[data-rarity="C"]:hover .showcase-card-holo { opacity: 0; }
+.showcase-card[data-rarity="C"]:hover .showcase-card-border { opacity: 0; }
 .showcase-card:hover .showcase-card-inner {
   box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px var(--card-glow, rgba(220,38,38,0.3));
 }
