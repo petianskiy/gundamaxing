@@ -7,15 +7,42 @@ import { Heart } from "lucide-react";
 import type { Build } from "@/lib/types";
 import "./showcase-view.css";
 
-// ── Rarity based on likes ──
+// ── Rarity based on likes (percentile-based, adapts to community size) ──
 
 type Rarity = "C" | "R" | "SR" | "SSR" | "L";
 
-function getRarity(likes: number): Rarity {
-  if (likes >= 400) return "L";
-  if (likes >= 250) return "SSR";
-  if (likes >= 100) return "SR";
-  if (likes >= 50) return "R";
+/**
+ * Calculate rarity thresholds from the actual like distribution.
+ * Top 1 build → Legendary
+ * Top ~5% → SSR
+ * Top ~15% → SR
+ * Top ~35% → R
+ * Rest → C
+ */
+function computeThresholds(likeCounts: number[]): { l: number; ssr: number; sr: number; r: number } {
+  if (likeCounts.length === 0) return { l: 1, ssr: 1, sr: 1, r: 1 };
+  const sorted = [...likeCounts].sort((a, b) => b - a);
+  const max = sorted[0];
+
+  // If max is 0, everything is C
+  if (max === 0) return { l: 1, ssr: 1, sr: 1, r: 1 };
+
+  // Percentile positions
+  const p = (pct: number) => sorted[Math.max(0, Math.floor(sorted.length * pct) - 1)] ?? 0;
+
+  const l = max; // Only the very top build(s)
+  const ssr = Math.max(p(0.05), Math.ceil(max * 0.85)); // Top ~5%
+  const sr = Math.max(p(0.15), Math.ceil(max * 0.6));   // Top ~15%
+  const r = Math.max(p(0.35), Math.ceil(max * 0.35));    // Top ~35%
+
+  return { l, ssr, sr, r };
+}
+
+function getRarity(likes: number, thresholds: { l: number; ssr: number; sr: number; r: number }): Rarity {
+  if (likes >= thresholds.l) return "L";
+  if (likes >= thresholds.ssr) return "SSR";
+  if (likes >= thresholds.sr) return "SR";
+  if (likes >= thresholds.r) return "R";
   return "C";
 }
 
@@ -47,6 +74,10 @@ export function ShowcaseView({ builds, likeCounts }: ShowcaseViewProps) {
     const bLikes = likeCounts[b.id] ?? b.likes;
     return bLikes - aLikes;
   });
+
+  // Compute rarity thresholds from actual data
+  const allLikeCounts = sorted.map((b) => likeCounts[b.id] ?? b.likes);
+  const thresholds = computeThresholds(allLikeCounts);
 
   // Holographic tilt effect
   const setupTilt = useCallback(() => {
@@ -114,9 +145,9 @@ export function ShowcaseView({ builds, likeCounts }: ShowcaseViewProps) {
       <div ref={gridRef} className="showcase-grid">
         {sorted.map((build, idx) => {
           const likes = likeCounts[build.id] ?? build.likes;
-          const rarity = getRarity(likes);
+          const rarity = getRarity(likes, thresholds);
           const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
-          const isFeatured = idx === 0 && likes >= 100;
+          const isFeatured = idx === 0;
 
           return (
             <Link
