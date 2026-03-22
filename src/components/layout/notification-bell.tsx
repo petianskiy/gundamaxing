@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { getMyUnreadCount } from "@/lib/actions/notification";
 
-const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes (was 30 seconds)
+const POLL_INTERVAL = 60 * 1000; // 1 minute
 
 export function NotificationBell() {
   const [count, setCount] = useState(0);
@@ -19,7 +19,7 @@ export function NotificationBell() {
     refresh();
     intervalRef.current = setInterval(refresh, POLL_INTERVAL);
 
-    // Pause polling when tab is not visible
+    // Refresh when tab regains focus (catches mark-read from notifications page)
     const handleVisibility = () => {
       if (document.hidden) {
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -28,11 +28,22 @@ export function NotificationBell() {
         intervalRef.current = setInterval(refresh, POLL_INTERVAL);
       }
     };
+
+    // Also refresh on window focus (covers tab switches and alt-tabs)
+    const handleFocus = () => refresh();
+
+    // Listen for custom event dispatched when notifications are marked read
+    const handleMarkedRead = () => refresh();
+
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("notifications-read", handleMarkedRead);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("notifications-read", handleMarkedRead);
     };
   }, [refresh]);
 

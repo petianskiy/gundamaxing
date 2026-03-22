@@ -56,6 +56,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
   const handleMarkAllRead = () => {
     startTransition(async () => {
       await markAllNotificationsRead();
+      window.dispatchEvent(new Event("notifications-read"));
       router.refresh();
     });
   };
@@ -64,6 +65,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
     if (!notification.read) {
       startTransition(async () => {
         await markNotificationRead(notification.id);
+        window.dispatchEvent(new Event("notifications-read"));
         router.refresh();
       });
     }
@@ -111,6 +113,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
                 hoverTimers.current[notification.id] = setTimeout(() => {
                   startTransition(async () => {
                     await markNotificationRead(notification.id);
+                    window.dispatchEvent(new Event("notifications-read"));
                     router.refresh();
                   });
                 }, 700);

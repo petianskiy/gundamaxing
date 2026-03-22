@@ -48,11 +48,20 @@ export default async function ProfilePage({ params }: Props) {
       _count: {
         select: {
           builds: true,
-          likes: true,
         },
       },
     },
   });
+
+  // Calculate total likes RECEIVED on user's builds
+  let likesReceived = 0;
+  if (user) {
+    const result = await db.build.aggregate({
+      where: { userId: user.id },
+      _sum: { likeCount: true },
+    });
+    likesReceived = result._sum.likeCount ?? 0;
+  }
 
   // Fetch custom roles separately — table may not exist yet if migration hasn't run
   let userCustomRoles: { customRole: { displayName: string; color: string; icon: string | null } }[] = [];
@@ -239,7 +248,7 @@ export default async function ProfilePage({ params }: Props) {
             reputation: user.reputation,
             socialLinks,
             buildCount: user._count.builds,
-            likeCount: user._count.likes,
+            likeCount: likesReceived,
             joinedAt: user.createdAt.toLocaleDateString(),
             isBanned: user.riskScore >= 100,
           }}

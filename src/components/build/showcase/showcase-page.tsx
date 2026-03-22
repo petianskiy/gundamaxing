@@ -124,8 +124,11 @@ function PageViewer({
 }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [animating, setAnimating] = useState(false);
-  const touchRef = useRef<{ x: number; time: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ x: number; time: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   // Prevent browser back navigation on horizontal swipe
   useEffect(() => {
@@ -148,36 +151,96 @@ function PageViewer({
     setTimeout(() => setAnimating(false), 350);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchRef.current = { x: e.touches[0].clientX, time: Date.now() };
+  // ── Unified pointer drag (mouse + touch) ──
+  const handleDragStart = (clientX: number) => {
+    dragRef.current = { x: clientX, time: Date.now() };
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleDragMove = (clientX: number) => {
+    if (!dragRef.current || !containerRef.current) return;
+    const dx = clientX - dragRef.current.x;
+    const containerWidth = containerRef.current.offsetWidth;
+    // Convert pixel offset to percentage of container width
+    const pct = (dx / containerWidth) * 100;
+    setDragOffset(pct);
+  };
+
+  const handleDragEnd = (clientX: number) => {
+    if (!dragRef.current || !containerRef.current) return;
+    const dx = clientX - dragRef.current.x;
+    const elapsed = Date.now() - dragRef.current.time;
+    const containerWidth = containerRef.current.offsetWidth;
+    dragRef.current = null;
+    setIsDragging(false);
+    setDragOffset(0);
+
+    // Navigate if dragged far enough (20% of width) or fast swipe (>50px in <300ms)
+    const pctDragged = Math.abs(dx) / containerWidth;
+    const isFastSwipe = elapsed < 300 && Math.abs(dx) > 50;
+
+    if (pctDragged > 0.2 || isFastSwipe) {
+      if (dx < 0) goTo(currentPage + 1);
+      else goTo(currentPage - 1);
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchRef.current.x;
-    const elapsed = Date.now() - touchRef.current.time;
-    touchRef.current = null;
-    if (elapsed > 500 || Math.abs(dx) < 50) return;
-    if (dx < 0) goTo(currentPage + 1);
-    else goTo(currentPage - 1);
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) handleDragStart(e.touches[0].clientX);
   };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) handleDragMove(e.touches[0].clientX);
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    handleDragEnd(e.changedTouches[0].clientX);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // left click only
+    e.preventDefault();
+    handleDragStart(e.clientX);
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    handleDragMove(e.clientX);
+  };
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    handleDragEnd(e.clientX);
+  };
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    handleDragEnd(e.clientX);
+  };
+
+  // Compute transform: base page position + live drag offset
+  const translateX = isDragging
+    ? `calc(-${currentPage * 100}% + ${dragOffset}%)`
+    : `-${currentPage * 100}%`;
 
   return (
     <div
       ref={containerRef}
       className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 select-none overflow-hidden"
-      style={{ overscrollBehaviorX: "contain" }}
+      style={{ overscrollBehaviorX: "contain", cursor: pages.length > 1 ? (isDragging ? "grabbing" : "grab") : undefined }}
       onContextMenu={(e) => e.preventDefault()}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={pages.length > 1 ? handleMouseDown : undefined}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="relative">
-        {/* Render all pages side-by-side, slide via translateX — no unmount = no black flash */}
+        {/* Pages side-by-side, translateX for position + drag offset */}
         <div
-          className="flex transition-transform duration-300 ease-out"
-          style={{ transform: `translateX(-${currentPage * 100}%)` }}
+          ref={sliderRef}
+          className={isDragging ? "flex" : "flex transition-transform duration-300 ease-out"}
+          style={{ transform: `translateX(${translateX})` }}
         >
           {pages.map((page, i) => (
             <div key={page.id} className="w-full flex-shrink-0">
