@@ -8,6 +8,7 @@ import {
   X,
   Grid3X3,
   LayoutList,
+  Sparkles,
   Flame,
   Heart,
   MessageCircle,
@@ -25,6 +26,7 @@ import { TechniqueChip } from "@/components/ui/technique-chip";
 import { toggleLike, toggleBookmark } from "@/lib/actions/like";
 import { toast } from "sonner";
 import type { Build, Grade, Timeline, Scale, Technique, VerificationTier, BuildStatus } from "@/lib/types";
+import { ShowcaseView } from "./showcase-view";
 
 type Filters = {
   grades: Grade[];
@@ -81,7 +83,7 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "wall">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "wall" | "showcase">("grid");
   const [timeRange, setTimeRange] = useState<"all" | "week" | "month" | "year">("all");
   const [likedSet, setLikedSet] = useState<Set<string>>(() => new Set(likedBuildIds));
   const [bookmarkedSet, setBookmarkedSet] = useState<Set<string>>(() => new Set(bookmarkedBuildIds));
@@ -227,9 +229,10 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
     { value: "year", labelKey: "builds.timeRange.year" },
   ];
 
-  const viewOptions: { value: "grid" | "wall"; icon: typeof Grid3X3; label: string }[] = [
+  const viewOptions: { value: "grid" | "wall" | "showcase"; icon: typeof Grid3X3; label: string }[] = [
     { value: "grid", icon: Grid3X3, label: "Grid" },
     { value: "wall", icon: LayoutList, label: "Wall" },
+    { value: "showcase", icon: Sparkles, label: "Showcase" },
   ];
 
   return (
@@ -452,6 +455,14 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
                 onBookmark={handleBookmark}
                 onShare={handleShare}
                 t={t}
+              />
+            )}
+
+            {/* Card Showcase View */}
+            {viewMode === "showcase" && (
+              <ShowcaseView
+                builds={filteredBuilds}
+                likeCounts={likeCounts}
               />
             )}
           </>

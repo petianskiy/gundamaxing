@@ -1,0 +1,192 @@
+/* ── Build Showcase Card System ── */
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+/* ── Card ── */
+.showcase-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: visible;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  perspective: 800px;
+  animation: showcaseCardIn 0.5s ease forwards;
+  opacity: 0;
+  transform: translateY(24px);
+}
+@keyframes showcaseCardIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.showcase-card-inner {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+}
+
+/* Holographic shimmer */
+.showcase-card-holo {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  opacity: 0;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+  background: conic-gradient(
+    from var(--holo-angle, 0deg),
+    #ff000055, #ff7f0055, #ffff0055, #00ff0055,
+    #0000ff55, #8b00ff55, #ff000055
+  );
+}
+
+.showcase-card-border {
+  position: absolute;
+  inset: -1px;
+  border-radius: 15px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: conic-gradient(
+    from var(--holo-angle, 0deg),
+    #ff0080, #ff8c00, #40e0d0, #a855f7, #ff0080
+  );
+}
+
+.showcase-card:hover .showcase-card-holo { opacity: 0.35; }
+.showcase-card:hover .showcase-card-border { opacity: 1; }
+.showcase-card:hover .showcase-card-inner {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px var(--card-glow, rgba(220,38,38,0.3));
+}
+.showcase-card:hover .showcase-card-img { transform: scale(1.07); }
+
+/* Image */
+.showcase-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+.showcase-card-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.23,1,0.32,1);
+}
+
+/* Scan lines */
+.showcase-card-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+  );
+  pointer-events: none;
+}
+
+.showcase-card-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.18;
+  transition: opacity 0.3s;
+}
+.showcase-card:hover .showcase-card-overlay { opacity: 0.28; }
+
+/* Info panel */
+.showcase-card-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+  padding: 40px 14px 14px;
+  z-index: 5;
+}
+
+/* Corner decorations */
+.showcase-corner {
+  position: absolute;
+  width: 16px; height: 16px;
+  z-index: 6;
+  opacity: 0.4;
+}
+.showcase-corner.tl { top: 0; left: 0; border-top: 1.5px solid; border-left: 1.5px solid; border-radius: 14px 0 0 0; }
+.showcase-corner.tr { top: 0; right: 0; border-top: 1.5px solid; border-right: 1.5px solid; border-radius: 0 14px 0 0; }
+.showcase-corner.bl { bottom: 0; left: 0; border-bottom: 1.5px solid; border-left: 1.5px solid; border-radius: 0 0 0 14px; }
+.showcase-corner.br { bottom: 0; right: 0; border-bottom: 1.5px solid; border-right: 1.5px solid; border-radius: 0 0 14px 0; }
+
+/* ── Rarity: Common ── */
+.showcase-card[data-rarity="C"] .showcase-card-inner {
+  background: linear-gradient(160deg, #1a2436 0%, #0d1420 100%);
+  border: 1px solid rgba(138,180,201,0.25);
+}
+.showcase-card[data-rarity="C"] { --card-glow: rgba(138,180,201,0.25); }
+.showcase-card[data-rarity="C"] .showcase-card-overlay { background: linear-gradient(135deg, #4a7a96, transparent 60%); }
+.showcase-card[data-rarity="C"] .showcase-corner { border-color: #8ab4c9; }
+
+/* ── Rarity: Rare ── */
+.showcase-card[data-rarity="R"] .showcase-card-inner {
+  background: linear-gradient(160deg, #1e1535 0%, #0f0a22 100%);
+  border: 1px solid rgba(167,139,250,0.3);
+}
+.showcase-card[data-rarity="R"] { --card-glow: rgba(167,139,250,0.35); }
+.showcase-card[data-rarity="R"] .showcase-card-overlay { background: linear-gradient(135deg, #7c3aed, #a78bfa 50%, transparent 80%); }
+.showcase-card[data-rarity="R"] .showcase-corner { border-color: #a78bfa; }
+
+/* ── Rarity: Super Rare ── */
+.showcase-card[data-rarity="SR"] .showcase-card-inner {
+  background: linear-gradient(160deg, #2a1e08 0%, #160f02 100%);
+  border: 1px solid rgba(252,211,77,0.35);
+}
+.showcase-card[data-rarity="SR"] { --card-glow: rgba(252,211,77,0.4); }
+.showcase-card[data-rarity="SR"] .showcase-card-overlay { background: linear-gradient(135deg, #d97706, #fcd34d 50%, transparent 80%); }
+.showcase-card[data-rarity="SR"] .showcase-corner { border-color: #fcd34d; }
+
+/* ── Rarity: SSR ── */
+.showcase-card[data-rarity="SSR"] .showcase-card-inner {
+  background: linear-gradient(160deg, #2a0d0d 0%, #160404 100%);
+  border: 1px solid rgba(248,113,113,0.4);
+}
+.showcase-card[data-rarity="SSR"] { --card-glow: rgba(248,113,113,0.5); }
+.showcase-card[data-rarity="SSR"] .showcase-card-overlay { background: linear-gradient(135deg, #991b1b, #f87171 50%, transparent 80%); }
+.showcase-card[data-rarity="SSR"] .showcase-corner { border-color: #f87171; }
+
+/* ── Rarity: Legendary ── */
+.showcase-card[data-rarity="L"] .showcase-card-inner {
+  background: linear-gradient(160deg, #0a2218 0%, #031208 100%);
+  border: 1px solid rgba(134,239,172,0.45);
+  animation: legendPulse 3s ease-in-out infinite;
+}
+.showcase-card[data-rarity="L"] { --card-glow: rgba(134,239,172,0.6); }
+.showcase-card[data-rarity="L"] .showcase-card-overlay {
+  background: conic-gradient(from 0deg, #047857, #86efac, #4fc3f7, #a78bfa, #047857);
+  opacity: 0.25;
+  animation: overlayRotate 8s linear infinite;
+}
+.showcase-card[data-rarity="L"] .showcase-corner { border-color: #86efac; opacity: 0.8; }
+.showcase-card[data-rarity="L"] .showcase-card-holo { opacity: 0.15; }
+.showcase-card[data-rarity="L"]:hover .showcase-card-holo { opacity: 0.5; }
+
+@keyframes legendPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(134,239,172,0.1), inset 0 0 10px rgba(134,239,172,0.05); }
+  50% { box-shadow: 0 0 25px rgba(134,239,172,0.25), inset 0 0 20px rgba(134,239,172,0.1); }
+}
+@keyframes overlayRotate {
+  from { transform: rotate(0deg) scale(1.5); }
+  to { transform: rotate(360deg) scale(1.5); }
+}
+
+/* ── Featured (first card spans 2 cols) ── */
+.showcase-card.featured { grid-column: span 2; }
+.showcase-card.featured .showcase-card-image { aspect-ratio: 16/10; }
+.showcase-card.featured .showcase-card-info { padding: 60px 18px 18px; }
