@@ -24,6 +24,7 @@ const SECTIONS: GuideSection[] = [
   { id: "setup", icon: <Target className="h-5 w-5" />, color: "text-emerald-400", borderColor: "border-emerald-500/30" },
   { id: "phases", icon: <Clock className="h-5 w-5" />, color: "text-amber-400", borderColor: "border-amber-500/30" },
   { id: "combat", icon: <Swords className="h-5 w-5" />, color: "text-red-400", borderColor: "border-red-500/30" },
+  { id: "keywords", icon: <Zap className="h-5 w-5" />, color: "text-violet-400", borderColor: "border-violet-500/30" },
   { id: "winning", icon: <Trophy className="h-5 w-5" />, color: "text-yellow-400", borderColor: "border-yellow-500/30" },
 ];
 
@@ -240,9 +241,26 @@ export function GameGuide() {
             <p>{t("cards.guide.combat.p3")}</p>
           </AccordionItem>
 
-          {/* WINNING */}
+          {/* KEYWORDS */}
           <AccordionItem
             section={SECTIONS[5]}
+            isOpen={openId === "keywords"}
+            toggle={() => toggle("keywords")}
+            title={t("cards.guide.keywords.title")}
+          >
+            <p>{t("cards.guide.keywords.intro")}</p>
+            <div className="space-y-3">
+              {["link", "burst", "blocker", "firstStrike", "highManeuver", "breach", "support"].map((kw) => (
+                <div key={kw} className="rounded-lg border border-violet-500/10 bg-violet-500/[0.03] p-3">
+                  <p className="text-xs text-zinc-300">{t(`cards.guide.keywords.${kw}`)}</p>
+                </div>
+              ))}
+            </div>
+          </AccordionItem>
+
+          {/* WINNING */}
+          <AccordionItem
+            section={SECTIONS[6]}
             isOpen={openId === "winning"}
             toggle={() => toggle("winning")}
             title={t("cards.guide.winning.title")}
@@ -250,7 +268,7 @@ export function GameGuide() {
             <p>{t("cards.guide.winning.p1")}</p>
             <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/15 p-4">
               <div className="flex items-start gap-2">
-                <Flame className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
+                <Crosshair className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
                 <div>
                   <div className="text-xs font-semibold text-yellow-400 mb-1">{t("cards.guide.winning.tip.title")}</div>
                   <p className="text-xs text-zinc-400">{t("cards.guide.winning.tip.desc")}</p>

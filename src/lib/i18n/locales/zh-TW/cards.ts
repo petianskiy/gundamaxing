@@ -58,15 +58,25 @@ export const cards = {
   "cards.guide.phases.end.name": "結束階段",
   "cards.guide.phases.end.desc": "結算回合結束效果。手牌超過10張時須棄至10張。將回合交給對手。",
 
-  "cards.guide.combat.title": "戰鬥",
-  "cards.guide.combat.p1": "主階段中可用就緒狀態的單位攻擊。將單位休息後選擇目標：對手的休息狀態單位或對手本人。單位對戰時比較攻擊力，較弱者被消滅。",
-  "cards.guide.combat.p2": "直接攻擊對手時，若對手仍有護盾，最上方的護盾卡翻面加入手牌。護盾同時充當防禦和防守方的卡牌優勢。",
-  "cards.guide.combat.p3": "若對手護盾耗盡後受到單位直接傷害即為敗北。護盾管理是每場比賽的核心策略。",
+  "cards.guide.combat.title": "戰鬥（5步驟）",
+  "cards.guide.combat.p1": "主階段中將啟用狀態的單位休息以宣告攻擊。選擇目標：對手的護盾區或休息中的敵方單位。戰鬥以5步驟解決：攻擊（宣告）、阻擋（防守方可休息阻擋者攔截）、行動（雙方交替使用行動時機指令卡）、傷害（雙方單位同時造成AP傷害，傷害等於或超過HP則被消滅）、戰鬥結束。",
+  "cards.guide.combat.p2": "攻擊護盾區時，摧毀最上方的護盾卡。若該護盾有爆發效果，防守方可免費發動。當所有護盾和基地都被摧毀後，下一次直接攻擊即為勝利。",
+  "cards.guide.combat.p3": "先制攻擊單位在防守方之前造成傷害。若防守方被消滅則不反擊。高機動單位無法被阻擋。突破X在消滅敵方單位時對護盾額外造成X點傷害。",
+
+  "cards.guide.keywords.title": "關鍵字與機制",
+  "cards.guide.keywords.intro": "塑造戰場的主要能力：",
+  "cards.guide.keywords.link": "連結：當駕駛員滿足單位的連結條件（通常為原作搭乘的駕駛員），單位成為連結單位。連結單位可在部署回合立即攻擊，並獲得額外能力。",
+  "cards.guide.keywords.burst": "爆發：印在作為護盾的卡牌上的效果。當該護盾被摧毀時，擁有者可免費發動爆發效果。你的護盾會反擊。",
+  "cards.guide.keywords.blocker": "阻擋者：休息此單位將攻擊從原始目標轉移至此單位。",
+  "cards.guide.keywords.firstStrike": "先制攻擊：戰鬥中此單位在防守方之前造成傷害。若防守方被消滅，不會反擊。",
+  "cards.guide.keywords.highManeuver": "高機動：此單位無法被阻擋。",
+  "cards.guide.keywords.breach": "突破X：消滅敵方單位時，對對手最上方護盾造成X點傷害。",
+  "cards.guide.keywords.support": "支援X：休息此單位，給予友方單位本回合+X AP。",
 
   "cards.guide.winning.title": "勝利條件",
-  "cards.guide.winning.p1": "有兩種勝利方式：消耗對手所有護盾後再給予一次直接傷害；或迫使對手從空牌組抽牌。大多數比賽以戰鬥決勝，但長期對局中牌庫耗盡也是實際威脅。",
-  "cards.guide.winning.tip.title": "進階技巧：護盾意識",
-  "cards.guide.winning.tip.desc": "密切追蹤對手的護盾數量。當對手剩餘1-2張護盾時，為新單位配對駕駛員進行突襲攻擊一舉收尾。掌握致命一擊的時機是區分好玩家與頂尖玩家的關鍵。",
+  "cards.guide.winning.p1": "有兩種勝利方式：摧毀對手所有護盾和基地，然後再命中一次直接攻擊。或迫使對手從空牌庫抽牌。大多數比賽以戰鬥決勝，但長期對局中牌庫耗盡也是實際威脅。",
+  "cards.guide.winning.tip.title": "進階技巧：致命推進",
+  "cards.guide.winning.tip.desc": "當對手護盾剩餘1-2張時，為新單位配對駕駛員以創造連結單位。連結單位可跳過召喚暈眩立即攻擊。在對手穩住局勢前發動致命一擊結束比賽。",
 
   // Deck Builder
   "cards.deck.eyebrow": "牌組策略",

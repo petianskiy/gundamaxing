@@ -58,15 +58,25 @@ export const cards = {
   "cards.guide.phases.end.name": "End Phase",
   "cards.guide.phases.end.desc": "Resolve end-of-turn effects. If your hand exceeds 10 cards, discard down to 10. Pass the turn to your opponent.",
 
-  "cards.guide.combat.title": "Combat",
-  "cards.guide.combat.p1": "During the Main Phase you can attack with any ready Unit. Rest the Unit, then choose a target: either an opponent's rested Unit or the opponent directly. If you attack a Unit, compare attack values; the weaker one is destroyed.",
-  "cards.guide.combat.p2": "When you attack the opponent directly and they have Shield cards remaining, the top Shield card is flipped face-up and added to their hand. This means shields act as both defence and card advantage for the defender.",
-  "cards.guide.combat.p3": "If the opponent has no Shield cards left and takes direct damage from a Unit, they lose the game. This makes shield management the central strategic tension of every match.",
+  "cards.guide.combat.title": "Combat (5 Steps)",
+  "cards.guide.combat.p1": "During the Main Phase, rest an active Unit to declare an attack. Choose a target: the opponent's Shield Area or a rested enemy Unit. Combat then resolves in 5 steps: Attack (declare), Block (defender may rest a Blocker to intercept), Action (both players alternate playing Action-timing Commands), Damage (both Units deal AP damage simultaneously; a Unit whose damage equals or exceeds its HP is destroyed), and End of Battle.",
+  "cards.guide.combat.p2": "When attacking the Shield Area, your Unit destroys the top Shield card. If that Shield has a Burst effect, the defender can activate it for free. When all Shields and the Base are gone, the next direct hit wins the game.",
+  "cards.guide.combat.p3": "Units with First Strike deal damage before the defender. If the defender is destroyed, it deals no damage back. Units with High-Maneuver cannot be blocked. Breach X deals X extra damage to a Shield when you destroy an enemy Unit.",
+
+  "cards.guide.keywords.title": "Keywords & Mechanics",
+  "cards.guide.keywords.intro": "Key abilities that shape the battlefield:",
+  "cards.guide.keywords.link": "Link: When a Pilot meets a Unit's Link Condition (usually the canonical pilot), the Unit becomes a Link Unit. Link Units can attack immediately on the turn they are deployed and gain bonus abilities.",
+  "cards.guide.keywords.burst": "Burst: An effect printed on cards that are acting as Shields. When that Shield is destroyed, the owning player may activate the Burst effect for free. Your shields fight back.",
+  "cards.guide.keywords.blocker": "Blocker: Rest this Unit to redirect an incoming attack to it instead of the original target.",
+  "cards.guide.keywords.firstStrike": "First Strike: This Unit deals damage before the defender during combat. If the defender is destroyed, it doesn't hit back.",
+  "cards.guide.keywords.highManeuver": "High-Maneuver: This Unit cannot be blocked.",
+  "cards.guide.keywords.breach": "Breach X: When this Unit destroys an enemy Unit, deal X damage to the opponent's top Shield.",
+  "cards.guide.keywords.support": "Support X: Rest this Unit to give another friendly Unit +X AP for the turn.",
 
   "cards.guide.winning.title": "Winning the Game",
-  "cards.guide.winning.p1": "There are two ways to win: deplete all of your opponent's Shield cards and then land one more direct hit, or force your opponent to draw from an empty deck. Most games end through combat, but deck-out is a real threat in long matches.",
-  "cards.guide.winning.tip.title": "Pro Tip: Shield Awareness",
-  "cards.guide.winning.tip.desc": "Track your opponent's Shield count carefully. When they're at 1-2 shields, pair a Pilot to a fresh Unit for an immediate Rush attack and go for the finish. Timing your lethal push is the difference between good and great players.",
+  "cards.guide.winning.p1": "There are two ways to win: destroy all of your opponent's Shields and Base, then land one more direct attack. Or force your opponent to draw from an empty deck. Most games end through combat, but deck-out is a real threat in long matches.",
+  "cards.guide.winning.tip.title": "Pro Tip: The Lethal Push",
+  "cards.guide.winning.tip.desc": "When your opponent is at 1-2 Shields, pair a Pilot to a fresh Unit to create a Link Unit. Link Units attack immediately, bypassing summoning sickness. Time your lethal push and close the game before they stabilize.",
 
   // Deck Builder
   "cards.deck.eyebrow": "Deck Strategy",
