@@ -3,6 +3,7 @@ import { FeaturedBuildsSection } from "@/components/landing/featured-builds-sect
 import { GundamGridSection } from "@/components/landing/gundam-grid-section";
 import { BuildDnaTeaser } from "@/components/landing/build-dna-teaser";
 import { WorkshopsSection } from "@/components/landing/workshops-section";
+import { CollectibleCardsSection } from "@/components/landing/collectible-cards-section";
 import { ConnectSection } from "@/components/landing/connect-section";
 import { getLatestBuilds, getBuildOfTheWeek } from "@/lib/data/builds";
 import { getLeafCategories } from "@/lib/data/categories";
@@ -31,6 +32,7 @@ export default async function HomePage() {
       <GundamGridSection />
       <BuildDnaTeaser />
       <WorkshopsSection categories={workshopCategories} />
+      <CollectibleCardsSection />
       <ConnectSection />
     </>
   );
