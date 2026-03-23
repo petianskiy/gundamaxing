@@ -6,16 +6,23 @@ import { WorkshopsSection } from "@/components/landing/workshops-section";
 import { ConnectSection } from "@/components/landing/connect-section";
 import { getLatestBuilds, getBuildOfTheWeek } from "@/lib/data/builds";
 import { getLeafCategories } from "@/lib/data/categories";
+import type { ForumCategory } from "@/lib/types";
+
+const WORKSHOP_NAMES = ["Painting", "Scribing", "Decals", "Weathering", "LEDs", "Kitbash"];
 
 // Revalidate every 60 seconds so new builds appear on the landing page
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [latestBuilds, buildOfTheWeek, workshopCategories] = await Promise.all([
+  const [latestBuilds, buildOfTheWeek, leafCategories] = await Promise.all([
     getLatestBuilds(4),
     getBuildOfTheWeek(),
     getLeafCategories(),
   ]);
+
+  const workshopCategories = WORKSHOP_NAMES
+    .map((name) => leafCategories.find((c) => c.name.toLowerCase() === name.toLowerCase()))
+    .filter((c): c is ForumCategory => !!c);
 
   return (
     <>

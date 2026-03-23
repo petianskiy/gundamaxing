@@ -77,7 +77,7 @@ export function WorkshopsSection({ categories }: WorkshopsSectionProps) {
                     {workshopKey(category.name)}
                   </h3>
                   <p className="text-[10px] text-muted-foreground">
-                    {category.threadCount} {t("shared.builds")}
+                    {category.postCount} {t("shared.posts")}
                   </p>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-gx-red transition-all" />
                 </div>
