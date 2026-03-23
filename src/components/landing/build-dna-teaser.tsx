@@ -43,7 +43,7 @@ export function BuildDnaTeaser() {
           >
             <Safari
               url="gundamaxing.com"
-              imageSrc="/images/safari-demo.png"
+              imageSrc="/images/safari-demo-2.png"
             />
           </motion.div>
 
