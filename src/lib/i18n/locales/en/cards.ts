@@ -111,7 +111,20 @@ export const cards = {
   "cards.deck.tip.p1": "Before taking your deck into a real match, simulate 3-4 solo turns. Draw 5 cards, set 6 shields, and play out the early game. Can you consistently deploy a unit by turn 2? If not, adjust your curve.",
   "cards.deck.tip.p2": "A great deck isn't just powerful cards. It flows. Low-cost units for the early game, mid-range threats for pressure, and a few high-impact finishers. Balance your levels and your deck will carry you.",
 
-  // Catalog
+  // Collection
+  "cards.collection.eyebrow": "Card Collection",
+  "cards.collection.title": "Browse the Cards",
+  "cards.collection.subtitle": "Explore the Gundam Card Game collection. Click any card to flip it and see the back design.",
+
+  // App download
+  "cards.app.eyebrow": "Official Teaching App",
+  "cards.app.title": "Learn and Play on Your Phone",
+  "cards.app.subtitle": "The official Gundam Card Game Teaching App walks you through every rule with interactive tutorials and practice matches.",
+  "cards.app.feature1": "Interactive rule tutorials for all mechanics",
+  "cards.app.feature2": "Practice matches to test your deck",
+  "cards.app.feature3": "Free to download on iPhone and iPad",
+
+  // Catalog (kept for potential future use)
   "cards.catalog.eyebrow": "Product Catalog",
   "cards.catalog.title": "Official Releases",
   "cards.catalog.subtitle": "Browse starter decks, booster packs, premium collections, and accessories.",

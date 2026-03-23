@@ -2,29 +2,15 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Sparkles, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import { CardShowcase } from "./components/card-showcase";
 import { GameGuide } from "./components/game-guide";
 import { DeckBuilder } from "./components/deck-builder";
-import { CardsCatalog } from "./cards-catalog";
+import { CardCollection } from "./components/card-collection";
+import { AppDownload } from "./components/app-download";
 
-interface CardProduct {
-  id: string;
-  code: string;
-  name: string;
-  type: string;
-  description: string | null;
-  seriesTheme: string | null;
-  releaseDate: string | null;
-  price: number | null;
-  currency: string;
-  imageUrl: string | null;
-  officialUrl: string | null;
-  isFeatured: boolean;
-}
-
-export function CardsLanding({ products }: { products: CardProduct[] }) {
+export function CardsLanding() {
   const { t } = useTranslation();
 
   return (
@@ -43,32 +29,17 @@ export function CardsLanding({ products }: { products: CardProduct[] }) {
       {/* ═══ CARD SHOWCASE ═══ */}
       <CardShowcase />
 
+      {/* ═══ CARD COLLECTION ═══ */}
+      <CardCollection />
+
       {/* ═══ GAME GUIDE ═══ */}
       <GameGuide />
 
       {/* ═══ DECK BUILDER ═══ */}
       <DeckBuilder />
 
-      {/* ═══ PRODUCT CATALOG ═══ */}
-      <section id="catalog" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-400">
-                {t("cards.catalog.eyebrow")}
-              </span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              {t("cards.catalog.title")}
-            </h2>
-            <p className="mt-3 text-zinc-400 max-w-lg mx-auto">
-              {t("cards.catalog.subtitle")}
-            </p>
-          </div>
-          <CardsCatalog products={products} />
-        </div>
-      </section>
+      {/* ═══ APP DOWNLOAD ═══ */}
+      <AppDownload />
 
       {/* ═══ CTA ═══ */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">

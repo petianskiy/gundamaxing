@@ -111,6 +111,19 @@ export const cards = {
   "cards.deck.tip.p1": "実戦前に3-4ターンのソロテストを。5枚ドロー、シールド6枚配置、序盤をプレイ。ターン2までにユニットを展開できるか? できなければカーブを調整。",
   "cards.deck.tip.p2": "優れたデッキとは強いカードの集合体ではなく、流れのあるデッキ。序盤の低コストユニット、中盤の圧力、そして少数の高インパクトフィニッシャー。レベルバランスがあなたを勝利に導く。",
 
+  // Collection
+  "cards.collection.eyebrow": "カードコレクション",
+  "cards.collection.title": "カードを見る",
+  "cards.collection.subtitle": "ガンダムカードゲームのコレクションを探索。カードをクリックして裏面デザインを確認。",
+
+  // App download
+  "cards.app.eyebrow": "公式ティーチングアプリ",
+  "cards.app.title": "スマホでルールを学ぼう",
+  "cards.app.subtitle": "公式ガンダムカードゲームティーチングアプリで、インタラクティブなチュートリアルと練習対戦ですべてのルールを学べます。",
+  "cards.app.feature1": "すべてのメカニクスをインタラクティブに学習",
+  "cards.app.feature2": "デッキをテストできる練習対戦",
+  "cards.app.feature3": "iPhone・iPad対応、無料ダウンロード",
+
   // Catalog
   "cards.catalog.eyebrow": "製品カタログ",
   "cards.catalog.title": "公式リリース",

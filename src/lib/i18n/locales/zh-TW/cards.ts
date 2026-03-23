@@ -111,6 +111,19 @@ export const cards = {
   "cards.deck.tip.p1": "實戰前進行3-4回合的單人測試。抽5張、設置6張護盾，模擬前期遊戲。能否在第2回合穩定部署單位？如果不行就調整曲線。",
   "cards.deck.tip.p2": "優秀的牌組不只是堆砌強力卡牌，而是要有節奏感。前期的低費單位、中期的壓制力量，以及少量高影響力的終結者。平衡你的等級分配，牌組就會帶你走向勝利。",
 
+  // Collection
+  "cards.collection.eyebrow": "卡牌收藏",
+  "cards.collection.title": "瀏覽卡牌",
+  "cards.collection.subtitle": "探索鋼彈卡牌遊戲的收藏。點擊任何卡牌翻面查看背面設計。",
+
+  // App download
+  "cards.app.eyebrow": "官方教學應用程式",
+  "cards.app.title": "在手機上學習並遊玩",
+  "cards.app.subtitle": "官方鋼彈卡牌遊戲教學應用程式透過互動教學和練習對戰，帶你了解每一條規則。",
+  "cards.app.feature1": "所有機制的互動規則教學",
+  "cards.app.feature2": "用練習對戰測試你的牌組",
+  "cards.app.feature3": "iPhone 和 iPad 免費下載",
+
   // Catalog
   "cards.catalog.eyebrow": "產品目錄",
   "cards.catalog.title": "官方發售",
