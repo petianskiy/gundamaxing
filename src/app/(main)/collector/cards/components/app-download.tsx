@@ -27,32 +27,40 @@ function AppleStoreBadge({ href }: { href: string }) {
   );
 }
 
-/* Custom landscape phone shell — the horizontal-iphone.jpg is already
-   a landscape-oriented screenshot, so we display it in a landscape
-   device frame directly (no rotation needed). */
+/* Landscape phone shell — two-layer: outer frame + inner screen.
+   The image is contained inside the screen div, so the frame border
+   is always fully visible around it. */
 function LandscapePhone({ src }: { src: string }) {
   return (
     <div
       style={{
-        width: 300,
-        height: 172,
-        borderRadius: 20,
-        border: "3px solid rgba(255,255,255,0.18)",
-        background: "#111",
-        overflow: "hidden",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06)",
-        position: "relative",
+        width: 310,
+        height: 182,
+        borderRadius: 24,
+        background: "#1e1e24",
+        border: "2.5px solid rgba(255,255,255,0.22)",
+        padding: 6,
+        boxShadow: "0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
         flexShrink: 0,
       }}
     >
-      {/* Subtle bezel line */}
-      <div style={{ position: "absolute", inset: 3, borderRadius: 17, border: "1px solid rgba(255,255,255,0.05)", pointerEvents: "none", zIndex: 2 }} />
-      <img
-        src={src}
-        alt="Teaching App"
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        draggable={false}
-      />
+      {/* Inner screen — image clipped here, frame stays visible */}
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: 18,
+          overflow: "hidden",
+          background: "#000",
+        }}
+      >
+        <img
+          src={src}
+          alt="Teaching App gameplay"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          draggable={false}
+        />
+      </div>
     </div>
   );
 }
