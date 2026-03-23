@@ -70,9 +70,9 @@ export function CardCollection() {
           className="text-center mb-14"
         >
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Layers className="h-4 w-4 text-amber-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-400">
-              {t("cards.collection.eyebrow")}
+            <Layers className="h-4 w-4 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              コレクション &middot; {t("cards.collection.eyebrow")}
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">

@@ -61,9 +61,9 @@ export function DeckBuilder() {
           className="text-center mb-14"
         >
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Layers className="h-4 w-4 text-violet-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-400">
-              {t("cards.deck.eyebrow")}
+            <Layers className="h-4 w-4 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              デッキ戦略 &middot; {t("cards.deck.eyebrow")}
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">

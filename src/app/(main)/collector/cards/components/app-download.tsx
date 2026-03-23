@@ -27,6 +27,36 @@ function AppleStoreBadge({ href }: { href: string }) {
   );
 }
 
+/* Custom landscape phone shell — the horizontal-iphone.jpg is already
+   a landscape-oriented screenshot, so we display it in a landscape
+   device frame directly (no rotation needed). */
+function LandscapePhone({ src }: { src: string }) {
+  return (
+    <div
+      style={{
+        width: 300,
+        height: 172,
+        borderRadius: 20,
+        border: "3px solid rgba(255,255,255,0.18)",
+        background: "#111",
+        overflow: "hidden",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06)",
+        position: "relative",
+        flexShrink: 0,
+      }}
+    >
+      {/* Subtle bezel line */}
+      <div style={{ position: "absolute", inset: 3, borderRadius: 17, border: "1px solid rgba(255,255,255,0.05)", pointerEvents: "none", zIndex: 2 }} />
+      <img
+        src={src}
+        alt="Teaching App"
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        draggable={false}
+      />
+    </div>
+  );
+}
+
 export function AppDownload() {
   const { t } = useTranslation();
 
@@ -43,8 +73,8 @@ export function AppDownload() {
             transition={{ duration: 0.55 }}
           >
             <div className="mb-4">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">
-                {t("cards.app.eyebrow")}
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+                公式アプリ &middot; {t("cards.app.eyebrow")}
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight">
@@ -56,7 +86,7 @@ export function AppDownload() {
             <ul className="mt-6 space-y-2">
               {(["cards.app.feature1", "cards.app.feature2", "cards.app.feature3"] as const).map((key) => (
                 <li key={key} className="flex items-center gap-2 text-sm text-zinc-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gx-red flex-shrink-0" />
                   {t(key)}
                 </li>
               ))}
@@ -66,30 +96,23 @@ export function AppDownload() {
             </div>
           </motion.div>
 
-          {/* ── Right: two iPhones, clearly separated ── */}
+          {/* ── Right: portrait phone + landscape phone, clearly separated ── */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.55, delay: 0.1 }}
-            className="relative flex items-center justify-center gap-6"
-            style={{ minHeight: 360 }}
+            className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center sm:gap-8"
           >
-            {/* Portrait iPhone — left */}
-            <div className="relative z-10 flex-shrink-0 w-[140px] sm:w-[160px]">
+            {/* Portrait iPhone */}
+            <div className="flex-shrink-0 w-[148px] drop-shadow-2xl">
               <Iphone src="/images/cards/vertical-iphone.jpg" />
             </div>
 
-            {/* Landscape iPhone — right, rotated */}
-            <div
-              className="relative z-10 flex-shrink-0 w-[140px] sm:w-[160px]"
-              style={{ transform: "rotate(90deg)" }}
-            >
-              <Iphone src="/images/cards/horizontal-iphone.jpg" />
+            {/* Landscape device */}
+            <div className="drop-shadow-2xl">
+              <LandscapePhone src="/images/cards/horizontal-iphone.jpg" />
             </div>
-
-            {/* Background glow */}
-            <div className="absolute inset-0 bg-indigo-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
           </motion.div>
 
         </div>

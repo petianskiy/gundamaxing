@@ -96,8 +96,8 @@ export function CardShowcase() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-400">
-            {t("cards.showcase.eyebrow")}
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+            四本の柱 &middot; {t("cards.showcase.eyebrow")}
           </span>
           <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-white tracking-tight">
             {t("cards.showcase.title")}
