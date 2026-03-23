@@ -23,8 +23,7 @@ export function BuildDnaTeaser() {
             Built for Every Screen
           </h2>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Whether you&apos;re browsing builds on your desktop or uploading your latest paint job on the go,
-            Gundamaxing is fully optimised for both — fast, clean, and responsive on any device.
+            Browse builds at your desk or upload straight from your phone. Fast, clean, and built to feel great on any screen.
           </p>
         </div>
 
