@@ -80,34 +80,7 @@ export function CardsCatalog({ products }: { products: CardProduct[] }) {
   }, [products, selectedType, search]);
 
   return (
-    <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-
-        {/* Back */}
-        <Link
-          href="/collector"
-          className="animate-page-header inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Collector
-        </Link>
-
-        {/* Hero */}
-        <div className="animate-page-header text-center mb-10">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Layers className="h-5 w-5 text-gx-red" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
-              カードゲーム &middot; Card Game
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-            Gundam Card Game
-          </h1>
-          <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
-            The official Gundam Card Game by Bandai. Browse starter decks, booster packs, premium sets, and accessories.
-          </p>
-        </div>
-
+    <div>
         {/* Featured */}
         {featured.length > 0 && !search.trim() && !selectedType && (
           <div className="animate-page-content mb-12">
@@ -193,19 +166,6 @@ export function CardsCatalog({ products }: { products: CardProduct[] }) {
           </div>
         )}
 
-        {/* Official link */}
-        <div className="mt-16 text-center">
-          <a
-            href="https://www.gundam-gcg.com/en/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Official Gundam Card Game site
-          </a>
-        </div>
-      </div>
     </div>
   );
 }

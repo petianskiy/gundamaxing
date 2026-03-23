@@ -13,6 +13,7 @@ import { hangar as enHangar } from "./locales/en/hangar";
 import { lineage as enLineage } from "./locales/en/lineage";
 import { achievements as enAchievements } from "./locales/en/achievements";
 import { collector as enCollector } from "./locales/en/collector";
+import { cards as enCards } from "./locales/en/cards";
 
 import { common as jaCommon } from "./locales/ja/common";
 import { landing as jaLanding } from "./locales/ja/landing";
@@ -29,6 +30,7 @@ import { hangar as jaHangar } from "./locales/ja/hangar";
 import { lineage as jaLineage } from "./locales/ja/lineage";
 import { achievements as jaAchievements } from "./locales/ja/achievements";
 import { collector as jaCollector } from "./locales/ja/collector";
+import { cards as jaCards } from "./locales/ja/cards";
 
 import { common as zhTWCommon } from "./locales/zh-TW/common";
 import { landing as zhTWLanding } from "./locales/zh-TW/landing";
@@ -45,6 +47,7 @@ import { hangar as zhTWHangar } from "./locales/zh-TW/hangar";
 import { lineage as zhTWLineage } from "./locales/zh-TW/lineage";
 import { achievements as zhTWAchievements } from "./locales/zh-TW/achievements";
 import { collector as zhTWCollector } from "./locales/zh-TW/collector";
+import { cards as zhTWCards } from "./locales/zh-TW/cards";
 
 export type Locale = "en" | "ja" | "zh-TW";
 export const DEFAULT_LOCALE: Locale = "en";
@@ -61,7 +64,7 @@ function merge(...objs: Record<string, string>[]): Record<string, string> {
 }
 
 export const translations: Record<Locale, Record<string, string>> = {
-  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar, enLineage, enAchievements, enCollector),
-  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar, jaLineage, jaAchievements, jaCollector),
-  "zh-TW": merge(zhTWCommon, zhTWLanding, zhTWBuilds, zhTWForum, zhTWUpload, zhTWProfile, zhTWContent, zhTWFilters, zhTWAuth, zhTWAdmin, zhTWSettings, zhTWHangar, zhTWLineage, zhTWAchievements, zhTWCollector),
+  en: merge(enCommon, enLanding, enBuilds, enForum, enUpload, enProfile, enContent, enFilters, enAuth, enAdmin, enSettings, enHangar, enLineage, enAchievements, enCollector, enCards),
+  ja: merge(jaCommon, jaLanding, jaBuilds, jaForum, jaUpload, jaProfile, jaContent, jaFilters, jaAuth, jaAdmin, jaSettings, jaHangar, jaLineage, jaAchievements, jaCollector, jaCards),
+  "zh-TW": merge(zhTWCommon, zhTWLanding, zhTWBuilds, zhTWForum, zhTWUpload, zhTWProfile, zhTWContent, zhTWFilters, zhTWAuth, zhTWAdmin, zhTWSettings, zhTWHangar, zhTWLineage, zhTWAchievements, zhTWCollector, zhTWCards),
 };

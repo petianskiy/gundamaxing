@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SmartImage as Image } from "@/components/ui/smart-image";
-import { BookOpen, Layers, Lock } from "lucide-react";
+import { BookOpen, Layers } from "lucide-react";
 
 export const metadata = {
   title: "Collector | Gundamaxing",
@@ -73,24 +73,19 @@ export default function CollectorGateway() {
               </div>
             </Link>
 
-            {/* Collectible Cards — Coming Soon */}
-            <div className="group relative rounded-2xl border border-white/[0.08] overflow-hidden cursor-not-allowed opacity-60">
+            {/* Collectible Cards */}
+            <Link
+              href="/collector/cards"
+              className="group relative rounded-2xl border border-white/[0.08] overflow-hidden transition-all hover:border-white/[0.2] hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1"
+            >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
                   src="/images/collector-cards.jpg"
                   alt="Gundam Collectible Cards"
                   fill
-                  className="object-cover grayscale"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-
-                {/* Lock overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 bg-black/60 rounded-xl px-5 py-3 border border-white/10">
-                    <Lock className="h-6 w-6 text-zinc-400" />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">Coming Soon</span>
-                  </div>
-                </div>
 
                 {/* Content overlay */}
                 <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
@@ -106,9 +101,15 @@ export default function CollectorGateway() {
                   <p className="text-sm text-zinc-400 mt-2 max-w-xs">
                     Explore the Gundam Card Game — starter decks, booster packs, and premium sets.
                   </p>
+                  <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500 group-hover:text-indigo-400 transition-colors">
+                    <span>Browse cards</span>
+                    <svg className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
 
           </div>
         </div>
