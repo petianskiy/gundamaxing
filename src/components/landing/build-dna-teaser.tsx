@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import { Monitor, Smartphone } from "lucide-react";
 import { Safari } from "@/components/ui/safari";
 import { Iphone } from "@/components/ui/iphone";
+import { useTranslation } from "@/lib/i18n/context";
 
 export function BuildDnaTeaser() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="mx-auto max-w-7xl">
@@ -15,15 +18,15 @@ export function BuildDnaTeaser() {
           <div className="flex items-center justify-center gap-2 mb-3">
             <Monitor className="h-4 w-4 text-gx-red" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
-              対応済み &middot; Cross-Platform
+              対応済み &middot; {t("platform.label")}
             </span>
             <Smartphone className="h-4 w-4 text-gx-red" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-            Built for Every Screen
+            {t("platform.title")}
           </h2>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Browse builds at your desk or upload straight from your phone. Fast, clean, and built to feel great on any screen.
+            {t("platform.subtitle")}
           </p>
         </div>
 

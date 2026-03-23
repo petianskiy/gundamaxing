@@ -3,11 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { mockWorkshops } from "@/lib/mock/data";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
+import type { ForumCategory } from "@/lib/types";
 
-export function WorkshopsSection() {
+interface WorkshopsSectionProps {
+  categories: ForumCategory[];
+}
+
+export function WorkshopsSection({ categories }: WorkshopsSectionProps) {
   const { t } = useTranslation();
   const workshopKey = (name: string) => t(`workshop.${name.toLowerCase()}`);
 
@@ -33,16 +37,16 @@ export function WorkshopsSection() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {mockWorkshops.map((workshop, i) => (
+          {categories.map((category, i) => (
             <motion.div
-              key={workshop.id}
+              key={category.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
             >
               <Link
-                href={`/forum/category/sub-${workshop.name.toLowerCase()}`}
+                href={`/forum/category/${category.id}`}
                 className="group flex flex-col rounded-xl border border-border/50 bg-card hover:border-gx-red/30 hover:bg-gx-surface-elevated transition-all relative overflow-hidden"
               >
                 {/* Corner accents on hover */}
@@ -51,23 +55,29 @@ export function WorkshopsSection() {
 
                 {/* Workshop image */}
                 <div className="relative h-32 w-full overflow-hidden">
-                  <Image
-                    src={workshop.image}
-                    alt={workshop.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                  {category.image ? (
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gx-surface-elevated flex items-center justify-center text-3xl">
+                      {category.icon}
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
                 </div>
 
                 {/* Text content */}
                 <div className="p-3 pt-2 text-center flex flex-col items-center gap-1">
                   <h3 className="text-sm font-semibold text-foreground">
-                    {workshopKey(workshop.name)}
+                    {workshopKey(category.name)}
                   </h3>
                   <p className="text-[10px] text-muted-foreground">
-                    {workshop.buildCount} {t("shared.builds")}
+                    {category.threadCount} {t("shared.builds")}
                   </p>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-gx-red transition-all" />
                 </div>
