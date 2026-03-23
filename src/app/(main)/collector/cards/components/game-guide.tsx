@@ -81,19 +81,28 @@ function TypeCard({
   name,
   color,
   description,
+  image,
 }: {
   icon: React.ReactNode;
   name: string;
   color: string;
   description: string;
+  image?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border p-4 bg-white/[0.02]", color)}>
-      <div className="flex items-center gap-2 mb-2">
-        {icon}
-        <span className="text-sm font-semibold text-white">{name}</span>
+    <div className={cn("rounded-lg border overflow-hidden bg-white/[0.02]", color)}>
+      {image && (
+        <div className="aspect-[3/2] overflow-hidden">
+          <img src={image} alt={name} className="w-full h-full object-cover object-top" loading="lazy" />
+        </div>
+      )}
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          {icon}
+          <span className="text-sm font-semibold text-white">{name}</span>
+        </div>
+        <p className="text-xs text-zinc-400 leading-relaxed">{description}</p>
       </div>
-      <p className="text-xs text-zinc-400 leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -173,25 +182,47 @@ export function GameGuide() {
                 name={t("cards.guide.cardTypes.unit.name")}
                 color="border-blue-500/20"
                 description={t("cards.guide.cardTypes.unit.desc")}
+                image="/images/cards/unitcard.jpg"
               />
               <TypeCard
                 icon={<Users className="h-4 w-4 text-emerald-400" />}
                 name={t("cards.guide.cardTypes.pilot.name")}
                 color="border-emerald-500/20"
                 description={t("cards.guide.cardTypes.pilot.desc")}
+                image="/images/cards/pilotcard.jpg"
               />
               <TypeCard
                 icon={<Zap className="h-4 w-4 text-violet-400" />}
                 name={t("cards.guide.cardTypes.command.name")}
                 color="border-violet-500/20"
                 description={t("cards.guide.cardTypes.command.desc")}
+                image="/images/cards/commandcard.jpg"
               />
               <TypeCard
                 icon={<Shield className="h-4 w-4 text-amber-400" />}
                 name={t("cards.guide.cardTypes.base.name")}
                 color="border-amber-500/20"
                 description={t("cards.guide.cardTypes.base.desc")}
+                image="/images/cards/basecard.jpg"
               />
+            </div>
+
+            {/* Additional card types strip */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4">
+              {[
+                { src: "/images/cards/resourcecard.jpg", label: "Resource" },
+                { src: "/images/cards/tokencard.jpg", label: "EX Base" },
+                { src: "/images/cards/usualbackside.jpg", label: "Card Back" },
+                { src: "/images/cards/backsideofresourcecards.jpg", label: "Resource Back" },
+                { src: "/images/cards/damagecounters.jpg", label: "Damage Dice" },
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <div className="rounded-lg overflow-hidden border border-white/[0.06] aspect-[3/4]">
+                    <img src={item.src} alt={item.label} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  <span className="text-[10px] text-zinc-500 mt-1 block">{item.label}</span>
+                </div>
+              ))}
             </div>
           </AccordionItem>
 

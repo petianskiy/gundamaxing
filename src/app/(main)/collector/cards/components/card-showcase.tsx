@@ -16,40 +16,40 @@ interface ShowcaseCard {
 
 const CARDS: ShowcaseCard[] = [
   {
-    title: "RX-78-2 Gundam",
+    title: "Tieren Taozi",
     subtitle: "Unit Card",
     type: "unit",
     color: "from-blue-500/20 to-blue-900/40",
     glow: "rgba(59,130,246,0.35)",
     border: "border-blue-500/30",
-    image: "https://cdn.gundamaxing.com/builds/cmmqfyndi0001jp049b23m0k0/images/1773579887357-emmbn1.jpeg",
+    image: "/images/cards/unitcard.jpg",
   },
   {
-    title: "Amuro Ray",
+    title: "Sarah Zabiarov",
     subtitle: "Pilot Card",
     type: "pilot",
     color: "from-emerald-500/20 to-emerald-900/40",
     glow: "rgba(16,185,129,0.35)",
     border: "border-emerald-500/30",
-    image: "https://cdn.gundamaxing.com/builds/cmmr0ukao0000k304qlqrfsod/images/1773574191542-c6y11u.jpg",
+    image: "/images/cards/pilotcard.jpg",
   },
   {
-    title: "Newtype Flash",
+    title: "With Iron and Blood",
     subtitle: "Command Card",
     type: "command",
     color: "from-violet-500/20 to-violet-900/40",
     glow: "rgba(139,92,246,0.35)",
     border: "border-violet-500/30",
-    image: "https://cdn.gundamaxing.com/builds/cmmrf8wvj0000l604i57s0mo5/images/1773570358836-uog8m1.jpg",
+    image: "/images/cards/commandcard.jpg",
   },
   {
-    title: "White Base",
+    title: "Hammerhead",
     subtitle: "Base Card",
     type: "base",
     color: "from-amber-500/20 to-amber-900/40",
     glow: "rgba(245,158,11,0.35)",
     border: "border-amber-500/30",
-    image: "https://cdn.gundamaxing.com/builds/cmmrcfd860000ky04txv6mlt5/images/1773568559623-7l6z02.jpg",
+    image: "/images/cards/basecard.jpg",
   },
 ];
 
