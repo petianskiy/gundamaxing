@@ -152,6 +152,64 @@ export interface ForumCategory {
   children?: ForumCategory[];
 }
 
+// ─── CARD SCANNER ─────────────────────────────────────────────────
+
+export type GCGCardType = "UNIT" | "PILOT" | "COMMAND" | "BASE" | "RESOURCE" | "TOKEN";
+
+export type ScanStatus = "idle" | "detecting" | "locked" | "capturing" | "processing" | "review" | "saved" | "error";
+
+export interface ScanField<T = string> {
+  value: T;
+  confidence: number;
+}
+
+export interface ScanResult {
+  fields: {
+    cardId: ScanField;
+    name: ScanField;
+    cardType: ScanField<GCGCardType | null>;
+    rarity: ScanField<string | null>;
+    level: ScanField<number | null>;
+    cost: ScanField<number | null>;
+    ap: ScanField<number | null>;
+    hp: ScanField<number | null>;
+    abilityText: ScanField<string | null>;
+    pilot: ScanField<string | null>;
+    faction: ScanField<string | null>;
+    environment: ScanField<string | null>;
+  };
+  overallConfidence: number;
+  needsReview: boolean;
+}
+
+export interface UserCardUI {
+  id: string;
+  cardId: string;
+  name: string;
+  cardType: GCGCardType | null;
+  rarity: string | null;
+  level: number | null;
+  cost: number | null;
+  ap: number | null;
+  hp: number | null;
+  abilityText: string | null;
+  pilot: string | null;
+  faction: string | null;
+  environment: string | null;
+  confidence: number;
+  isVerified: boolean;
+  imageUrl: string;
+  quantity: number;
+  createdAt: string;
+}
+
+export interface CardCollectionStats {
+  totalCards: number;
+  uniqueCards: number;
+  byType: Record<string, number>;
+  avgConfidence: number;
+}
+
 export interface GifAttachment {
   url: string;
   previewUrl: string | null;

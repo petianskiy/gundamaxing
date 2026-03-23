@@ -193,6 +193,7 @@ model User {
   lineages          Lineage[]
   achievements      UserAchievement[]
   kits              UserKit[]
+  cards             UserCard[]
   missionSubmissions MissionSubmission[]
   kitSuggestions    KitSuggestion[]
 
@@ -645,6 +646,7 @@ enum EventType {
   CUSTOM_ROLE_REMOVED
   SETTING_CHANGED
   CONTENT_MODERATED
+  CARD_SCANNED
 }
 
 model EventLog {
@@ -1154,4 +1156,56 @@ model CardProduct {
   @@index([isFeatured])
   @@index([sortOrder])
   @@index([releaseDate])
+}
+
+// ─── USER CARD COLLECTION (Scanned Cards) ─────────────────────
+
+enum GCGCardType {
+  UNIT
+  PILOT
+  COMMAND
+  BASE
+  RESOURCE
+  TOKEN
+}
+
+model UserCard {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // OCR-extracted fields
+  cardId      String                // e.g. "GD03-021"
+  name        String
+  cardType    GCGCardType?
+  rarity      String?
+  level       Int?
+  cost        Int?
+  ap          Int?
+  hp          Int?
+  abilityText String?      @db.Text
+  pilot       String?
+  faction     String?
+  environment String?
+
+  // Confidence & metadata
+  confidence  Float        @default(0)
+  rawOcrData  Json?
+  isVerified  Boolean      @default(false)
+
+  // Image
+  imageUrl    String
+  imageKey    String
+
+  // Duplicate tracking
+  quantity    Int          @default(1)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([userId, cardId])
+  @@index([userId])
+  @@index([cardId])
+  @@index([cardType])
+  @@index([createdAt])
 }
