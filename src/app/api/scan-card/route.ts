@@ -3,28 +3,28 @@ import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/security/rate-limiter";
 import { checkBanned } from "@/lib/security/ban-check";
 import { detectText, inferCardBounds } from "@/lib/ocr/vision-client";
-import { parseCardFields } from "@/lib/ocr/card-parser";
+import { loadBase64Image, cropCardFromFrame, canvasToBase64 } from "@/lib/ocr/image-preprocessor";
+import { parseCard } from "@/lib/ocr/card-parser";
 import { validateAndClean } from "@/lib/ocr/field-validator";
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Auth ──
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const banError = await checkBanned(session.user.id);
-    if (banError) {
-      return NextResponse.json({ error: banError }, { status: 403 });
-    }
+    if (banError) return NextResponse.json({ error: banError }, { status: 403 });
 
     const rl = await checkRateLimit(`card:scan:${session.user.id}`, 20, 60_000);
     if (!rl.success) {
-      return NextResponse.json({ error: "Too many scan requests. Please wait a moment." }, { status: 429 });
+      return NextResponse.json({ error: "Too many scan requests. Please wait." }, { status: 429 });
     }
 
+    // ── Parse input ──
     const body = await req.json();
     const { imageBase64, imageWidth, imageHeight } = body as {
       imageBase64: string;
@@ -33,70 +33,74 @@ export async function POST(req: NextRequest) {
     };
 
     if (!imageBase64 || !imageWidth || !imageHeight) {
-      return NextResponse.json({ error: "Missing imageBase64, imageWidth, or imageHeight" }, { status: 400 });
+      return NextResponse.json({ error: "Missing image data" }, { status: 400 });
     }
 
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
     if (base64Data.length * 0.75 > MAX_IMAGE_SIZE) {
       return NextResponse.json({ error: "Image too large (max 10MB)" }, { status: 400 });
     }
 
-    // ── Run Vision API ──
-    const vision = await detectText(base64Data);
+    // ══════════════════════════════════════════════════════
+    // STAGE 2: DETECT — find card in the frame
+    // ══════════════════════════════════════════════════════
 
-    if (vision.words.length === 0) {
+    // Coarse OCR on full frame to find text positions
+    const coarseVision = await detectText(base64Data);
+
+    if (coarseVision.words.length < 3) {
       return NextResponse.json({
-        error: "No text detected. Try a clearer image with better lighting.",
+        error: "No card text detected. Try better lighting or hold the card closer.",
       }, { status: 422 });
     }
 
-    // ── Infer card boundaries from text positions ──
-    const cardBounds = inferCardBounds(vision.annotations, imageWidth, imageHeight);
+    // Infer card boundaries from text annotation positions
+    const cardBounds = inferCardBounds(coarseVision.annotations, imageWidth, imageHeight);
 
-    // Parse using card bounds (if found, offset words to card-relative coordinates)
-    let parseW = imageWidth;
-    let parseH = imageHeight;
-    let adjustedWords = vision.words;
+    // ══════════════════════════════════════════════════════
+    // STAGE 3: PREPROCESS — crop card, normalize
+    // ══════════════════════════════════════════════════════
+
+    let cardCanvas;
+    let cardW: number;
+    let cardH: number;
+    let cardBase64: string;
 
     if (cardBounds) {
-      // Offset all word bounding boxes relative to the card crop
-      parseW = cardBounds.width;
-      parseH = cardBounds.height;
-      adjustedWords = vision.words.map((w) => ({
-        ...w,
-        boundingBox: {
-          x: w.boundingBox.x - cardBounds.x,
-          y: w.boundingBox.y - cardBounds.y,
-          width: w.boundingBox.width,
-          height: w.boundingBox.height,
-        },
-      }));
+      const cropped = await cropCardFromFrame(base64Data, cardBounds);
+      cardCanvas = cropped.canvas;
+      cardW = cropped.width;
+      cardH = cropped.height;
+      cardBase64 = cropped.base64;
+    } else {
+      // Fallback: use full image
+      const loaded = await loadBase64Image(base64Data);
+      cardCanvas = loaded.canvas;
+      cardW = loaded.width;
+      cardH = loaded.height;
+      cardBase64 = base64Data;
     }
 
-    const adjustedVision = { ...vision, words: adjustedWords };
-    const rawFields = parseCardFields(adjustedVision, parseW, parseH);
-    let result = validateAndClean(rawFields);
+    // ══════════════════════════════════════════════════════
+    // STAGE 4: EXTRACT — template-based multi-zone OCR
+    // ══════════════════════════════════════════════════════
 
-    // Fallback: aggressive cardId search in full text
-    if (result.fields.cardId.confidence < 0.6) {
-      const matches = vision.fullText.match(/[A-Z]{1,5}\d{1,3}[-–]\d{2,4}/g);
-      if (matches && matches.length > 0) {
-        const bestId = matches[0].replace("–", "-");
-        result = {
-          ...result,
-          fields: { ...result.fields, cardId: { value: bestId, confidence: 0.7 } },
-        };
-      }
-    }
+    const parsed = await parseCard(cardCanvas, cardW, cardH, coarseVision);
+
+    // ══════════════════════════════════════════════════════
+    // STAGE 5: VALIDATE — domain rules, confidence scoring
+    // ══════════════════════════════════════════════════════
+
+    const result = validateAndClean(parsed);
 
     return NextResponse.json({
       result,
       cardBounds,
+      cardImageBase64: cardBase64 ? `data:image/jpeg;base64,${cardBase64}` : null,
       debug: process.env.NODE_ENV === "development" ? {
-        fullText: vision.fullText,
-        wordCount: vision.words.length,
-        rawFields,
+        fullText: coarseVision.fullText,
+        wordCount: coarseVision.words.length,
+        parsedRaw: parsed,
       } : undefined,
     });
   } catch (error) {

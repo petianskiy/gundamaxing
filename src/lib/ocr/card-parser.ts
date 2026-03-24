@@ -1,215 +1,267 @@
 /**
- * Zone-based card field extraction from Google Cloud Vision response.
- *
- * Gundam Card Game layout zones (normalized 0-1 on a CROPPED card image):
- *   Top-left (x<0.25, y<0.18): Level + Cost
- *   Top-right (x>0.55, y<0.10): Card ID + rarity
- *   Left strip (x<0.10): Card type vertical text
- *   Title band (x>0.10, 0.62<y<0.78): Card name + unit model
- *   Stat boxes (x>0.70, y>0.88): AP / HP
- *   Bottom bar (y>0.82): traits, faction, environment
- *   Effect zone (x>0.10, 0.50<y<0.70): ability/effect text
+ * Template-based zone extraction for Gundam Card Game cards.
+ * Uses card templates to read specific regions via targeted OCR calls.
  */
 
-import type { VisionWord, VisionResponse } from "./vision-client";
+import type { Canvas } from "canvas";
+import type { VisionResponse, VisionWord } from "./vision-client";
+import { detectText } from "./vision-client";
+import {
+  getTemplate, ABILITY_KEYWORDS, NAME_BLACKLIST,
+  type CardTemplate, type CardZone,
+} from "./card-templates";
+import { cropZone, cropAndRotate90, enhanceContrast, canvasToBase64 } from "./image-preprocessor";
 
-export interface RawCardFields {
-  cardId: string | null;
+// ── Result type ──────────────────────────────────────────────
+
+export interface ParsedCardData {
+  cardNumber: string | null;
   rarity: string | null;
-  name: string | null;
   cardType: string | null;
-  level: string | null;
-  cost: string | null;
-  ap: string | null;
-  hp: string | null;
-  abilityText: string | null;
+  level: number | null;
+  cost: number | null;
+  name: string | null;
+  unitId: string | null;
+  effect: {
+    keywords: string[];
+    fullText: string | null;
+  };
+  zone: string | null;      // environments like "Space, Earth"
+  trait: string | null;      // faction/trait
+  linkReq: string | null;    // link requirement
   pilot: string | null;
-  faction: string | null;
-  environment: string | null;
-  wordCount: number;
+  ap: number | null;
+  hp: number | null;
+  // Per-field source for debugging
+  _debug?: Record<string, string>;
 }
 
-interface NW extends VisionWord {
-  nx: number;
-  ny: number;
+// ── Helpers ──────────────────────────────────────────────────
+
+function extractDigits(text: string): number | null {
+  const match = text.match(/\d+/);
+  return match ? parseInt(match[0], 10) : null;
 }
 
-// Words to filter from card name (copyright/manufacturer noise)
-const NOISE_WORDS = new Set([
-  "ILLUST", "BANDAI", "JAPAN", "MADE", "IN", "©ST", "©", "ST",
-  "SR", "MBS", "SUNRISE", "SOTSU", "TM", "CO", "LTD", "AC",
-  "STH", "MSJ", "XXXG", "RX", "GAT", "GNT", "ASW", "DT",
-  "05", "06", "01", "02", "03", "04", "07", "08", "09",
-]);
-
-function norm(words: VisionWord[], w: number, h: number): NW[] {
-  return words.map((word) => ({
-    ...word,
-    nx: w > 0 ? (word.boundingBox.x + word.boundingBox.width / 2) / w : 0,
-    ny: h > 0 ? (word.boundingBox.y + word.boundingBox.height / 2) / h : 0,
-  }));
+function cleanText(text: string): string {
+  return text.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function zone(words: NW[], x0: number, y0: number, x1: number, y1: number): NW[] {
-  return words.filter((w) => w.nx >= x0 && w.nx <= x1 && w.ny >= y0 && w.ny <= y1);
+function filterNoise(text: string): string {
+  return text.split(/\s+/)
+    .filter((w) => !NAME_BLACKLIST.test(w) && w.length > 1)
+    .join(" ")
+    .trim();
 }
 
-function join(words: NW[]): string {
-  return words.sort((a, b) => a.ny - b.ny || a.nx - b.nx).map((w) => w.text).join(" ").trim();
+function extractKeywords(text: string): string[] {
+  const found: string[] = [];
+  for (const kw of ABILITY_KEYWORDS) {
+    if (text.includes(kw)) found.push(kw);
+  }
+  return found;
 }
 
-function isNoise(word: string): boolean {
-  const upper = word.toUpperCase().replace(/[^A-Z]/g, "");
-  return NOISE_WORDS.has(upper) || upper.length <= 1 || /^©/.test(word);
+// ── Zone OCR: crop a zone, send to Vision API, return text ──
+
+async function ocrZone(
+  cardCanvas: Canvas,
+  zone: CardZone,
+  imgW: number,
+  imgH: number,
+  enhance = false,
+): Promise<string> {
+  let cropped: Canvas;
+
+  if (zone.rotated) {
+    cropped = cropAndRotate90(cardCanvas, zone, imgW, imgH);
+  } else {
+    cropped = cropZone(cardCanvas, zone, imgW, imgH);
+  }
+
+  if (enhance) {
+    cropped = enhanceContrast(cropped);
+  }
+
+  const b64 = canvasToBase64(cropped);
+  try {
+    const result = await detectText(b64);
+    return cleanText(result.fullText);
+  } catch {
+    return "";
+  }
 }
 
-const CARD_ID_RE = /[A-Z]{1,5}\d{1,3}[-–]\d{2,4}/;
-const CARD_TYPES = ["UNIT", "PILOT", "COMMAND", "BASE", "RESOURCE", "TOKEN", "EX BASE"];
-const ENV_LABELS = ["Space", "Earth", "Moon", "Colony", "Underwater"];
+// ── Detect card type from left vertical strip ────────────────
 
-export function parseCardFields(vision: VisionResponse, imgWidth: number, imgHeight: number): RawCardFields {
-  const words = norm(vision.words, imgWidth, imgHeight);
-  const fullText = vision.fullText;
+async function detectCardType(
+  cardCanvas: Canvas,
+  imgW: number,
+  imgH: number,
+  fullText: string,
+): Promise<string> {
+  // First try: OCR the left vertical strip (rotated text)
+  const typeText = await ocrZone(
+    cardCanvas,
+    { x: 0.00, y: 0.20, w: 0.06, h: 0.50, rotated: true, scale: 2 },
+    imgW,
+    imgH,
+    true,
+  );
 
-  // ── Card ID (top-right area) ──
-  let cardId: string | null = null;
-  const topRight = zone(words, 0.45, 0, 1, 0.12);
-  for (const w of topRight) {
-    const m = w.text.match(CARD_ID_RE);
-    if (m) { cardId = m[0].replace("–", "-"); break; }
-  }
-  if (!cardId) {
-    // Broader search in top 20%
-    const topAll = zone(words, 0.3, 0, 1, 0.20);
-    for (const w of topAll) {
-      const m = w.text.match(CARD_ID_RE);
-      if (m) { cardId = m[0].replace("–", "-"); break; }
-    }
-  }
-  if (!cardId) {
-    const m = fullText.match(CARD_ID_RE);
-    if (m) cardId = m[0].replace("–", "-");
-  }
+  const upper = typeText.toUpperCase();
+  if (upper.includes("UNIT") && upper.includes("TOKEN")) return "TOKEN";
+  if (upper.includes("EX BASE")) return "TOKEN";
+  if (upper.includes("UNIT")) return "UNIT";
+  if (upper.includes("PILOT")) return "PILOT";
+  if (upper.includes("COMMAND")) return "COMMAND";
+  if (upper.includes("BASE")) return "BASE";
+  if (upper.includes("RESOURCE")) return "RESOURCE";
 
-  // ── Rarity (near card ID) ──
-  let rarity: string | null = null;
-  const rarityRe = /\b(LR\+{0,2}|SR|SSR|R\+?|C\+?|SP)\b/i;
-  for (const w of topRight) {
-    const m = w.text.match(rarityRe);
-    if (m) { rarity = m[1].toUpperCase(); break; }
-  }
-  // Also check the small badge area
-  if (!rarity) {
-    const m = fullText.match(rarityRe);
-    if (m) rarity = m[1].toUpperCase();
-  }
+  // Fallback: check the full text for type keywords
+  const fullUpper = fullText.toUpperCase();
+  if (fullUpper.includes("UNIT")) return "UNIT";
+  if (fullUpper.includes("PILOT")) return "PILOT";
+  if (fullUpper.includes("COMMAND")) return "COMMAND";
+  if (fullUpper.includes("BASE")) return "BASE";
+  if (fullUpper.includes("RESOURCE")) return "RESOURCE";
 
-  // ── Card Type (left strip or anywhere) ──
-  let cardType: string | null = null;
-  const leftStrip = zone(words, 0, 0, 0.12, 1);
-  const leftText = join(leftStrip).toUpperCase();
-  for (const t of CARD_TYPES) {
-    if (leftText.includes(t)) { cardType = t; break; }
-  }
-  if (!cardType) {
-    const upperFull = fullText.toUpperCase();
-    for (const t of CARD_TYPES) {
-      if (upperFull.includes(t)) { cardType = t; break; }
-    }
-  }
+  return "UNKNOWN";
+}
 
-  // ── Level + Cost (top-left) ──
-  let level: string | null = null;
-  let cost: string | null = null;
-  const topLeft = zone(words, 0, 0, 0.30, 0.22);
-  const topLeftText = join(topLeft);
-  const lvMatch = topLeftText.match(/(?:Lv\.?\s*)?(\d{1,2})/i);
-  if (lvMatch) level = lvMatch[1];
-  const costMatch = topLeftText.match(/(?:COST|cost)\s*(\d{1,2})/i);
-  if (costMatch) cost = costMatch[1];
-  if (!cost && level) {
-    const nums = topLeftText.match(/\d+/g);
-    if (nums && nums.length >= 2) { level = nums[0]; cost = nums[1]; }
-  }
+// ── Main parse function: multi-pass template extraction ──────
 
-  // ── Name (title band: the large card name text) ──
-  // Strategy: find the largest/most prominent text in the center-lower area
-  // Card names are typically in y=0.58-0.75, large font, not copyright noise
-  const nameZone = zone(words, 0.08, 0.55, 0.82, 0.78)
-    .filter((w) => !isNoise(w.text) && w.text.length > 1)
-    // Sort by font size (approximate: taller bounding boxes = larger text)
-    .sort((a, b) => b.boundingBox.height - a.boundingBox.height);
-  // Take only the top large words (likely the card name), filter out model numbers
-  const nameWords = nameZone
-    .filter((w) => !/^[A-Z]{2,4}-?\d{2}/.test(w.text)) // filter model IDs like STH-05
-    .slice(0, 5); // card names are rarely more than 5 words
-  let name = join(nameWords) || null;
-  if (!name || name.length < 3) {
-    // Broader fallback
-    const broader = zone(words, 0.05, 0.50, 0.90, 0.82)
-      .filter((w) => !isNoise(w.text) && w.text.length > 2 && !/^[A-Z]{2,4}-?\d{2}/.test(w.text))
-      .sort((a, b) => b.boundingBox.height - a.boundingBox.height)
-      .slice(0, 5);
-    name = join(broader) || null;
+export async function parseCard(
+  cardCanvas: Canvas,
+  imgW: number,
+  imgH: number,
+  coarseVision: VisionResponse,
+): Promise<ParsedCardData> {
+  const debug: Record<string, string> = {};
+
+  // ── Pass 1: Detect card type ──
+  const cardType = await detectCardType(cardCanvas, imgW, imgH, coarseVision.fullText);
+  debug.cardType = `detected: ${cardType}`;
+
+  // ── Select template ──
+  const template = getTemplate(cardType);
+
+  // ── Pass 2: Per-zone OCR ──
+
+  // Card number (high priority — separate enhanced OCR call)
+  const cardNumberRaw = await ocrZone(cardCanvas, template.zones.cardNumber, imgW, imgH, true);
+  debug.cardNumber = cardNumberRaw;
+
+  // Level + Cost from top-left
+  const levelRaw = await ocrZone(cardCanvas, template.zones.level, imgW, imgH, true);
+  const costRaw = await ocrZone(cardCanvas, template.zones.cost, imgW, imgH, true);
+  debug.level = levelRaw;
+  debug.cost = costRaw;
+
+  // Name
+  const nameZone = template.zones.name;
+  const nameRaw = nameZone ? await ocrZone(cardCanvas, nameZone, imgW, imgH) : "";
+  debug.name = nameRaw;
+
+  // Effect / ability text
+  const effectZone = template.zones.effect;
+  const effectRaw = effectZone ? await ocrZone(cardCanvas, effectZone, imgW, imgH) : "";
+  debug.effect = effectRaw;
+
+  // AP / HP (if template has them)
+  let apRaw = "";
+  let hpRaw = "";
+  if (template.zones.ap) {
+    apRaw = await ocrZone(cardCanvas, template.zones.ap, imgW, imgH, true);
+    debug.ap = apRaw;
+  }
+  if (template.zones.hp) {
+    hpRaw = await ocrZone(cardCanvas, template.zones.hp, imgW, imgH, true);
+    debug.hp = hpRaw;
   }
 
-  // ── AP / HP (bottom-right stat boxes — two separate single digits typically) ──
-  let ap: string | null = null;
-  let hp: string | null = null;
-  const statWords = zone(words, 0.55, 0.84, 1, 1)
-    .filter((w) => /^\d{1,2}$/.test(w.text))
-    .sort((a, b) => a.nx - b.nx);
-  if (statWords.length >= 2) {
-    ap = statWords[statWords.length - 2].text; // second to last
-    hp = statWords[statWords.length - 1].text; // last
-  } else if (statWords.length === 1) {
-    // Single number — might be "34" which is actually AP=3 HP=4
-    const val = statWords[0].text;
-    if (val.length === 2) {
-      ap = val[0];
-      hp = val[1];
-    } else {
-      ap = val;
-    }
-  }
-  // Fallback: search full text for the pattern at the end (common: "3 4" or "6 5")
-  if (!ap) {
-    const bottomAll = join(zone(words, 0.40, 0.82, 1, 1));
-    // Look for two separate digits near the end
-    const twoDigits = bottomAll.match(/(\d)\s+(\d)\s*$/);
-    if (twoDigits) { ap = twoDigits[1]; hp = twoDigits[2]; }
-    else {
-      // Look for a 2-digit number that's actually AP+HP concatenated
-      const concat = bottomAll.match(/(\d)(\d)\s*$/);
-      if (concat) { ap = concat[1]; hp = concat[2]; }
-    }
-  }
+  // Zone (environments)
+  const zoneZone = template.zones.zone;
+  const zoneRaw = zoneZone ? await ocrZone(cardCanvas, zoneZone, imgW, imgH, true) : "";
+  debug.zone = zoneRaw;
 
-  // ── Ability text (effect zone, center-lower) ──
-  const effectWords = zone(words, 0.10, 0.45, 0.92, 0.65)
-    .filter((w) => !isNoise(w.text));
-  const abilityText = join(effectWords) || null;
+  // Trait
+  const traitZone = template.zones.trait;
+  const traitRaw = traitZone ? await ocrZone(cardCanvas, traitZone, imgW, imgH, true) : "";
+  debug.trait = traitRaw;
 
-  // ── Pilot (in parentheses in bottom area) ──
+  // Link requirement
+  const linkZone = template.zones.linkReq;
+  const linkRaw = linkZone ? await ocrZone(cardCanvas, linkZone, imgW, imgH) : "";
+  debug.linkReq = linkRaw;
+
+  // Unit ID (below name, model number)
+  const unitIdZone = template.zones.unitId;
+  const unitIdRaw = unitIdZone ? await ocrZone(cardCanvas, unitIdZone, imgW, imgH) : "";
+  debug.unitId = unitIdRaw;
+
+  // ── Pass 3: Extract structured values ──
+
+  // Card number: extract pattern XX00-000
+  const cardNumMatch = cardNumberRaw.match(/[A-Z0-9]{1,5}\d{1,3}[-–]\d{2,4}/);
+  const cardNumber = cardNumMatch ? cardNumMatch[0].replace("–", "-") : null;
+
+  // Rarity: look in the card number zone text
+  const rarityMatch = cardNumberRaw.match(/\b(LR\+{0,2}|SR\+?|SSR|R\+?|C\+?|SP|PR)\b/i);
+  const rarity = rarityMatch ? rarityMatch[1].toUpperCase() : null;
+
+  // Level + Cost
+  const level = extractDigits(levelRaw);
+  const costText = costRaw.toUpperCase().replace("COST", "").trim();
+  const cost = extractDigits(costText) ?? extractDigits(costRaw);
+
+  // Name: filter noise
+  const name = filterNoise(nameRaw) || null;
+
+  // Unit ID
+  const unitIdMatch = unitIdRaw.match(/[A-Z]{2,5}-\d{2,4}[A-Z]?/i);
+  const unitId = unitIdMatch ? unitIdMatch[0] : null;
+
+  // Effect: extract keywords + clean text
+  const keywords = extractKeywords(effectRaw);
+  const effectText = effectRaw || null;
+
+  // AP / HP: single digit extraction
+  const ap = extractDigits(apRaw);
+  const hp = extractDigits(hpRaw);
+
+  // Zone / environments
+  const zone = zoneRaw ? cleanText(zoneRaw) : null;
+
+  // Trait
+  const trait = traitRaw ? cleanText(traitRaw) : null;
+
+  // Link requirement
+  const linkReq = linkRaw ? cleanText(linkRaw) : null;
+
+  // Pilot: check link requirement for pilot names in brackets
   let pilot: string | null = null;
-  const bottomText = join(zone(words, 0, 0.82, 0.70, 1));
-  const pilotMatch = bottomText.match(/\(([^)]+)\)/);
-  if (pilotMatch && !ENV_LABELS.includes(pilotMatch[1])) pilot = pilotMatch[1];
-
-  // ── Faction ──
-  let faction: string | null = null;
-  const factionRe = /\(([^)]*(?:Team|Bloc|Force|Corps|Federation|Zeon|AEUG|Titans|Teiwaz|Celestial)[^)]*)\)/i;
-  const factionMatch = fullText.match(factionRe);
-  if (factionMatch) faction = factionMatch[1];
-
-  // ── Environment ──
-  let environment: string | null = null;
-  const foundEnvs = ENV_LABELS.filter((e) => fullText.includes(e));
-  if (foundEnvs.length > 0) environment = foundEnvs.join(", ");
+  const pilotMatch = (linkRaw || coarseVision.fullText).match(/\[([^\]]+)\]/);
+  if (pilotMatch) pilot = pilotMatch[1];
 
   return {
-    cardId, rarity, name, cardType, level, cost, ap, hp,
-    abilityText, pilot, faction, environment,
-    wordCount: words.length,
+    cardNumber,
+    rarity,
+    cardType: cardType !== "UNKNOWN" ? cardType : null,
+    level,
+    cost,
+    name,
+    unitId,
+    effect: {
+      keywords,
+      fullText: effectText,
+    },
+    zone,
+    trait,
+    linkReq,
+    pilot,
+    ap,
+    hp,
+    _debug: debug,
   };
 }

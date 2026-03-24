@@ -3,13 +3,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { ScanStatus, ScanResult } from "@/lib/types";
 
-interface CardBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 interface ScannerState {
   status: ScanStatus;
   processedImageUrl: string | null;
@@ -25,21 +18,6 @@ const INITIAL_STATE: ScannerState = {
   scanResult: null,
   error: null,
 };
-
-/**
- * Crop a canvas to the given bounds (used for card-only preview image).
- */
-function cropCanvas(source: HTMLCanvasElement, bounds: CardBounds): HTMLCanvasElement {
-  const out = document.createElement("canvas");
-  out.width = bounds.width;
-  out.height = bounds.height;
-  out.getContext("2d")!.drawImage(
-    source,
-    bounds.x, bounds.y, bounds.width, bounds.height,
-    0, 0, bounds.width, bounds.height,
-  );
-  return out;
-}
 
 export function useCardScanner() {
   const [state, setState] = useState<ScannerState>(INITIAL_STATE);
@@ -81,18 +59,15 @@ export function useCardScanner() {
         return;
       }
 
-      // If server found card bounds, crop the preview image to just the card
-      let previewCanvas = canvas;
-      if (data.cardBounds) {
-        previewCanvas = cropCanvas(canvas, data.cardBounds);
-      }
+      // Use the server-cropped card image if available
+      const previewUrl = data.cardImageBase64 || canvas.toDataURL("image/jpeg", 0.92);
 
       setState((s) => ({
         ...s,
         status: "review",
         scanResult: data.result,
-        processedCanvas: previewCanvas,
-        processedImageUrl: previewCanvas.toDataURL("image/jpeg", 0.92),
+        processedCanvas: canvas, // keep original for upload
+        processedImageUrl: previewUrl,
       }));
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
