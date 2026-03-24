@@ -36,8 +36,10 @@ interface NW extends VisionWord {
 
 // Words to filter from card name (copyright/manufacturer noise)
 const NOISE_WORDS = new Set([
-  "ILLUST", "BANDAI", "JAPAN", "MADE", "IN", "©ST", "©",
-  "SR", "MBS", "SUNRISE", "SOTSU", "TM", "CO", "LTD",
+  "ILLUST", "BANDAI", "JAPAN", "MADE", "IN", "©ST", "©", "ST",
+  "SR", "MBS", "SUNRISE", "SOTSU", "TM", "CO", "LTD", "AC",
+  "STH", "MSJ", "XXXG", "RX", "GAT", "GNT", "ASW", "DT",
+  "05", "06", "01", "02", "03", "04", "07", "08", "09",
 ]);
 
 function norm(words: VisionWord[], w: number, h: number): NW[] {
@@ -130,34 +132,57 @@ export function parseCardFields(vision: VisionResponse, imgWidth: number, imgHei
     if (nums && nums.length >= 2) { level = nums[0]; cost = nums[1]; }
   }
 
-  // ── Name (title band: card name sits in the lower-center area) ──
-  const nameWords = zone(words, 0.10, 0.60, 0.80, 0.78)
-    .filter((w) => !isNoise(w.text) && w.text.length > 1);
+  // ── Name (title band: the large card name text) ──
+  // Strategy: find the largest/most prominent text in the center-lower area
+  // Card names are typically in y=0.58-0.75, large font, not copyright noise
+  const nameZone = zone(words, 0.08, 0.55, 0.82, 0.78)
+    .filter((w) => !isNoise(w.text) && w.text.length > 1)
+    // Sort by font size (approximate: taller bounding boxes = larger text)
+    .sort((a, b) => b.boundingBox.height - a.boundingBox.height);
+  // Take only the top large words (likely the card name), filter out model numbers
+  const nameWords = nameZone
+    .filter((w) => !/^[A-Z]{2,4}-?\d{2}/.test(w.text)) // filter model IDs like STH-05
+    .slice(0, 5); // card names are rarely more than 5 words
   let name = join(nameWords) || null;
-  // If name is empty, try slightly broader zone
   if (!name || name.length < 3) {
-    const broader = zone(words, 0.08, 0.55, 0.85, 0.82)
-      .filter((w) => !isNoise(w.text) && w.text.length > 1);
+    // Broader fallback
+    const broader = zone(words, 0.05, 0.50, 0.90, 0.82)
+      .filter((w) => !isNoise(w.text) && w.text.length > 2 && !/^[A-Z]{2,4}-?\d{2}/.test(w.text))
+      .sort((a, b) => b.boundingBox.height - a.boundingBox.height)
+      .slice(0, 5);
     name = join(broader) || null;
   }
 
-  // ── AP / HP (bottom-right stat boxes) ──
+  // ── AP / HP (bottom-right stat boxes — two separate single digits typically) ──
   let ap: string | null = null;
   let hp: string | null = null;
-  const statWords = zone(words, 0.60, 0.86, 1, 1)
-    .filter((w) => /^\d+$/.test(w.text))
+  const statWords = zone(words, 0.55, 0.84, 1, 1)
+    .filter((w) => /^\d{1,2}$/.test(w.text))
     .sort((a, b) => a.nx - b.nx);
   if (statWords.length >= 2) {
-    ap = statWords[0].text;
-    hp = statWords[1].text;
+    ap = statWords[statWords.length - 2].text; // second to last
+    hp = statWords[statWords.length - 1].text; // last
   } else if (statWords.length === 1) {
-    ap = statWords[0].text;
+    // Single number — might be "34" which is actually AP=3 HP=4
+    const val = statWords[0].text;
+    if (val.length === 2) {
+      ap = val[0];
+      hp = val[1];
+    } else {
+      ap = val;
+    }
   }
-  // Fallback: look for "N | N" pattern in bottom area
+  // Fallback: search full text for the pattern at the end (common: "3 4" or "6 5")
   if (!ap) {
-    const bottomText = join(zone(words, 0.50, 0.85, 1, 1));
-    const statMatch = bottomText.match(/(\d+)\s+(\d+)\s*$/);
-    if (statMatch) { ap = statMatch[1]; hp = statMatch[2]; }
+    const bottomAll = join(zone(words, 0.40, 0.82, 1, 1));
+    // Look for two separate digits near the end
+    const twoDigits = bottomAll.match(/(\d)\s+(\d)\s*$/);
+    if (twoDigits) { ap = twoDigits[1]; hp = twoDigits[2]; }
+    else {
+      // Look for a 2-digit number that's actually AP+HP concatenated
+      const concat = bottomAll.match(/(\d)(\d)\s*$/);
+      if (concat) { ap = concat[1]; hp = concat[2]; }
+    }
   }
 
   // ── Ability text (effect zone, center-lower) ──

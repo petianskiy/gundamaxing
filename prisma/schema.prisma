@@ -1203,9 +1203,9 @@ model UserCard {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  @@unique([userId, cardId])
   @@index([userId])
   @@index([cardId])
+  @@index([userId, cardId])
   @@index([cardType])
   @@index([createdAt])
 }

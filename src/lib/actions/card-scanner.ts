@@ -35,19 +35,7 @@ export async function saveScannedCard(data: unknown) {
 
     const userId = session.user.id;
 
-    // Check for duplicate — increment quantity if exists
-    const existing = await db.userCard.findUnique({
-      where: { userId_cardId: { userId, cardId } },
-    });
-
-    if (existing) {
-      await db.userCard.update({
-        where: { id: existing.id },
-        data: { quantity: { increment: 1 } },
-      });
-      return { success: true, userCardId: existing.id, duplicate: true, newQuantity: existing.quantity + 1 };
-    }
-
+    // Always create a new card entry (same card codes can exist on different physical cards)
     const userCard = await db.userCard.create({
       data: {
         userId,
@@ -71,7 +59,7 @@ export async function saveScannedCard(data: unknown) {
       },
     });
 
-    return { success: true, userCardId: userCard.id, duplicate: false };
+    return { success: true, userCardId: userCard.id };
   } catch (error) {
     console.error("saveScannedCard error:", error);
     return { error: "An unexpected error occurred." };
