@@ -7,7 +7,6 @@ import { Heart, MessageCircle, GitFork, SlidersHorizontal, ArrowUpDown } from "l
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 import { GradeBadge } from "@/components/ui/grade-badge";
-import { TechniqueChip } from "@/components/ui/technique-chip";
 import type { Grade } from "@/lib/types";
 
 interface BuildImage {
@@ -165,84 +164,68 @@ export function BuildGallery({
       )}
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {filtered.map((build) => {
-          const primaryImage =
-            build.images.find((img) => img.isPrimary) || build.images[0];
+          const primaryImage = build.images.find((img) => img.isPrimary) || build.images[0];
           return (
-            <Link
-              key={build.id}
-              href={`/builds/${build.slug}`}
-              className="group relative rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-lg hover:border-border transition-[border-color,box-shadow] duration-300 h-full flex flex-col"
-            >
-              {/* Image */}
-              <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
-                {primaryImage && (
-                  <Image
-                    src={primaryImage.url}
-                    alt={primaryImage.alt}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                    style={
-                      primaryImage.objectPosition
-                        ? { objectPosition: primaryImage.objectPosition }
-                        : undefined
-                    }
-                  />
-                )}
-                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                  <GradeBadge grade={build.grade as Grade} />
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-black/60 text-zinc-300 backdrop-blur-sm">
-                    {build.scale}
-                  </span>
-                </div>
-                {build.status === "WIP" && (
-                  <div className="absolute bottom-2.5 left-2.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-black backdrop-blur-sm">
-                      WIP
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Details */}
-              <div className="p-4 flex flex-col flex-1 gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-gx-red transition-colors">
-                    {build.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                    {build.kitName}
-                  </p>
-                </div>
-                {/* Techniques — max 2 full tags + overflow count */}
-                <div className="flex gap-1 items-center min-h-[22px]">
-                  {build.techniques.slice(0, 2).map((tech) => (
-                    <TechniqueChip key={tech} technique={tech} size="sm" />
-                  ))}
-                  {build.techniques.length > 2 && (
-                    <span className="inline-flex items-center px-2 py-[2px] rounded text-[11px] leading-[1.4] font-medium bg-zinc-800 text-zinc-400 shrink-0 whitespace-nowrap">
-                      +{build.techniques.length - 2}
-                    </span>
+            <div key={build.id} className="relative group" style={{ aspectRatio: "3/4" }}>
+              <Link href={`/builds/${build.slug}`} className="absolute inset-0 rounded-[14px] overflow-hidden block">
+                <div className="relative w-full h-full rounded-[14px] overflow-hidden border border-white/[0.08] bg-[#0d1420] transition-transform duration-300 group-hover:scale-[1.02]" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.6)" }}>
+                  {primaryImage && (
+                    <Image
+                      src={primaryImage.url}
+                      alt={primaryImage.alt}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                      style={primaryImage.objectPosition ? { objectPosition: primaryImage.objectPosition } : undefined}
+                    />
                   )}
+
+                  {/* Grade badge */}
+                  <div className="absolute top-2.5 left-2.5 z-[5]">
+                    <GradeBadge grade={build.grade as Grade} />
+                  </div>
+
+                  {/* WIP */}
+                  {build.status === "WIP" && (
+                    <div className="absolute top-9 right-2.5 z-[6]">
+                      <span className="px-1.5 py-0.5 rounded text-[7px] font-bold uppercase tracking-widest bg-amber-400/15 border border-amber-400/40 text-amber-400">WIP</span>
+                    </div>
+                  )}
+
+                  {/* Corner decorations */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/20 rounded-tl-[14px] z-[6]" />
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-white/20 rounded-tr-[14px] z-[6]" />
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-white/20 rounded-bl-[14px] z-[6]" />
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/20 rounded-br-[14px] z-[6]" />
+
+                  {/* Bottom gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
+
+                  {/* Info panel */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 z-[5]">
+                    {build.techniques.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1.5">
+                        {build.techniques.slice(0, 2).map((tech) => (
+                          <span key={tech} className="text-[9px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded bg-white/10 text-white/55 border border-white/10">{tech}</span>
+                        ))}
+                        {build.techniques.length > 2 && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/40">+{build.techniques.length - 2}</span>
+                        )}
+                      </div>
+                    )}
+                    <h3 className="text-[13px] font-bold text-white leading-tight truncate mb-0.5">{build.title}</h3>
+                    <p className="text-[10px] text-white/45 truncate mb-2">{build.kitName}</p>
+                    <div className="flex items-center gap-2.5 text-[11px] text-white/50">
+                      <span className="flex items-center gap-0.5"><Heart className="h-3 w-3" />{build.likeCount}</span>
+                      <span className="flex items-center gap-0.5"><MessageCircle className="h-3 w-3" />{build.commentCount}</span>
+                      <span className="flex items-center gap-0.5"><GitFork className="h-3 w-3" />{build.forkCount}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 pt-3 border-t border-border/30 text-xs text-muted-foreground mt-auto">
-                  <span className="flex items-center gap-1">
-                    <Heart className="h-3 w-3" />
-                    {build.likeCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageCircle className="h-3 w-3" />
-                    {build.commentCount}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <GitFork className="h-3 w-3" />
-                    {build.forkCount}
-                  </span>
-                </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           );
         })}
       </div>

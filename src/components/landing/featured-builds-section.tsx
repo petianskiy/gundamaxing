@@ -28,11 +28,10 @@ export function FeaturedBuildsSection({ builds }: FeaturedBuildsSectionProps) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {builds.map((build, i) => (
             <motion.div
               key={build.id}
-              className="h-full"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
