@@ -161,7 +161,7 @@ export function ProfileHeader({
             </p>
 
             {user.bio && (
-              <p className="text-sm text-zinc-300 mt-3 leading-relaxed max-w-xl">
+              <p className="text-sm text-zinc-300 mt-3 leading-relaxed">
                 {user.bio}
               </p>
             )}
