@@ -41,7 +41,6 @@ export function cropZone(
 
   // Use higher quality interpolation
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(source, sx, sy, sw, sh, 0, 0, outW, outH);
 
   return out;
@@ -66,7 +65,6 @@ export function cropAndRotate90(
   const ctx = out.getContext("2d");
 
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
 
   // Rotate 90° CW
   ctx.translate(outW, 0);
@@ -131,7 +129,6 @@ export async function cropCardFromFrame(
   const out = createCanvas(targetW, targetH);
   const ctx = out.getContext("2d");
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(
     source,
     bounds.x, bounds.y, bounds.width, bounds.height,
