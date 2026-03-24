@@ -43,6 +43,50 @@ function vertexToBbox(vertices: Array<{ x?: number; y?: number }>) {
   };
 }
 
+export interface CardBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Infer card boundaries from text annotation positions.
+ * All text on a Gundam card is ON the card, so the bounding box
+ * of all detected text gives us a tight crop of the card area.
+ */
+export function inferCardBounds(annotations: VisionAnnotation[], imgW: number, imgH: number, padding = 0.03): CardBounds | null {
+  if (annotations.length < 3) return null;
+
+  let minX = imgW, minY = imgH, maxX = 0, maxY = 0;
+  for (const a of annotations) {
+    for (const v of a.boundingPoly.vertices) {
+      const x = v.x ?? 0;
+      const y = v.y ?? 0;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  // Add padding (percentage of image dimensions)
+  const padX = imgW * padding;
+  const padY = imgH * padding;
+  minX = Math.max(0, minX - padX);
+  minY = Math.max(0, minY - padY);
+  maxX = Math.min(imgW, maxX + padX);
+  maxY = Math.min(imgH, maxY + padY);
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+
+  // Sanity check: card should be a reasonable size
+  if (w < imgW * 0.1 || h < imgH * 0.1) return null;
+
+  return { x: Math.round(minX), y: Math.round(minY), width: Math.round(w), height: Math.round(h) };
+}
+
 export async function detectText(imageBase64: string): Promise<VisionResponse> {
   const response = await fetch(`${VISION_API_URL}?key=${getApiKey()}`, {
     method: "POST",

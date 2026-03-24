@@ -3,6 +3,13 @@
 import { useState, useCallback, useRef } from "react";
 import type { ScanStatus, ScanResult } from "@/lib/types";
 
+interface CardBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface ScannerState {
   status: ScanStatus;
   processedImageUrl: string | null;
@@ -19,6 +26,21 @@ const INITIAL_STATE: ScannerState = {
   error: null,
 };
 
+/**
+ * Crop a canvas to the given bounds (used for card-only preview image).
+ */
+function cropCanvas(source: HTMLCanvasElement, bounds: CardBounds): HTMLCanvasElement {
+  const out = document.createElement("canvas");
+  out.width = bounds.width;
+  out.height = bounds.height;
+  out.getContext("2d")!.drawImage(
+    source,
+    bounds.x, bounds.y, bounds.width, bounds.height,
+    0, 0, bounds.width, bounds.height,
+  );
+  return out;
+}
+
 export function useCardScanner() {
   const [state, setState] = useState<ScannerState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
@@ -26,16 +48,11 @@ export function useCardScanner() {
   const setStatus = (status: ScanStatus) => setState((s) => ({ ...s, status }));
   const setError = (error: string) => setState((s) => ({ ...s, status: "error", error }));
 
-  /**
-   * Process a canvas image (from camera capture or file upload).
-   * Sends to /api/scan-card for OCR, returns structured result.
-   */
   const processImage = useCallback(async (canvas: HTMLCanvasElement) => {
     setState((s) => ({
       ...s,
       status: "processing",
       processedCanvas: canvas,
-      processedImageUrl: canvas.toDataURL("image/jpeg", 0.92),
       error: null,
     }));
 
@@ -64,10 +81,18 @@ export function useCardScanner() {
         return;
       }
 
+      // If server found card bounds, crop the preview image to just the card
+      let previewCanvas = canvas;
+      if (data.cardBounds) {
+        previewCanvas = cropCanvas(canvas, data.cardBounds);
+      }
+
       setState((s) => ({
         ...s,
         status: "review",
         scanResult: data.result,
+        processedCanvas: previewCanvas,
+        processedImageUrl: previewCanvas.toDataURL("image/jpeg", 0.92),
       }));
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -75,20 +100,14 @@ export function useCardScanner() {
     }
   }, []);
 
-  /**
-   * Process an uploaded file.
-   */
   const processFile = useCallback(async (file: File) => {
     setState((s) => ({ ...s, status: "processing", error: null }));
-
     try {
       const img = await createImageBitmap(file);
       const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-
+      canvas.getContext("2d")!.drawImage(img, 0, 0);
       await processImage(canvas);
     } catch {
       setError("Failed to load image. Please try a different file.");
@@ -104,12 +123,5 @@ export function useCardScanner() {
     setState((s) => ({ ...s, status: "saved" }));
   }, []);
 
-  return {
-    state,
-    setStatus,
-    processImage,
-    processFile,
-    reset,
-    markSaved,
-  };
+  return { state, setStatus, processImage, processFile, reset, markSaved };
 }
