@@ -1,14 +1,14 @@
 /**
- * Zone-based card field extraction.
- * Uses bounding-box positions from Vision API to assign text to known card zones.
+ * Zone-based card field extraction from Google Cloud Vision response.
  *
- * Gundam Card Game layout zones (normalized 0-1):
- *   Top-right (x>0.55, y<0.12): Card ID + rarity
- *   Top-left (x<0.3, y<0.2): Level + Cost
- *   Left strip (x<0.08): Card type (vertical text)
- *   Center (0.08<x<0.92, 0.55<y<0.85): Ability text
- *   Bottom (y>0.8): Name, pilot, faction, traits
- *   Bottom corners (y>0.85): AP / HP stat boxes
+ * Gundam Card Game layout zones (normalized 0-1 on a CROPPED card image):
+ *   Top-left (x<0.25, y<0.18): Level + Cost
+ *   Top-right (x>0.55, y<0.10): Card ID + rarity
+ *   Left strip (x<0.10): Card type vertical text
+ *   Title band (x>0.10, 0.62<y<0.78): Card name + unit model
+ *   Stat boxes (x>0.70, y>0.88): AP / HP
+ *   Bottom bar (y>0.82): traits, faction, environment
+ *   Effect zone (x>0.10, 0.50<y<0.70): ability/effect text
  */
 
 import type { VisionWord, VisionResponse } from "./vision-client";
@@ -29,140 +29,162 @@ export interface RawCardFields {
   wordCount: number;
 }
 
-interface NormalizedWord extends VisionWord {
-  nx: number; // normalized x center (0-1)
-  ny: number; // normalized y center (0-1)
+interface NW extends VisionWord {
+  nx: number;
+  ny: number;
 }
 
-function normalizeWords(words: VisionWord[], imgW: number, imgH: number): NormalizedWord[] {
-  return words.map((w) => ({
-    ...w,
-    nx: imgW > 0 ? (w.boundingBox.x + w.boundingBox.width / 2) / imgW : 0,
-    ny: imgH > 0 ? (w.boundingBox.y + w.boundingBox.height / 2) / imgH : 0,
+// Words to filter from card name (copyright/manufacturer noise)
+const NOISE_WORDS = new Set([
+  "ILLUST", "BANDAI", "JAPAN", "MADE", "IN", "©ST", "©",
+  "SR", "MBS", "SUNRISE", "SOTSU", "TM", "CO", "LTD",
+]);
+
+function norm(words: VisionWord[], w: number, h: number): NW[] {
+  return words.map((word) => ({
+    ...word,
+    nx: w > 0 ? (word.boundingBox.x + word.boundingBox.width / 2) / w : 0,
+    ny: h > 0 ? (word.boundingBox.y + word.boundingBox.height / 2) / h : 0,
   }));
 }
 
-function wordsInZone(words: NormalizedWord[], x0: number, y0: number, x1: number, y1: number): NormalizedWord[] {
+function zone(words: NW[], x0: number, y0: number, x1: number, y1: number): NW[] {
   return words.filter((w) => w.nx >= x0 && w.nx <= x1 && w.ny >= y0 && w.ny <= y1);
 }
 
-function joinWords(words: NormalizedWord[]): string {
-  return words
-    .sort((a, b) => a.ny - b.ny || a.nx - b.nx)
-    .map((w) => w.text)
-    .join(" ")
-    .trim();
+function join(words: NW[]): string {
+  return words.sort((a, b) => a.ny - b.ny || a.nx - b.nx).map((w) => w.text).join(" ").trim();
 }
 
-// Known card types
-const CARD_TYPES = ["UNIT", "PILOT", "COMMAND", "BASE", "RESOURCE", "TOKEN", "EX BASE"];
+function isNoise(word: string): boolean {
+  const upper = word.toUpperCase().replace(/[^A-Z]/g, "");
+  return NOISE_WORDS.has(upper) || upper.length <= 1 || /^©/.test(word);
+}
 
-// Card ID patterns
 const CARD_ID_RE = /[A-Z]{1,5}\d{1,3}[-–]\d{2,4}/;
+const CARD_TYPES = ["UNIT", "PILOT", "COMMAND", "BASE", "RESOURCE", "TOKEN", "EX BASE"];
+const ENV_LABELS = ["Space", "Earth", "Moon", "Colony", "Underwater"];
 
 export function parseCardFields(vision: VisionResponse, imgWidth: number, imgHeight: number): RawCardFields {
-  const words = normalizeWords(vision.words, imgWidth, imgHeight);
+  const words = norm(vision.words, imgWidth, imgHeight);
   const fullText = vision.fullText;
 
-  // ── Card ID (top-right zone) ──
-  const topRightWords = wordsInZone(words, 0.45, 0, 1, 0.15);
+  // ── Card ID (top-right area) ──
   let cardId: string | null = null;
-  for (const w of topRightWords) {
-    const match = w.text.match(CARD_ID_RE);
-    if (match) { cardId = match[0].replace("–", "-"); break; }
+  const topRight = zone(words, 0.45, 0, 1, 0.12);
+  for (const w of topRight) {
+    const m = w.text.match(CARD_ID_RE);
+    if (m) { cardId = m[0].replace("–", "-"); break; }
   }
-  // Fallback: search full text
   if (!cardId) {
-    const fullMatch = fullText.match(CARD_ID_RE);
-    if (fullMatch) cardId = fullMatch[0].replace("–", "-");
+    // Broader search in top 20%
+    const topAll = zone(words, 0.3, 0, 1, 0.20);
+    for (const w of topAll) {
+      const m = w.text.match(CARD_ID_RE);
+      if (m) { cardId = m[0].replace("–", "-"); break; }
+    }
+  }
+  if (!cardId) {
+    const m = fullText.match(CARD_ID_RE);
+    if (m) cardId = m[0].replace("–", "-");
   }
 
-  // ── Rarity (near card ID, top-right) ──
-  const rarityWords = wordsInZone(words, 0.7, 0, 1, 0.12);
+  // ── Rarity (near card ID) ──
   let rarity: string | null = null;
-  const rarityPatterns = /\b(LR\+{0,2}|SR|SSR|R\+?|C\+?|SP)\b/i;
-  for (const w of rarityWords) {
-    const m = w.text.match(rarityPatterns);
+  const rarityRe = /\b(LR\+{0,2}|SR|SSR|R\+?|C\+?|SP)\b/i;
+  for (const w of topRight) {
+    const m = w.text.match(rarityRe);
     if (m) { rarity = m[1].toUpperCase(); break; }
   }
-
-  // ── Card type (left strip or full text) ──
-  let cardType: string | null = null;
-  const typeWords = wordsInZone(words, 0, 0, 0.15, 1);
-  const allTypeText = joinWords(typeWords).toUpperCase() + " " + fullText.toUpperCase();
-  for (const t of CARD_TYPES) {
-    if (allTypeText.includes(t)) { cardType = t; break; }
+  // Also check the small badge area
+  if (!rarity) {
+    const m = fullText.match(rarityRe);
+    if (m) rarity = m[1].toUpperCase();
   }
 
-  // ── Level / Cost (top-left zone) ──
-  const topLeftWords = wordsInZone(words, 0, 0, 0.35, 0.25);
+  // ── Card Type (left strip or anywhere) ──
+  let cardType: string | null = null;
+  const leftStrip = zone(words, 0, 0, 0.12, 1);
+  const leftText = join(leftStrip).toUpperCase();
+  for (const t of CARD_TYPES) {
+    if (leftText.includes(t)) { cardType = t; break; }
+  }
+  if (!cardType) {
+    const upperFull = fullText.toUpperCase();
+    for (const t of CARD_TYPES) {
+      if (upperFull.includes(t)) { cardType = t; break; }
+    }
+  }
+
+  // ── Level + Cost (top-left) ──
   let level: string | null = null;
   let cost: string | null = null;
-  const topLeftText = joinWords(topLeftWords);
+  const topLeft = zone(words, 0, 0, 0.30, 0.22);
+  const topLeftText = join(topLeft);
   const lvMatch = topLeftText.match(/(?:Lv\.?\s*)?(\d{1,2})/i);
   if (lvMatch) level = lvMatch[1];
-  const costMatch = topLeftText.match(/(?:COST|Cost)\s*(\d{1,2})/i);
+  const costMatch = topLeftText.match(/(?:COST|cost)\s*(\d{1,2})/i);
   if (costMatch) cost = costMatch[1];
-  // If we have two separate numbers in top-left, first is level, second is cost
   if (!cost && level) {
     const nums = topLeftText.match(/\d+/g);
     if (nums && nums.length >= 2) { level = nums[0]; cost = nums[1]; }
   }
 
-  // ── Name (title band: x>0.1, 0.6<y<0.82) ──
-  const nameWords = wordsInZone(words, 0.1, 0.55, 0.85, 0.82);
-  const name = joinWords(nameWords) || null;
-
-  // ── AP / HP (bottom-right corners, y>0.85) ──
-  const statWords = wordsInZone(words, 0.55, 0.85, 1, 1);
-  let ap: string | null = null;
-  let hp: string | null = null;
-  const statNums = statWords.filter((w) => /^\d+$/.test(w.text)).sort((a, b) => a.nx - b.nx);
-  if (statNums.length >= 2) {
-    ap = statNums[0].text;
-    hp = statNums[1].text;
-  } else if (statNums.length === 1) {
-    ap = statNums[0].text;
+  // ── Name (title band: card name sits in the lower-center area) ──
+  const nameWords = zone(words, 0.10, 0.60, 0.80, 0.78)
+    .filter((w) => !isNoise(w.text) && w.text.length > 1);
+  let name = join(nameWords) || null;
+  // If name is empty, try slightly broader zone
+  if (!name || name.length < 3) {
+    const broader = zone(words, 0.08, 0.55, 0.85, 0.82)
+      .filter((w) => !isNoise(w.text) && w.text.length > 1);
+    name = join(broader) || null;
   }
 
-  // ── Ability text (center zone) ──
-  const abilityWords = wordsInZone(words, 0.08, 0.6, 0.92, 0.88);
-  // Filter out name words to avoid duplication
-  const abilityOnly = abilityWords.filter((w) => !nameWords.includes(w));
-  const abilityText = joinWords(abilityOnly) || null;
+  // ── AP / HP (bottom-right stat boxes) ──
+  let ap: string | null = null;
+  let hp: string | null = null;
+  const statWords = zone(words, 0.60, 0.86, 1, 1)
+    .filter((w) => /^\d+$/.test(w.text))
+    .sort((a, b) => a.nx - b.nx);
+  if (statWords.length >= 2) {
+    ap = statWords[0].text;
+    hp = statWords[1].text;
+  } else if (statWords.length === 1) {
+    ap = statWords[0].text;
+  }
+  // Fallback: look for "N | N" pattern in bottom area
+  if (!ap) {
+    const bottomText = join(zone(words, 0.50, 0.85, 1, 1));
+    const statMatch = bottomText.match(/(\d+)\s+(\d+)\s*$/);
+    if (statMatch) { ap = statMatch[1]; hp = statMatch[2]; }
+  }
 
-  // ── Pilot (look for known patterns in bottom zones) ──
+  // ── Ability text (effect zone, center-lower) ──
+  const effectWords = zone(words, 0.10, 0.45, 0.92, 0.65)
+    .filter((w) => !isNoise(w.text));
+  const abilityText = join(effectWords) || null;
+
+  // ── Pilot (in parentheses in bottom area) ──
   let pilot: string | null = null;
-  const bottomWords = wordsInZone(words, 0.05, 0.85, 0.65, 1);
-  const bottomText = joinWords(bottomWords);
-  // Pilot names often appear in parentheses or as standalone text
+  const bottomText = join(zone(words, 0, 0.82, 0.70, 1));
   const pilotMatch = bottomText.match(/\(([^)]+)\)/);
-  if (pilotMatch) pilot = pilotMatch[1];
+  if (pilotMatch && !ENV_LABELS.includes(pilotMatch[1])) pilot = pilotMatch[1];
 
   // ── Faction ──
   let faction: string | null = null;
-  const factionMatch = fullText.match(/\(([^)]*(?:Team|Bloc|Force|Corps|Federation|Zeon|AEUG|Titans)[^)]*)\)/i);
+  const factionRe = /\(([^)]*(?:Team|Bloc|Force|Corps|Federation|Zeon|AEUG|Titans|Teiwaz|Celestial)[^)]*)\)/i;
+  const factionMatch = fullText.match(factionRe);
   if (factionMatch) faction = factionMatch[1];
 
-  // ── Environment (Space, Earth, etc.) ──
+  // ── Environment ──
   let environment: string | null = null;
-  const envLabels = ["Space", "Earth", "Moon", "Colony", "Underwater"];
-  const foundEnvs = envLabels.filter((e) => fullText.includes(e));
+  const foundEnvs = ENV_LABELS.filter((e) => fullText.includes(e));
   if (foundEnvs.length > 0) environment = foundEnvs.join(", ");
 
   return {
-    cardId,
-    rarity,
-    name,
-    cardType,
-    level,
-    cost,
-    ap,
-    hp,
-    abilityText,
-    pilot,
-    faction,
-    environment,
+    cardId, rarity, name, cardType, level, cost, ap, hp,
+    abilityText, pilot, faction, environment,
     wordCount: words.length,
   };
 }
