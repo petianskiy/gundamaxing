@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Layers, ScanLine, BadgeCheck, LayoutGrid, ArrowRight } from "lucide-react";
-
-/* ── Inline flip card (no external dep needed) ─────────────── */
+import { Layers, Lock } from "lucide-react";
+import Link from "next/link";
 
 const BACK_STANDARD = "/images/cards/usualbackside.jpg";
 
@@ -28,19 +27,15 @@ function FlipCard({ card, index }: { card: typeof CARDS[0]; index: number }) {
       className="relative cursor-pointer select-none"
       style={{ aspectRatio: "200/280", perspective: "1000px" }}
     >
-      <div
-        style={{
-          position: "absolute", inset: 0,
-          transformStyle: "preserve-3d",
-          transition: "transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.000)",
-          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-        }}
-      >
-        {/* Back */}
+      <div style={{
+        position: "absolute", inset: 0,
+        transformStyle: "preserve-3d",
+        transition: "transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.000)",
+        transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+      }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: 12, overflow: "hidden", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
           <img src={BACK_STANDARD} alt="card back" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} draggable={false} />
         </div>
-        {/* Front */}
         <div style={{ position: "absolute", inset: 0, borderRadius: 12, overflow: "hidden", transform: "rotateY(180deg)", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", border: `2px solid ${card.border}`, boxShadow: flipped ? `0 0 20px ${card.glow}` : "none" }}>
           <img src={card.image} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} draggable={false} />
         </div>
@@ -49,95 +44,74 @@ function FlipCard({ card, index }: { card: typeof CARDS[0]; index: number }) {
   );
 }
 
-/* ── Feature pill ───────────────────────────────────────────── */
+function LockedButton() {
+  const [showTip, setShowTip] = useState(false);
 
-function Feature({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="shrink-0 w-8 h-8 rounded-lg bg-gx-red/10 border border-gx-red/20 flex items-center justify-center text-gx-red">
-        {icon}
-      </div>
-      <p className="text-sm text-zinc-400 leading-relaxed pt-1">{text}</p>
+    <div className="relative inline-flex">
+      <button
+        onMouseEnter={() => setShowTip(true)}
+        onMouseLeave={() => setShowTip(false)}
+        onFocus={() => setShowTip(true)}
+        onBlur={() => setShowTip(false)}
+        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-semibold text-zinc-500 cursor-not-allowed"
+        aria-disabled="true"
+      >
+        <Lock className="h-4 w-4" />
+        Add Your Collectible Card
+      </button>
+      {showTip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg bg-zinc-800 border border-white/10 text-xs text-zinc-300 whitespace-nowrap z-10">
+          Coming soon — we&apos;re working on this!
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── Main section ───────────────────────────────────────────── */
-
 export function CollectibleCardsSection() {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+      <div className="mx-auto max-w-5xl">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10"
+        >
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Layers className="h-4 w-4 text-gx-red" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
+              カードコレクション &middot; Card Collection
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            Showcase Your Collectible Cards
+          </h2>
+        </motion.div>
 
-          {/* ── Left: cards ── */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6 }}
+        {/* Cards in a row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 sm:gap-7 max-w-xl sm:max-w-none mx-auto mb-3">
+          {CARDS.map((card, i) => (
+            <FlipCard key={card.id} card={card} index={i} />
+          ))}
+        </div>
+
+        <p className="text-center text-[11px] text-zinc-600 uppercase tracking-[0.15em] mb-10">
+          ↑ Click any card to flip it
+        </p>
+
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <LockedButton />
+          <Link
+            href="/collector/cards"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gx-red hover:bg-red-500 text-white text-sm font-semibold transition-all shadow-lg shadow-gx-red/20"
           >
-            <div className="grid grid-cols-2 gap-4 max-w-xs sm:max-w-sm mx-auto lg:mx-0">
-              {CARDS.map((card, i) => (
-                <FlipCard key={card.id} card={card} index={i} />
-              ))}
-            </div>
-            <p className="mt-3 text-center lg:text-left text-[11px] text-zinc-600 uppercase tracking-[0.15em]">
-              ↑ Click any card to flip it
-            </p>
-          </motion.div>
-
-          {/* ── Right: text + CTAs ── */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Layers className="h-4 w-4 text-gx-red" />
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
-                カードコレクション &middot; Card Collection
-              </span>
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
-              Showcase Your Collectible Cards
-            </h2>
-
-            <p className="mt-4 text-muted-foreground leading-relaxed max-w-md">
-              Add your Gundam Card Game cards to your profile and display them alongside your Gunpla builds.
-              Each card carries a unique code — scan it to verify ownership and make your collection yours.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              <Feature
-                icon={<ScanLine className="h-4 w-4" />}
-                text="Scan the card code to verify ownership — no duplicates, no fakes. Your collection is authenticated."
-              />
-              <Feature
-                icon={<BadgeCheck className="h-4 w-4" />}
-                text="Verified cards appear on your public profile alongside your Gunpla builds, in one unified showcase."
-              />
-              <Feature
-                icon={<LayoutGrid className="h-4 w-4" />}
-                text="Browse, filter and organise your entire collection — by type, rarity, or set — in your personal hangar."
-              />
-            </div>
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <button className="group inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gx-red hover:bg-red-500 text-white text-sm font-semibold transition-all shadow-lg shadow-gx-red/20">
-                <ScanLine className="h-4 w-4" />
-                Add Your Collectible Card
-                <ArrowRight className="h-3.5 w-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-              <button className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-border/50 bg-card hover:bg-gx-surface-elevated text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
-                <Layers className="h-4 w-4" />
-                Browse the Card Game
-              </button>
-            </div>
-          </motion.div>
-
+            <Layers className="h-4 w-4" />
+            Explore Collectible Cards
+          </Link>
         </div>
       </div>
     </section>

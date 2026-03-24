@@ -2,9 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ExternalLink, ScanLine, Layers } from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
-import { CardShowcase } from "./components/card-showcase";
 import { GameGuide } from "./components/game-guide";
 import { DeckBuilder } from "./components/deck-builder";
 import { CardCollection } from "./components/card-collection";
@@ -26,11 +25,11 @@ export function CardsLanding() {
         }}
       />
 
-      {/* ═══ CARD SHOWCASE ═══ */}
-      <CardShowcase />
-
       {/* ═══ CARD COLLECTION ═══ */}
       <CardCollection />
+
+      {/* ═══ APP DOWNLOAD (above rules guide) ═══ */}
+      <AppDownload />
 
       {/* ═══ GAME GUIDE ═══ */}
       <GameGuide />
@@ -38,45 +37,21 @@ export function CardsLanding() {
       {/* ═══ DECK BUILDER ═══ */}
       <DeckBuilder />
 
-      {/* ═══ APP DOWNLOAD ═══ */}
-      <AppDownload />
-
-      {/* ═══ SCANNER CTA ═══ */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <ScanLine className="h-4 w-4 text-gx-red" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gx-red">
-              スキャナー &middot; Card Scanner
-            </span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">
-            Add Cards to Your Collection
-          </h2>
-          <p className="text-zinc-400 max-w-md mx-auto mb-8 text-sm">
-            Use your phone camera or upload a photo to scan a card. The scanner reads the card code, extracts all data, and saves it to your profile.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/collector/cards/scanner"
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gx-red hover:bg-red-500 text-white text-sm font-semibold transition-all shadow-lg shadow-gx-red/20"
-            >
-              <ScanLine className="h-4 w-4" />
-              Open Card Scanner
-            </Link>
-            <Link
-              href="/collector/cards/my-cards"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-zinc-300 text-sm font-medium transition-all"
-            >
-              <Layers className="h-4 w-4" />
-              View My Collection
-            </Link>
+      {/* ═══ DISCLAIMER ═══ */}
+      <section className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 flex gap-3">
+            <ShieldCheck className="h-5 w-5 text-zinc-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              <span className="text-zinc-400 font-semibold">Fan Content Disclaimer: </span>
+              Gundamaxing is an independent fan community and is not affiliated with, endorsed by, or connected to Bandai Co., Ltd., Bandai Namco Holdings, Sunrise Inc., or any official Gundam license holders. All Gundam Card Game card images, names, card codes, and related intellectual property are trademarks and property of their respective owners. This content is shared in good faith for educational and community purposes only. Gundamaxing makes no profit from the display of card-related content and does not sell, distribute, or reproduce official card game materials.
+            </p>
           </div>
         </div>
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -98,7 +73,7 @@ export function CardsLanding() {
                   href="https://www.gundam-gcg.com/en/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shadow-lg shadow-indigo-600/20"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shadow-lg shadow-indigo-600/20"
                 >
                   {t("cards.cta.officialSite")}
                   <ExternalLink className="h-3.5 w-3.5 opacity-50" />
