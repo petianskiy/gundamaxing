@@ -78,11 +78,7 @@ export function ScannerShell() {
           setSaveMessage(result.error);
         } else {
           markSaved();
-          setSaveMessage(
-            result.duplicate
-              ? `Card already in collection! Quantity updated to ${result.newQuantity}.`
-              : "Card saved to your collection!",
-          );
+          setSaveMessage("Card saved to your collection!");
         }
       } catch (err) {
         setSaveMessage(err instanceof Error ? err.message : "Failed to save");
