@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Loader2, Search, Info } from "lucide-react";
+import { X, Loader2, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ interface GifPickerProps {
   onSelect: (gif: { slug: string; title: string; url: string; previewUrl: string; width: number; height: number }) => void;
 }
 
-const QUICK_FILTERS = ["Zaku", "RX-78", "Char", "Gunpla", "Wing", "Seed", "Barbatos", "Unicorn"];
+const QUICK_FILTERS = ["Gundam", "Zaku", "Char", "Gunpla", "Cat", "Wow", "Nice", "GG", "Thumbs up", "LOL"];
 
 export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
   const [gifs, setGifs] = useState<KlipyGif[]>([]);
@@ -34,6 +34,7 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchGifs = useCallback(async (term: string | null, pageNum: number, append: boolean) => {
     // Cancel any in-flight request
@@ -114,10 +115,17 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
     fetchGifs(term, 1, false);
   }
 
+  function handleSearch(term: string) {
+    const trimmed = term.trim();
+    setActiveFilter(trimmed || null);
+    setPage(1);
+    fetchGifs(trimmed || null, 1, false);
+  }
+
   function handleSearchKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
-      setShowSearchHint(true);
+      handleSearch(searchTerm);
     }
   }
 
@@ -153,7 +161,7 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-              <h3 className="text-sm font-bold text-foreground tracking-tight">Gundam GIFs</h3>
+              <h3 className="text-sm font-bold text-foreground tracking-tight">Search GIFs</h3>
               <button
                 onClick={onClose}
                 className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -170,20 +178,24 @@ export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => {
-                    setSearchTerm(e.target.value);
+                    const val = e.target.value;
+                    setSearchTerm(val);
                     setShowSearchHint(false);
+                    // Debounced search — triggers 400ms after user stops typing
+                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                    debounceRef.current = setTimeout(() => {
+                      const trimmed = val.trim();
+                      setActiveFilter(trimmed || null);
+                      setPage(1);
+                      fetchGifs(trimmed || null, 1, false);
+                    }, 400);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search KLIPY"
+                  placeholder="Search GIFs... (e.g. cat, gundam, happy)"
                   className="w-full pl-9 pr-3 py-2 rounded-lg border border-border/50 bg-background text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-gx-red/30"
                 />
               </div>
-              {showSearchHint && (
-                <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground">
-                  <Info className="h-3 w-3 flex-shrink-0" />
-                  Use the filter buttons below to search for GIFs.
-                </div>
-              )}
+              {/* Search hint removed — search works directly now */}
             </div>
 
             {/* Quick filters */}
