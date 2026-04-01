@@ -62,11 +62,12 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Prevent image drag-to-download across the site */
+/* Prevent image download — desktop drag + mobile long-press */
 img {
   -webkit-user-drag: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* iPhone safe area support */

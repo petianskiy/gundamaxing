@@ -51,11 +51,10 @@ export const changeUsernameSchema = z.object({
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
-    .max(24, "Username must be at most 24 characters")
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Only letters, numbers, hyphens, and underscores allowed"
-    )
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9_.]+$/, "Only letters, numbers, dots, and underscores allowed")
+    .refine((v) => !v.includes(".."), "No consecutive dots allowed")
+    .refine((v) => !v.endsWith("."), "Cannot end with a dot")
     .transform((v) => v.toLowerCase()),
 });
 

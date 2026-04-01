@@ -153,13 +153,14 @@ export function toUIBuild(b: any): Build {
 
 // ─── Queries ─────────────────────────────────────────────────────
 
-export const getBuilds = cache(async (): Promise<Build[]> => {
+export const getBuilds = cache(async (limit = 40): Promise<Build[]> => {
   const builds = await db.build.findMany({
     where: {
       user: { isProfilePrivate: false },
     },
     include: buildInclude,
     orderBy: { createdAt: "desc" },
+    take: limit,
   });
 
   return builds.map(toUIBuild);

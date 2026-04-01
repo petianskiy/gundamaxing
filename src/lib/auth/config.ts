@@ -107,8 +107,10 @@ function createAdapter() {
       const prefix = email
         .split("@")[0]
         .toLowerCase()
-        .replace(/[^a-z0-9_]/g, "")
-        .slice(0, 20) || "user";
+        .replace(/[^a-z0-9_.]/g, "")
+        .replace(/\.{2,}/g, ".")
+        .replace(/\.$/, "")
+        .slice(0, 25) || "user";
 
       // Retry loop: avoids TOCTOU race by directly attempting create
       // and retrying with a new suffix on username collision

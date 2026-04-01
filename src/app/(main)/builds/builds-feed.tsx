@@ -76,10 +76,14 @@ interface BuildsFeedProps {
   currentUserId?: string;
   likedBuildIds?: string[];
   bookmarkedBuildIds?: string[];
+  initialCursor?: string | null;
 }
 
-export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmarkedBuildIds = [] }: BuildsFeedProps) {
+export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmarkedBuildIds = [], initialCursor = null }: BuildsFeedProps) {
   const { t } = useTranslation();
+  const [allBuilds, setAllBuilds] = useState<Build[]>(builds);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "wall" | "showcase">("grid");
@@ -88,9 +92,58 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
   const [bookmarkedSet, setBookmarkedSet] = useState<Set<string>>(() => new Set(bookmarkedBuildIds));
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>(() => {
     const counts: Record<string, number> = {};
-    for (const b of builds) counts[b.id] = b.likes;
+    for (const b of allBuilds) counts[b.id] = b.likes;
     return counts;
   });
+
+  // Load more builds handler
+  const loadMore = async () => {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/builds?cursor=${cursor}&limit=40`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      // Map API response to Build type format
+      const newBuilds: Build[] = data.builds.map((b: any) => ({
+        id: b.id,
+        slug: b.slug,
+        title: b.title,
+        kitName: b.kitName,
+        grade: b.grade,
+        scale: b.scale,
+        timeline: b.timeline || "",
+        status: b.status,
+        techniques: b.techniques || [],
+        images: b.images || [],
+        username: b.user?.displayName || b.user?.username || "",
+        userHandle: b.user?.username || "",
+        userAvatar: b.user?.avatar || "",
+        likes: b._count?.likes ?? 0,
+        comments: b._count?.comments ?? 0,
+        bookmarks: b._count?.bookmarks ?? 0,
+        forkCount: b._count?.forks ?? 0,
+        respectCount: 0,
+        techniqueCount: 0,
+        creativityCount: 0,
+        commentsEnabled: true,
+        verification: b.user?.verificationTier?.toLowerCase() || "unverified",
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+      }));
+      setAllBuilds((prev) => [...prev, ...newBuilds]);
+      setLikeCounts((prev) => {
+        const counts = { ...prev };
+        for (const b of newBuilds) counts[b.id] = b.likes;
+        return counts;
+      });
+      setCursor(data.nextCursor);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   const [, startTransition] = useTransition();
 
   const handleLike = (buildId: string) => {
@@ -175,7 +228,7 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
   }, [filters]);
 
   const filteredBuilds = useMemo(() => {
-    let filtered = builds.filter((build) => {
+    let filtered = allBuilds.filter((build) => {
       if (filters.search) {
         const q = filters.search.toLowerCase();
         if (
@@ -211,7 +264,7 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
     }
 
     return filtered;
-  }, [filters, builds, timeRange]);
+  }, [filters, allBuilds, timeRange]);
 
   function toggleFilter<K extends keyof Omit<Filters, "search">>(key: K, value: Filters[K][number]) {
     setFilters((prev) => {
@@ -478,10 +531,14 @@ export function BuildsFeed({ builds, currentUserId, likedBuildIds = [], bookmark
         )}
 
         {/* Load more */}
-        {filteredBuilds.length > 0 && (
+        {cursor && filteredBuilds.length > 0 && (
           <div className="mt-10 text-center">
-            <button className="px-6 py-2.5 rounded-lg border border-border/50 bg-card text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border transition-colors">
-              {t("builds.loadMore")}
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-6 py-2.5 rounded-lg border border-border/50 bg-card text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? "Loading..." : t("builds.loadMore")}
             </button>
           </div>
         )}

@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function BuildsPage() {
-  const [builds, session] = await Promise.all([getBuilds(), auth()]);
+  const [initialBuilds, session] = await Promise.all([getBuilds(40), auth()]);
   const currentUserId = session?.user?.id;
 
   const [likedIds, bookmarkedIds] = currentUserId
@@ -19,6 +19,9 @@ export default async function BuildsPage() {
       ])
     : [new Set<string>(), new Set<string>()];
 
+  // Cursor for next page (last build's ID if we got a full page)
+  const initialCursor = initialBuilds.length >= 40 ? initialBuilds[initialBuilds.length - 1].id : null;
+
   return (
     <div className="relative min-h-screen">
       <div
@@ -27,10 +30,11 @@ export default async function BuildsPage() {
       />
       <div className="fixed inset-0 -z-10 bg-black/60" />
       <BuildsFeed
-        builds={builds}
+        builds={initialBuilds}
         currentUserId={currentUserId}
         likedBuildIds={Array.from(likedIds)}
         bookmarkedBuildIds={Array.from(bookmarkedIds)}
+        initialCursor={initialCursor}
       />
     </div>
   );
