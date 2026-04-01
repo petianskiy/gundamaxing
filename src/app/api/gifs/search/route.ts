@@ -16,8 +16,18 @@ export async function GET(req: NextRequest) {
     }
 
     const term = req.nextUrl.searchParams.get("term")?.trim() ?? "";
+    const mode = req.nextUrl.searchParams.get("mode") ?? "gundam"; // "gundam" | "all"
     const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10) || 1);
-    const query = term || "gundam";
+
+    // In gundam mode, prefix the query so results are Gundam-themed
+    // In all mode, search exactly what the user typed
+    let query: string;
+    if (mode === "all") {
+      query = term || "trending";
+    } else {
+      query = term ? `gundam ${term}` : "gundam";
+    }
+
     const { gifs, hasNext } = await searchGifs(query, page);
 
     return NextResponse.json(
