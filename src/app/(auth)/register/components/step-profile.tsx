@@ -32,6 +32,7 @@ import {
 } from "@/lib/actions/registration";
 import { stepDSchema, type StepDInput } from "@/lib/validations/registration-wizard";
 import type { StepAInput, StepBInput, StepCInput } from "@/lib/validations/registration-wizard";
+import { useR2Upload } from "@/lib/upload/use-r2-upload";
 
 interface StepProfileProps {
   data: Partial<StepDInput>;
@@ -155,7 +156,11 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
   const [deploySuccess, setDeploySuccess] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [customHex, setCustomHex] = useState("");
+  const avatarUploader = useR2Upload({ type: "image" });
+  const bannerUploader = useR2Upload({ type: "image" });
 
   const {
     register,
@@ -186,28 +191,48 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
   const watchedAccent = watch("accentColor");
   const bioLength = watchedBio?.length ?? 0;
 
-  function handleAvatarSelect(file: File | null) {
+  async function handleAvatarSelect(file: File | null) {
     if (!file) return;
     if (file.size > 4 * 1024 * 1024) {
       toast.error("Avatar must be under 4MB");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setAvatarPreview(url);
-    // Placeholder -- real upload integration comes later
-    setValue("avatar", "");
+    // Show instant preview
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarUploading(true);
+    try {
+      const result = await avatarUploader.upload(file);
+      setValue("avatar", result.url, { shouldValidate: true });
+      toast.success("Avatar uploaded");
+    } catch (err) {
+      toast.error("Avatar upload failed. Try again.");
+      setAvatarPreview(null);
+      setValue("avatar", "");
+    } finally {
+      setAvatarUploading(false);
+    }
   }
 
-  function handleBannerSelect(file: File | null) {
+  async function handleBannerSelect(file: File | null) {
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) {
       toast.error("Banner must be under 8MB");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setBannerPreview(url);
-    // Placeholder -- real upload integration comes later
-    setValue("banner", "");
+    // Show instant preview
+    setBannerPreview(URL.createObjectURL(file));
+    setBannerUploading(true);
+    try {
+      const result = await bannerUploader.upload(file);
+      setValue("banner", result.url, { shouldValidate: true });
+      toast.success("Banner uploaded");
+    } catch (err) {
+      toast.error("Banner upload failed. Try again.");
+      setBannerPreview(null);
+      setValue("banner", "");
+    } finally {
+      setBannerUploading(false);
+    }
   }
 
   function handleCustomHex(hex: string) {
@@ -343,14 +368,21 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Avatar & Banner uploads */}
         <div className="flex gap-4 items-start">
-          <UploadZone
-            label="Avatar"
-            maxSize="4MB"
-            aspect="square"
-            preview={avatarPreview}
-            onFileSelect={handleAvatarSelect}
-          />
-          <div className="flex-1">
+          <div className="relative">
+            <UploadZone
+              label="Avatar"
+              maxSize="4MB"
+              aspect="square"
+              preview={avatarPreview}
+              onFileSelect={handleAvatarSelect}
+            />
+            {avatarUploading && (
+              <div className="absolute inset-0 mt-6 flex items-center justify-center bg-black/50 rounded-lg">
+                <div className="w-6 h-6 border-2 border-gx-red border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 relative">
             <UploadZone
               label="Banner"
               maxSize="8MB"
@@ -358,6 +390,11 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
               preview={bannerPreview}
               onFileSelect={handleBannerSelect}
             />
+            {bannerUploading && (
+              <div className="absolute inset-0 mt-6 flex items-center justify-center bg-black/50 rounded-lg">
+                <div className="w-6 h-6 border-2 border-gx-red border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
           </div>
         </div>
 
@@ -471,6 +508,7 @@ export function StepProfile({ data, allData, onBack }: StepProfileProps) {
             variant="primary"
             size="lg"
             loading={isSubmitting}
+            disabled={avatarUploading || bannerUploading}
             className="flex-1 font-mono tracking-wider"
           >
             <Rocket className="h-4 w-4" />
