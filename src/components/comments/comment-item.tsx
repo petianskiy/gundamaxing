@@ -4,7 +4,7 @@ import { useState } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ThumbsUp, MessageSquare, Flag, Trash2, MoreHorizontal } from "lucide-react";
+import { ThumbsUp, MessageSquare, Flag, Trash2, MoreHorizontal, Languages } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GifDisplay } from "@/components/gifs/gif-display";
@@ -42,6 +42,8 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
   const [showReply, setShowReply] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
 
   const isOwner = session?.user?.id === comment.userId;
   const isMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
@@ -55,6 +57,25 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
     if ("liked" in result && result.liked !== !liked) {
       setLiked(result.liked ?? false);
       setLikeCount(result.liked ? likeCount + 1 : likeCount);
+    }
+  }
+
+  async function handleTranslate() {
+    if (translatedText) { setTranslatedText(null); return; } // toggle off
+    if (!comment.content || translating) return;
+    setTranslating(true);
+    try {
+      const userLang = navigator.language.split("-")[0] || "en";
+      const res = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${userLang}&dt=t&q=${encodeURIComponent(comment.content)}`
+      );
+      const data = await res.json();
+      const translated = data?.[0]?.map((s: any[]) => s[0]).join("") ?? null;
+      setTranslatedText(translated);
+    } catch {
+      setTranslatedText("Translation failed. Try again.");
+    } finally {
+      setTranslating(false);
     }
   }
 
@@ -97,6 +118,11 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
           </div>
 
           <p className="text-sm text-zinc-300 leading-relaxed">{comment.content}</p>
+          {translatedText && (
+            <p className="text-sm text-blue-300/80 leading-relaxed mt-1 italic border-l-2 border-blue-500/30 pl-2">
+              {translatedText}
+            </p>
+          )}
 
           {comment.gif && (
             <div className="mt-2">
@@ -116,6 +142,20 @@ export function CommentItem({ comment, depth = 0, buildId, threadId, onUpdate }:
               <ThumbsUp className="h-3 w-3" />
               {likeCount > 0 && likeCount}
             </button>
+
+            {comment.content && (
+              <button
+                onClick={handleTranslate}
+                disabled={translating}
+                className={cn(
+                  "flex items-center gap-1 text-xs transition-colors",
+                  translatedText ? "text-blue-400" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Languages className="h-3 w-3" />
+                {translating ? "..." : translatedText ? "Original" : "Translate"}
+              </button>
+            )}
 
             {session?.user && (
               <button

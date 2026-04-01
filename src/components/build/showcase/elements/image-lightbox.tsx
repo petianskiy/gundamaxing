@@ -31,14 +31,17 @@ export function ImageLightbox({ imageUrl, alt, onClose, images, initialIndex = 0
 
   const imageCount = images?.length ?? 0;
 
+  const canGoNext = hasMultiple && currentIndex < imageCount - 1;
+  const canGoPrev = hasMultiple && currentIndex > 0;
+
   const goNext = useCallback(() => {
     if (imageCount <= 1) return;
-    setCurrentIndex((i) => (i + 1) % imageCount);
+    setCurrentIndex((i) => Math.min(i + 1, imageCount - 1));
   }, [imageCount]);
 
   const goPrev = useCallback(() => {
     if (imageCount <= 1) return;
-    setCurrentIndex((i) => (i - 1 + imageCount) % imageCount);
+    setCurrentIndex((i) => Math.max(i - 1, 0));
   }, [imageCount]);
 
   useEffect(() => {
@@ -69,12 +72,12 @@ export function ImageLightbox({ imageUrl, alt, onClose, images, initialIndex = 0
     const dy = touch.clientY - touchStartRef.current.y;
     touchStartRef.current = null;
 
-    // Only horizontal swipes (ignore vertical)
+    // Only horizontal swipes (ignore vertical), respect bounds
     if (Math.abs(dx) > swipeThreshold && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0) goNext();
-      else goPrev();
+      if (dx < 0 && canGoNext) goNext();
+      else if (dx > 0 && canGoPrev) goPrev();
     }
-  }, [hasMultiple, goNext, goPrev]);
+  }, [hasMultiple, goNext, goPrev, canGoNext, canGoPrev]);
 
   if (!mounted) return null;
 
@@ -106,7 +109,7 @@ export function ImageLightbox({ imageUrl, alt, onClose, images, initialIndex = 0
           <>
             <button
               onClick={(e) => { e.stopPropagation(); goPrev(); }}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-colors"
+              className={`absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-all ${canGoPrev ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               style={{ zIndex: 10000 }}
               aria-label="Previous image"
             >
@@ -114,7 +117,7 @@ export function ImageLightbox({ imageUrl, alt, onClose, images, initialIndex = 0
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); goNext(); }}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-colors"
+              className={`absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 sm:p-3 text-white/80 hover:bg-black/70 hover:text-white transition-all ${canGoNext ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               style={{ zIndex: 10000 }}
               aria-label="Next image"
             >
