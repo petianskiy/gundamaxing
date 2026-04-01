@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { SmartImage as Image } from "@/components/ui/smart-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Send,
+  Languages,
 } from "lucide-react";
 import { createComment, deleteComment } from "@/lib/actions/comment";
 import { toggleComments } from "@/lib/actions/comment";
@@ -19,6 +20,8 @@ import { toggleLike } from "@/lib/actions/like";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
+import { GifDisplay } from "@/components/gifs/gif-display";
+import { CommentForm } from "@/components/comments/comment-form";
 import type { Comment } from "@/lib/types";
 
 // URL detection regex — matches http(s)://, www., and bare domains ending in common TLDs
@@ -94,6 +97,8 @@ function CommentItem({
   const [likeCount, setLikeCount] = useState(comment.likes);
   const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const size = depth > 0 ? 28 : 32;
 
@@ -121,6 +126,19 @@ function CommentItem({
         toast.error(result.error);
       }
     });
+  };
+
+  const handleTranslate = async () => {
+    if (translatedText) { setTranslatedText(null); return; }
+    if (!comment.content || translating) return;
+    setTranslating(true);
+    try {
+      const lang = navigator.language.split("-")[0] || "en";
+      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(comment.content)}`);
+      const data = await res.json();
+      setTranslatedText(data?.[0]?.map((s: any[]) => s[0]).join("") ?? null);
+    } catch { setTranslatedText("Translation failed."); }
+    finally { setTranslating(false); }
   };
 
   const handleDelete = () => {
@@ -186,8 +204,34 @@ function CommentItem({
         </div>
         <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap break-words font-mono">{renderCommentContent(comment.content, t("forum.linkRemoved"), t("forum.linkRemovedTitle"))}</p>
 
+        {translatedText && (
+          <p className="text-sm text-blue-300/80 leading-relaxed mt-1 italic border-l-2 border-blue-500/30 pl-2">
+            {translatedText}
+          </p>
+        )}
+
+        {/* GIF attachment */}
+        {comment.gif && (
+          <div className="mt-2">
+            <GifDisplay gif={comment.gif} />
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex items-center gap-3 mt-2">
+          {comment.content && (
+            <button
+              onClick={handleTranslate}
+              disabled={translating}
+              className={cn(
+                "flex items-center gap-1 text-xs transition-colors",
+                translatedText ? "text-blue-400" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Languages className="h-3 w-3" />
+              {translating ? "..." : translatedText ? "Original" : "Translate"}
+            </button>
+          )}
           <button
             onClick={handleLikeComment}
             className={cn(
@@ -278,39 +322,10 @@ export function CommentSection({
 }: CommentSectionProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const [content, setContent] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(commentsEnabled);
   const [, startTransition] = useTransition();
-  const formRenderedAt = useRef(Date.now());
   const isOwner = currentUserId === buildOwnerId;
-
-  const handleSubmit = async () => {
-    if (!content.trim()) return;
-    if (!currentUserId) {
-      toast.error(t("builds.toast.signInToComment"));
-      return;
-    }
-    setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append("content", content);
-    formData.append("buildId", buildId);
-    // Honeypot field
-    formData.append("website", "");
-    // Timing field — base64 encoded timestamp expected by validateTiming
-    formData.append("_timing", btoa(String(formRenderedAt.current)));
-
-    const result = await createComment(formData);
-    setIsSubmitting(false);
-    if ("error" in result) {
-      toast.error(result.error);
-    } else {
-      setContent("");
-      formRenderedAt.current = Date.now();
-      router.refresh();
-    }
-  };
 
   const handleToggleComments = () => {
     const newState = !enabled;
@@ -346,35 +361,15 @@ export function CommentSection({
         )}
       </div>
 
-      {/* Write comment */}
+      {/* Write comment — uses CommentForm with GIF picker */}
       {enabled ? (
         currentUserId ? (
-          <div className="mb-6 rounded-xl border border-border/50 bg-card p-4">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+          <div className="mb-6">
+            <CommentForm
+              buildId={buildId}
               placeholder={t("builds.commentPlaceholder")}
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 resize-none h-20 focus:outline-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  handleSubmit();
-                }
-              }}
+              onSuccess={() => router.refresh()}
             />
-            <div className="flex justify-end">
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting || !content.trim()}
-                className={cn(
-                  "px-4 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                  content.trim()
-                    ? "bg-gx-red text-white hover:bg-red-600"
-                    : "bg-gx-red/50 text-white/50 cursor-not-allowed"
-                )}
-              >
-                {isSubmitting ? t("builds.comments.posting") : t("builds.postComment")}
-              </button>
-            </div>
           </div>
         ) : (
           <div className="mb-6 rounded-xl border border-border/50 bg-card p-4 text-center">
