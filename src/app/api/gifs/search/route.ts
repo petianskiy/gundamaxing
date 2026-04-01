@@ -3,15 +3,6 @@ import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/security/rate-limiter";
 import { searchGifs } from "@/lib/klipy";
 
-const ALLOWED_TERMS = new Set([
-  "rx-78", "zaku", "char", "gunpla", "gundam wing", "uc", "seed", "00",
-  "barbatos", "unicorn", "sinanju", "sazabi", "freedom", "exia", "aerial",
-  "hg", "mg", "rg", "pg", "zeon", "federation", "mecha", "model kit",
-  "panel line", "weathering", "custom build", "kitbash", "wing zero",
-  "nu gundam", "strike", "destiny", "turn a", "iron blooded",
-  "witch from mercury", "hathaway", "thunderbolt", "build fighters",
-]);
-
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
@@ -24,18 +15,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const term = req.nextUrl.searchParams.get("term")?.trim().toLowerCase() ?? "";
-
-    // If a term is provided, it must be in the allowlist
-    if (term && !ALLOWED_TERMS.has(term)) {
-      return NextResponse.json(
-        { error: "Search term not allowed. Use one of the suggested terms." },
-        { status: 400 },
-      );
-    }
-
+    const term = req.nextUrl.searchParams.get("term")?.trim() ?? "";
     const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10) || 1);
-    const query = term ? `gundam ${term}` : "gundam";
+    const query = term || "gundam";
     const { gifs, hasNext } = await searchGifs(query, page);
 
     return NextResponse.json(

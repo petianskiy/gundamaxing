@@ -20,7 +20,7 @@ interface GifPickerProps {
   onSelect: (gif: { slug: string; title: string; url: string; previewUrl: string; width: number; height: number }) => void;
 }
 
-const QUICK_FILTERS = ["Gundam", "Zaku", "Char", "Gunpla", "Cat", "Wow", "Nice", "GG", "Thumbs up", "LOL"];
+const QUICK_FILTERS = ["Zaku", "RX-78", "Char", "Gunpla", "Wing", "Seed", "Barbatos", "Unicorn"];
 
 export function GifPicker({ open, onClose, onSelect }: GifPickerProps) {
   const [gifs, setGifs] = useState<KlipyGif[]>([]);
