@@ -32,7 +32,7 @@ export function CardsLanding() {
       <AppDownload />
 
       {/* ═══ GAME GUIDE ═══ */}
-      <GameGuide />
+      {/* <GameGuide /> */}
 
       {/* ═══ DECK BUILDER ═══ */}
       <DeckBuilder />
@@ -50,45 +50,13 @@ export function CardsLanding() {
         </div>
       </section>
 
-      {/* ═══ CTA ═══ */}
+      {/* ═══ CTA — hidden for now, restore when ready ═══
       <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6 }}
-            className="relative rounded-2xl border border-indigo-500/20 bg-gradient-to-b from-indigo-950/40 to-transparent p-10 sm:p-14"
-          >
-            <div className="absolute inset-0 rounded-2xl bg-indigo-500/[0.04]" />
-            <div className="relative">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">
-                {t("cards.cta.title")}
-              </h2>
-              <p className="text-zinc-400 max-w-md mx-auto mb-8">
-                {t("cards.cta.subtitle")}
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a
-                  href="https://www.gundam-gcg.com/en/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all shadow-lg shadow-indigo-600/20"
-                >
-                  {t("cards.cta.officialSite")}
-                  <ExternalLink className="h-3.5 w-3.5 opacity-50" />
-                </a>
-                <Link
-                  href="/collector"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-zinc-300 text-sm font-medium transition-all"
-                >
-                  {t("cards.cta.backToCollector")}
-                </Link>
-              </div>
-            </div>
-          </motion.div>
+          CTA content here (Ready to Play? section)
         </div>
       </section>
+      ═══ end CTA ═══ */}
     </div>
   );
 }

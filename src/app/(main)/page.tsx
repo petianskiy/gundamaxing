@@ -31,7 +31,7 @@ export default async function HomePage() {
       <FeaturedBuildsSection builds={latestBuilds} />
       <GundamGridSection />
       <BuildDnaTeaser />
-      <WorkshopsSection categories={workshopCategories} />
+      {/* <WorkshopsSection categories={workshopCategories} /> */}
       <CollectibleCardsSection />
       <ConnectSection />
     </>
